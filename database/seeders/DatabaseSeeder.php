@@ -13,6 +13,7 @@ use Database\Seeders\FuelSeeder;
 use Database\Seeders\ConditionSeeder;
 use Database\Seeders\StatusSeeder;
 use Database\Seeders\VehicleTypeSeeder;
+use Database\Seeders\DomainSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -36,5 +37,6 @@ class DatabaseSeeder extends Seeder
         $this->call(ConditionSeeder::class);
         $this->call(StatusSeeder::class);
         $this->call(VehicleTypeSeeder::class);
+        $this->call(DomainSeeder::class);
     }
 }

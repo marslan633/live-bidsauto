@@ -1,1 +1,79 @@
 # live-bidsauto
+- Manufacture
+- Model
+- Generation
+- Body Type
+- Color
+- Transmission
+- Drive Wheel
+- Fuel
+- Condition
+- Status
+- VehicleType
+- Domain
+- Engine
+- Seller
+- SellerType
+- Title
+- DetailedTitle
+- Damage
+- Image
+- Country 
+- State
+- City
+- Location
+- SellingBranch
+
+Database Table fields
+- id
+- year
+- title
+- vin
+- manufacturer_id -> foreign key
+- vehicle_model_id -> foreign key
+- generation_id -> foreign key
+- body_type_id -> foreign key
+- color_id -> foreign key
+- engine_id -> foreign key
+- transmission_id -> foreign key
+- drive_wheel_id -> foreign key
+- vehicle_type_id -> foreign key
+- fuel_id -> foreign key
+- cylinders
+- salvage_id (lot->id)
+- lot_id
+- domain_id -> foreign key
+- external_id
+- odometer_km
+- odometer_mi
+- odometer_status
+- estimate_repair_price
+- pre_accident_price
+- clean_wholesale_price
+- actual_cash_value
+- sale_date
+- sale_date_updated_at
+- bid
+- bid_updated_at
+- buy_now
+- buy_now_updated_at
+- final_bid
+- final_bid_updated_at
+- status -> foreign key
+- seller_id -> foreign key
+- seller_type_id -> foreign key
+- title_id -> foreign key
+- detailed_title_id -> foreign key
+- damage_main -> foreign key
+- damage_second -> foreign key
+- keys_available
+- airbags
+- condition_id -> foreign key
+- grade_iaai
+- image_id -> foreign key
+- country_id -> foreign key
+- state_id -> foreign key
+- city_id -> foreign key
+- location_id -> foreign key
+- selling_branch -> foreign key
+- details

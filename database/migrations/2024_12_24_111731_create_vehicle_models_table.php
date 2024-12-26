@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('vehicle_models', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('vehicle_model_api_id')->unique(); // Unique identifier from API
+            $table->unsignedBigInteger('vehicle_model_api_id')->unique();
             $table->string('name')->nullable();
             $table->integer('cars_qty')->default(0);
             $table->unsignedBigInteger('manufacturer_id'); // Foreign key

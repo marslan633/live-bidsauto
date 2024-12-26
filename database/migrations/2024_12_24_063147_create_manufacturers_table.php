@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('manufacturers', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('manufacturer_api_id')->nullable(); // Remove unique from here
+            $table->unsignedBigInteger('manufacturer_api_id')->unique()->nullable();
             $table->string('name')->nullable();
             $table->integer('cars_qty')->default(0);
             $table->string('image')->nullable();

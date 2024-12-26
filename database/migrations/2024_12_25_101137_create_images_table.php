@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('images', function (Blueprint $table) {
             $table->id(); 
+            $table->unsignedBigInteger('image_api_id')->unique();
             $table->json('small')->nullable(); 
             $table->json('normal')->nullable(); 
             $table->json('big')->nullable();
