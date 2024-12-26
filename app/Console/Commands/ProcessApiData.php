@@ -49,8 +49,10 @@ class ProcessApiData extends Command
             }
 
             $this->info('Data processed successfully.');
+            \Log::info('Data processed successfully.');
         } else {
             $this->error('Failed to fetch API data.');
+            \Log::info('Failed to fetch API data.');
         }
     }
 
@@ -170,7 +172,6 @@ class ProcessApiData extends Command
                 'domain_id' => $lot['selling_branch']['domain_id'],
             ]
         ) : null;
-        $this->info($sellingBranch);
 
 
         // Process Seller
