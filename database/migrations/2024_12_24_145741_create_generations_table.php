@@ -18,7 +18,7 @@ return new class extends Migration
             $table->integer('cars_qty')->default(0);
             $table->integer('from_year')->nullable();
             $table->integer('to_year')->nullable();
-            $table->unsignedBigInteger('manufacturer_id');
+            $table->unsignedBigInteger('manufacturer_id')->nullable();
             $table->unsignedBigInteger('model_id');
             $table->string('type')->nullable(); // cars or motorcycles
             $table->timestamps();

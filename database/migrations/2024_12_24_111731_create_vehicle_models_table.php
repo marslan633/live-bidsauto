@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('vehicle_model_api_id')->unique();
             $table->string('name')->nullable();
             $table->integer('cars_qty')->default(0);
-            $table->unsignedBigInteger('manufacturer_id'); // Foreign key
+            $table->unsignedBigInteger('manufacturer_id')->nullable(); // Foreign key
             $table->integer('generations_qty')->default(0);
             $table->string('type')->nullable(); // To store cars or motorcycles
             $table->timestamps();

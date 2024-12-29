@@ -32,32 +32,69 @@ class ProcessApiData extends Command
      */
     public function handle()
     {
-        $apiUrl = 'https://carstat.dev/api/cars?minutes=4320&per_page=1000&page=1';
+        // Starting URL for the first page
+        $apiUrl = 'https://carstat.dev/api/cars?minutes=1000&per_page=1000&page=1';
 
-        $response = Http::withHeaders([
+        do {
+            // Fetch data from the API
+            $response = Http::withHeaders([
                 'x-api-key' => env('CAR_API_KEY'),
-            ])->get($apiUrl);
+            ])->timeout(60) // Increase timeout
+            ->retry(3, 500) // Retry up to 3 times with 500ms delay
+            ->get($apiUrl);
 
-        $this->info($response);
-        \Log::info($response);   
+            // Log the API hit URL for debugging purposes
+            $this->info("API URL: $apiUrl");
+            \Log::info("API URL: $apiUrl");
 
-        if ($response->successful()) {
-            $data = $response->json()['data'];
+            // Log the full response for debugging purposes
+            $this->info("Response: " . $response->body());
+            \Log::info("Response: " . $response->body());
 
-            foreach ($data as $car) {
-                $this->processCarData($car);
+            if ($response->successful()) {
+                // Extract the data from the response
+                $data = $response->json()['data'];
+
+                // Process each car's data
+                foreach ($data as $car) {
+                    $this->processCarData($car);
+                }
+
+                // Log successful data processing
+                $this->info('Data processed successfully.');
+                \Log::info('Data processed successfully.');
+
+                // Check the 'next' link to fetch the next page
+                $nextUrl = $response->json()['links']['next'];
+
+                // If there is a next page, update $apiUrl to fetch the next page, otherwise end the loop
+                if ($nextUrl) {
+                    $apiUrl = $nextUrl;
+                } else {
+                    $this->info('No more pages to fetch.');
+                    \Log::info('No more pages to fetch.');
+                }
+
+            } else {
+                // Handle failed API request
+                $this->error('Failed to fetch API data.');
+                \Log::info('Failed to fetch API data.');
+                break; // Exit the loop if the API request fails
             }
 
-            $this->info('Data processed successfully.');
-            \Log::info('Data processed successfully.');
-        } else {
-            $this->error('Failed to fetch API data.');
-            \Log::info('Failed to fetch API data.');
-        }
+        } while ($nextUrl !== null); // Continue fetching until 'next' is null
+
+        // Final completion log
+        $this->info('Data processing completed.');
+        \Log::info('Data processing completed.');
     }
 
     private function processCarData(array $car)
     {
+        // Initialize variables as null
+        $model = null;
+        $generation = null;
+
         // Process Manufacturer
         $manufacturer = $car['manufacturer'] ? Manufacturer::firstOrCreate(
             ['manufacturer_api_id' => $car['manufacturer']['id']],
@@ -65,23 +102,27 @@ class ProcessApiData extends Command
         ) : null;
 
         // Process Model
-        $model = $car['model'] ? VehicleModel::firstOrCreate(
-            ['vehicle_model_api_id' => $car['model']['id']],
-            [
-                'name' => $car['model']['name'],
-                'manufacturer_id' => $manufacturer->id
-            ]
-        ) : null;
+        if ($manufacturer) {
+            $model = $car['model'] ? VehicleModel::firstOrCreate(
+                ['vehicle_model_api_id' => $car['model']['id']],
+                [
+                    'name' => $car['model']['name'],
+                    'manufacturer_id' => $manufacturer->id
+                ]
+            ) : null;
+        }
 
         // Process Generation
-        $generation = $car['generation'] ? Generation::firstOrCreate(
-            ['generation_api_id' => $car['generation']['id']],
-            [
-                'name' => $car['generation']['name'],
-                'manufacturer_id' => $manufacturer->id,
-                'model_id' => $model->id
-            ]
-        ) : null;
+        if ($manufacturer && $model) {
+            $generation = $car['generation'] ? Generation::firstOrCreate(
+                ['generation_api_id' => $car['generation']['id']],
+                [
+                    'name' => $car['generation']['name'],
+                    'manufacturer_id' => $manufacturer->id,
+                    'model_id' => $model->id
+                ]
+            ) : null;
+        }
 
         // Process BodyType
         $bodyType = $car['body_type'] ? BodyType::firstOrCreate(
