@@ -10,6 +10,7 @@ use App\Models\{
     Engine, Seller, SellerType, Title, DetailedTitle, Damage, Image, Country,
     State, City, Location, SellingBranch
 };
+use Carbon\Carbon;
 
 class ProcessApiData extends Command
 {
@@ -32,8 +33,14 @@ class ProcessApiData extends Command
      */
     public function handle()
     {
+        // Log the starting time of the process
+        $startTime = microtime(true);
+        $startDateTime = Carbon::now();
+        $this->info("Process started at: " . $startDateTime);
+        \Log::info("Process started at: " . $startDateTime);
+
         // Starting URL for the first page
-        $apiUrl = 'https://carstat.dev/api/cars?minutes=1000&per_page=1000&page=1';
+        $apiUrl = 'http://carstat.dev/api/cars?minutes=10&page=1&per_page=1000';
 
         do {
             // Fetch data from the API
@@ -49,7 +56,7 @@ class ProcessApiData extends Command
 
             // Log the full response for debugging purposes
             $this->info("Response: " . $response->body());
-            \Log::info("Response: " . $response->body());
+            // \Log::info("Response: " . $response->body());
 
             if ($response->successful()) {
                 // Extract the data from the response
@@ -83,6 +90,18 @@ class ProcessApiData extends Command
             }
 
         } while ($nextUrl !== null); // Continue fetching until 'next' is null
+
+        // Log the ending time of the process
+        $endTime = microtime(true);
+        $endDateTime = Carbon::now();
+        $this->info("Process ended at: " . $endDateTime);
+        \Log::info("Process ended at: " . $endDateTime);
+
+        // Calculate the total execution time
+        $executionTime = $endTime - $startTime; // In seconds, including fractions
+        $formattedTime = round($executionTime, 2); // Round to 2 decimal places
+        $this->info("Total execution time: {$formattedTime} seconds");
+        \Log::info("Total execution time: {$formattedTime} seconds");
 
         // Final completion log
         $this->info('Data processing completed.');
