@@ -32,7 +32,7 @@ class ProcessApiData extends Command
      */
     public function handle()
     {
-        $apiUrl = 'https://carstat.dev/api/cars?minutes=120&per_page=5';
+        $apiUrl = 'https://carstat.dev/api/cars?minutes=4320&per_page=1000&page=1';
 
         $response = Http::withHeaders([
                 'x-api-key' => env('CAR_API_KEY'),
@@ -59,19 +59,19 @@ class ProcessApiData extends Command
     private function processCarData(array $car)
     {
         // Process Manufacturer
-        $manufacturer = Manufacturer::firstOrCreate(
+        $manufacturer = $car['manufacturer'] ? Manufacturer::firstOrCreate(
             ['manufacturer_api_id' => $car['manufacturer']['id']],
             ['name' => $car['manufacturer']['name']]
-        );
+        ) : null;
 
         // Process Model
-        $model = VehicleModel::firstOrCreate(
+        $model = $car['model'] ? VehicleModel::firstOrCreate(
             ['vehicle_model_api_id' => $car['model']['id']],
             [
                 'name' => $car['model']['name'],
                 'manufacturer_id' => $manufacturer->id
             ]
-        );
+        ) : null;
 
         // Process Generation
         $generation = $car['generation'] ? Generation::firstOrCreate(
@@ -134,8 +134,8 @@ class ProcessApiData extends Command
                 'year' => $car['year'],
                 'title' => $car['title'],
                 'vin' => $car['vin'],
-                'manufacturer_id' => $manufacturer->id,
-                'vehicle_model_id' => $model->id,
+                'manufacturer_id' => $manufacturer?->id,
+                'vehicle_model_id' => $model?->id,
                 'generation_id' => $generation?->id,
                 'body_type_id' => $bodyType?->id,
                 'color_id' => $color?->id,
@@ -229,31 +229,51 @@ class ProcessApiData extends Command
             ['name' => $location['country']['name']]
         ) : null;
 
-        // Handle State
-        $state = $location['state'] ? State::firstOrCreate(
-            ['state_api_id' => $location['state']['id']],
-            ['country_id' => $country->id, 'code' => $location['state']['code'], 'name' => $location['state']['name']]
-        ) : null;
+        // Initialize variables to null
+        $state = null;
+        $city = null;
+        $locationRecord = null;
 
-        // Handle City
-        $city = $location['city'] ? City::firstOrCreate(
-            ['city_api_id' => $location['city']['id']],
-            ['state_id' => $state->id, 'name' => $location['city']['name']]
-        ) : null;
+        // Only proceed if the state is not null or empty
+        if (!empty($location['state'])) {
+            // Handle State
+            $state = State::firstOrCreate(
+                ['state_api_id' => $location['state']['id']],
+                [
+                    'country_id' => $country?->id,
+                    'code' => $location['state']['code'],
+                    'name' => $location['state']['name']
+                ]
+            );
 
-        // Handle Location
-        $locationRecord = $location['location'] ? Location::firstOrCreate(
-            ['location_api_id' => $location['location']['id']],
-            [
-                'city_id' => $city->id,
-                'name' => $location['location']['name'],
-                'latitude' => $location['latitude'],
-                'longitude' => $location['longitude'],
-                'postal_code' => $location['postal_code'],
-                'is_offsite' => $location['is_offsite'],
-                'raw' => $location['raw']
-            ]
-        ) : null;
+            // Handle City
+            if (!empty($location['city'])) {
+                $city = City::firstOrCreate(
+                    ['city_api_id' => $location['city']['id']],
+                    [
+                        'state_id' => $state->id,
+                        'name' => $location['city']['name']
+                    ]
+                );
+
+                // Handle Location
+                if (!empty($location['location']) && !empty($location['location']['id'])) {
+                    $locationRecord = Location::firstOrCreate(
+                        ['location_api_id' => $location['location']['id']],
+                        [
+                            'city_id' => $city->id,
+                            'name' => trim($location['location']['name']) ?: 'Unnamed Location',
+                            'latitude' => $location['latitude'] ?? null,
+                            'longitude' => $location['longitude'] ?? null,
+                            'postal_code' => trim($location['postal_code']) ?: null,
+                            'is_offsite' => $location['is_offsite'] ?? false,
+                            'raw' => $location['raw'] ?? '{}'
+                        ]
+                    );
+                }
+            }
+        }
+
 
         // Process Images
         if (!empty($lot['images'])) {
@@ -266,8 +286,8 @@ class ProcessApiData extends Command
                     'normal' => json_encode($imagesData['normal'] ?? []),
                     'big' => json_encode($imagesData['big'] ?? []),
                     'downloaded' => json_encode($imagesData['downloaded'] ?? []),
-                    'exterior' => $imagesData['exterior'] ?? null,
-                    'interior' => $imagesData['interior'] ?? null,
+                    'exterior' => json_encode($imagesData['exterior'] ?? []),
+                    'interior' => json_encode($imagesData['interior'] ?? []),
                     'video' => $imagesData['video'] ?? null,
                     'video_youtube_id' => $imagesData['video_youtube_id'] ?? null,
                     'external_panorama_url' => $imagesData['external_panorama_url'] ?? null,

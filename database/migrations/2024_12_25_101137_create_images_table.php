@@ -18,8 +18,8 @@ return new class extends Migration
             $table->json('normal')->nullable(); 
             $table->json('big')->nullable();
             $table->json('downloaded')->nullable(); 
-            $table->text('exterior')->nullable();
-            $table->text('interior')->nullable(); 
+            $table->json('exterior')->nullable();
+            $table->json('interior')->nullable(); 
             $table->text('video')->nullable(); 
             $table->text('video_youtube_id')->nullable(); 
             $table->text('external_panorama_url')->nullable();
