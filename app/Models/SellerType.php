@@ -9,5 +9,6 @@ class SellerType extends Model
     protected $fillable = [
         'seller_type_api_id',
         'name',
+        'count'
     ];
 }

@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class Transmission extends Model
 {
-    protected $fillable = ['id', 'transmission_api_id', 'name'];
+    protected $fillable = ['id', 'transmission_api_id', 'name', 'count'];
 }

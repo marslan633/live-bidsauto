@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class Damage extends Model
 {
-    protected $fillable = ['id', 'damage_api_id', 'name'];
+    protected $fillable = ['id', 'damage_api_id', 'name', 'count'];
 }

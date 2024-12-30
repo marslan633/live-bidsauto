@@ -10,5 +10,6 @@ class DetailedTitle extends Model
         'detailed_title_api_id',
         'code',
         'name',
+        'count'
     ];
 }
