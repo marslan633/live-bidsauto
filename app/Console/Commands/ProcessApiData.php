@@ -40,8 +40,9 @@ class ProcessApiData extends Command
         \Log::info("Process started at: " . $startDateTime);
 
         // Starting URL for the first page
-        $apiUrl = 'http://carstat.dev/api/cars?minutes=10&page=1&per_page=1000';
+        // $apiUrl = 'http://carstat.dev/api/cars?minutes=4320&page=1&per_page=1000';
 
+        $apiUrl = 'http://carstat.dev/api/cars?minutes=10&page=1&per_page=1000';
         do {
             // Fetch data from the API
             $response = Http::withHeaders([
@@ -381,6 +382,7 @@ class ProcessApiData extends Command
             'seller_type_id' => $sellerType?->id,
             'title_id' => $title?->id,
             'detailed_title_id' => $detailedTitle?->id,
+            'damage_id' => $damageMain?->id,
             'damage_main' => $damageMain?->id,
             'damage_second' => $damageSecond?->id,
             'keys_available' => $lot['keys_available'] ?? null,

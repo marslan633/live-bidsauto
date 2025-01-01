@@ -52,6 +52,7 @@ return new class extends Migration
             $table->unsignedBigInteger('seller_type_id')->nullable();
             $table->unsignedBigInteger('title_id')->nullable();
             $table->unsignedBigInteger('detailed_title_id')->nullable();
+            $table->unsignedBigInteger('damage_id')->nullable();
             $table->unsignedBigInteger('damage_main')->nullable();
             $table->unsignedBigInteger('damage_second')->nullable();
             $table->boolean('keys_available')->nullable();
@@ -83,6 +84,7 @@ return new class extends Migration
             $table->foreign('seller_type_id')->references('id')->on('seller_types')->onDelete('set null');
             $table->foreign('title_id')->references('id')->on('titles')->onDelete('set null');
             $table->foreign('detailed_title_id')->references('id')->on('detailed_titles')->onDelete('set null');
+            $table->foreign('damage_id')->references('id')->on('damages')->onDelete('set null');
             $table->foreign('damage_main')->references('id')->on('damages')->onDelete('set null');
             $table->foreign('damage_second')->references('id')->on('damages')->onDelete('set null');
             $table->foreign('condition_id')->references('id')->on('conditions')->onDelete('set null');

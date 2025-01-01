@@ -64,6 +64,7 @@ Database Table fields
 - seller_type_id -> foreign key
 - title_id -> foreign key
 - detailed_title_id -> foreign key
+- damage_id -> foreign key
 - damage_main -> foreign key
 - damage_second -> foreign key
 - keys_available

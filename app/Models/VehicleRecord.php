@@ -14,7 +14,7 @@ class VehicleRecord extends Model
         'pre_accident_price', 'clean_wholesale_price', 'actual_cash_value', 'sale_date', 
         'sale_date_updated_at', 'bid', 'bid_updated_at', 'buy_now', 'buy_now_updated_at', 
         'final_bid', 'final_bid_updated_at', 'status_id', 'seller_id', 'seller_type_id', 
-        'title_id', 'detailed_title_id', 'damage_main', 'damage_second', 'keys_available', 
+        'title_id', 'detailed_title_id', 'damage_id', 'damage_main', 'damage_second', 'keys_available', 
         'airbags', 'condition_id', 'grade_iaai', 'image_id', 'country_id', 'state_id', 
         'city_id', 'location_id', 'selling_branch', 'details'
     ];

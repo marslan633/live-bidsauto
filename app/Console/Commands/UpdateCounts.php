@@ -26,7 +26,7 @@ class UpdateCounts extends Command
         'Manufacturer' => ['table' => 'manufacturers', 'relation' => 'manufacturer_id'],
         'VehicleModel' => ['table' => 'vehicle_models', 'relation' => 'vehicle_model_id'],
         'VehicleType' => ['table' => 'vehicle_types', 'relation' => 'vehicle_type_id'],
-        'Damage' => ['table' => 'damages', 'relation' => 'damage_main'],
+        'Damage' => ['table' => 'damages', 'relation' => 'damage_id'],
         'Condition' => ['table' => 'conditions', 'relation' => 'condition_id'],
         'Fuel' => ['table' => 'fuels', 'relation' => 'fuel_id'],
         'SellerType' => ['table' => 'seller_types', 'relation' => 'seller_type_id'],
