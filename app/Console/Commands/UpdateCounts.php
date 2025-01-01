@@ -34,6 +34,7 @@ class UpdateCounts extends Command
         'Transmission' => ['table' => 'transmissions', 'relation' => 'transmission_id'],
         'DetailedTitle' => ['table' => 'detailed_titles', 'relation' => 'detailed_title_id'],
         'Year' => ['table' => 'years', 'relation' => 'year_id'],
+        'BuyNow' => ['table' => 'buy_nows', 'relation' => 'buy_now_id'],
     ];
 
     /**

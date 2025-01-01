@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('vehicle_records', function (Blueprint $table) {
-            $table->unsignedBigInteger('year_id')->after('year')->nullable();
-            $table->foreign('year_id')->references('id')->on('years')->onDelete('set null');
+            $table->unsignedBigInteger('buy_now_id')->nullable();
+            $table->foreign('buy_now_id')->references('id')->on('buy_nows')->onDelete('set null');
         });
     }
 

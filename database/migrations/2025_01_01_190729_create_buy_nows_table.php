@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('vehicle_records', function (Blueprint $table) {
-            $table->unsignedBigInteger('year_id')->after('year')->nullable();
-            $table->foreign('year_id')->references('id')->on('years')->onDelete('set null');
+        Schema::create('buy_nows', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->nullable();
+            $table->integer('count')->default(0)->nullable();
+            $table->timestamps();
         });
     }
 
@@ -22,8 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('vehicle_records', function (Blueprint $table) {
-            //
-        });
+        Schema::dropIfExists('buy_nows');
     }
 };

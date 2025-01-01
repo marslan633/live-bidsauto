@@ -8,7 +8,7 @@ use App\Models\{
     VehicleRecord, Manufacturer, VehicleModel, Generation, BodyType, Color,
     Transmission, DriveWheel, Fuel, Condition, Status, VehicleType, Domain,
     Engine, Seller, SellerType, Title, DetailedTitle, Damage, Image, Country,
-    State, City, Location, SellingBranch, Year
+    State, City, Location, SellingBranch, Year, BuyNow
 };
 use Carbon\Carbon;
 
@@ -225,6 +225,16 @@ class ProcessApiData extends Command
 
     private function processLot($vehicleRecord, $lot)
     {
+        // Determine buy_now_id based on buy_now value
+        $buyNowValue = $lot['buy_now'] ?? null;
+        $buyNowId = null;
+
+        if ($buyNowValue === 0 || is_null($buyNowValue)) {
+            $buyNowId = BuyNow::where('name', 'buyNowWithoutPrice')->value('id');
+        } elseif (is_numeric($buyNowValue) && $buyNowValue > 0) {
+            $buyNowId = BuyNow::where('name', 'buyNowWithPrice')->value('id');
+        }
+
         // Process Seller
         $domain = $lot['domain'] ? Domain::firstOrCreate(
             ['domain_api_id' => $lot['domain']['id']],
@@ -404,6 +414,7 @@ class ProcessApiData extends Command
             'location_id' => $locationRecord?->id,
             'selling_branch' => $sellingBranch?->id,
             'details' => $lot['details'] ?? null,
+            'buy_now_id' => $buyNowId,
         ]);
     }
 }

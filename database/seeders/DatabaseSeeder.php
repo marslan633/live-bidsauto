@@ -15,6 +15,7 @@ use Database\Seeders\StatusSeeder;
 use Database\Seeders\VehicleTypeSeeder;
 use Database\Seeders\DomainSeeder;
 use Database\Seeders\YearSeeder;
+use Database\Seeders\BuyNowSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -40,5 +41,6 @@ class DatabaseSeeder extends Seeder
         $this->call(VehicleTypeSeeder::class);
         $this->call(DomainSeeder::class);
         $this->call(YearSeeder::class);
+        $this->call(BuyNowSeeder::class);
     }
 }
