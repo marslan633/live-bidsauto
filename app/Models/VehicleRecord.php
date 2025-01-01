@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class VehicleRecord extends Model
 {
     protected $fillable = [
-        'api_id', 'year', 'title', 'vin', 'manufacturer_id', 'vehicle_model_id', 'generation_id', 
+        'api_id', 'year', 'year_id', 'title', 'vin', 'manufacturer_id', 'vehicle_model_id', 'generation_id', 
         'body_type_id', 'color_id', 'engine_id', 'transmission_id', 'drive_wheel_id', 
         'vehicle_type_id', 'fuel_id', 'cylinders', 'salvage_id', 'lot_id', 'domain_id', 
         'external_id', 'odometer_km', 'odometer_mi', 'odometer_status', 'estimate_repair_price', 

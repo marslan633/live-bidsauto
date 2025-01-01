@@ -33,6 +33,7 @@ class UpdateCounts extends Command
         'DriveWheel' => ['table' => 'drive_wheels', 'relation' => 'drive_wheel_id'],
         'Transmission' => ['table' => 'transmissions', 'relation' => 'transmission_id'],
         'DetailedTitle' => ['table' => 'detailed_titles', 'relation' => 'detailed_title_id'],
+        'Year' => ['table' => 'years', 'relation' => 'year_id'],
     ];
 
     /**

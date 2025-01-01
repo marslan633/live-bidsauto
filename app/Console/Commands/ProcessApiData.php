@@ -8,7 +8,7 @@ use App\Models\{
     VehicleRecord, Manufacturer, VehicleModel, Generation, BodyType, Color,
     Transmission, DriveWheel, Fuel, Condition, Status, VehicleType, Domain,
     Engine, Seller, SellerType, Title, DetailedTitle, Damage, Image, Country,
-    State, City, Location, SellingBranch
+    State, City, Location, SellingBranch, Year
 };
 use Carbon\Carbon;
 
@@ -42,7 +42,7 @@ class ProcessApiData extends Command
         // Starting URL for the first page
         // $apiUrl = 'http://carstat.dev/api/cars?minutes=4320&page=1&per_page=1000';
 
-        $apiUrl = 'http://carstat.dev/api/cars?minutes=10&page=1&per_page=1000';
+        $apiUrl = 'http://carstat.dev/api/cars?minutes=20&page=1&per_page=1000';
         do {
             // Fetch data from the API
             $response = Http::withHeaders([
@@ -144,6 +144,13 @@ class ProcessApiData extends Command
             ) : null;
         }
 
+        // Process Year
+        if ($car['year']) {
+            $year = Year::firstOrCreate(
+                ['name' => $car['year']]
+            );
+        }
+        
         // Process BodyType
         $bodyType = $car['body_type'] ? BodyType::firstOrCreate(
             ['body_type_api_id' => $car['body_type']['id']],
@@ -193,6 +200,7 @@ class ProcessApiData extends Command
             ['api_id' => $car['id']],
             [
                 'year' => $car['year'],
+                'year_id' => $year?->id,
                 'title' => $car['title'],
                 'vin' => $car['vin'],
                 'manufacturer_id' => $manufacturer?->id,
