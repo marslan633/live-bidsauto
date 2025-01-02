@@ -138,4 +138,46 @@ class VehicleRecord extends Model
     {
         return $this->belongsTo(SellingBranch::class);
     }
+
+    // Accessor methods to decode the JSON strings for small, normal, and big
+    public function getSmallAttribute($value)
+    {
+        return json_decode($value, true);
+    }
+
+    public function getNormalAttribute($value)
+    {
+        return json_decode($value, true);
+    }
+
+    public function getBigAttribute($value)
+    {
+        return json_decode($value, true);
+    }
+
+    // Override the toArray method to modify how the image attributes are returned
+    public function toArray()
+    {
+        $array = parent::toArray();
+
+        if ($this->image) {
+            $array['image'] = [
+                'id' => $this->image->id,
+                'image_api_id' => $this->image->image_api_id,
+                'small' => $this->getSmallAttribute($this->image->small),
+                'normal' => $this->getNormalAttribute($this->image->normal),
+                'big' => $this->getBigAttribute($this->image->big),
+                'downloaded' => $this->image->downloaded,
+                'exterior' => json_decode($this->image->exterior, true),
+                'interior' => json_decode($this->image->interior, true),
+                'video' => $this->image->video,
+                'video_youtube_id' => $this->image->video_youtube_id,
+                'external_panorama_url' => $this->image->external_panorama_url,
+                'created_at' => $this->image->created_at,
+                'updated_at' => $this->image->updated_at,
+            ];
+        }
+
+        return $array;
+    }
 }
