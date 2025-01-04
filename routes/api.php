@@ -13,3 +13,4 @@ Route::prefix('vehicles')->group(function () {
     Route::get('/{id}', [VehicleController::class, 'searchVehicle']);
 });
 Route::post('domain/attributes', [VehicleController::class, 'getRelatedAttributes']);
+// Route::post('filter', [VehicleController::class, 'filterRecords']);

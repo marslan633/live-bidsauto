@@ -145,6 +145,7 @@ class ProcessApiData extends Command
         }
 
         // Process Year
+        $year = null;
         if ($car['year']) {
             $year = Year::firstOrCreate(
                 ['name' => $car['year']]
