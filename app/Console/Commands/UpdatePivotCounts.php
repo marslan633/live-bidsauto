@@ -255,12 +255,12 @@ class UpdatePivotCounts extends Command
                 $baseId = $baseRecord->id;
                 $this->info("Processing {$base} ID: {$baseId}");
                 \Log::info("Processing {$base} ID: {$baseId}");
-                
 
                 $singularBase = Str::singular($base);
 
                 $relatedRecords = DB::table('vehicle_records')
                     ->where("{$singularBase}_id", $baseId)
+                    ->whereNotNull('sale_date')
                     ->get();
 
                 foreach ($data['relations'] as $relation => $relationData) {
@@ -277,13 +277,17 @@ class UpdatePivotCounts extends Command
                         ->filter(function ($record) use ($fieldToGroupBy) {
                             return isset($record->{$fieldToGroupBy}) && is_numeric($record->{$fieldToGroupBy});
                         })
-                        ->groupBy($fieldToGroupBy)
+                        ->groupBy(function ($record) use ($fieldToGroupBy) {
+                            return $record->{$fieldToGroupBy} . '_' . $record->domain_id; // Group by field and domain_id
+                        })
                         ->map(function ($group) {
                             return $group->count();
                         });
 
-                    foreach ($counts as $relatedId => $count) {
-                        if ($relatedId === null || !is_numeric($relatedId)) {
+                    foreach ($counts as $groupKey => $count) {
+                        [$relatedId, $domainId] = explode('_', $groupKey);
+
+                        if ($relatedId === null || !is_numeric($relatedId) || $domainId === null || !is_numeric($domainId)) {
                             continue;
                         }
 
@@ -291,6 +295,7 @@ class UpdatePivotCounts extends Command
                             [
                                 "{$singularBase}_id" => $baseId,
                                 $foreignKey => $relatedId,
+                                'domain_id' => $domainId, // Add domain_id
                             ],
                             [
                                 'count' => $count,

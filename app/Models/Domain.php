@@ -10,61 +10,61 @@ class Domain extends Model
 
     public function manufacturers()
     {
-        return $this->belongsToMany(Manufacturer::class, 'domain_manufacturer')->withPivot('count');
+        return $this->belongsToMany(Manufacturer::class, 'domain_manufacturer')->withPivot('count' , 'domain_id');
     }
 
-    public function vehicleModels()
+    public function vehicle_models()
     {
-        return $this->belongsToMany(VehicleModel::class, 'domain_vehicle_model')->withPivot('count');
+        return $this->belongsToMany(VehicleModel::class, 'domain_vehicle_model')->withPivot('count' , 'domain_id');
     }
 
-    public function vehicleTypes()
+    public function vehicle_types()
     {
-        return $this->belongsToMany(VehicleType::class, 'domain_vehicle_type')->withPivot('count');
+        return $this->belongsToMany(VehicleType::class, 'domain_vehicle_type')->withPivot('count' , 'domain_id');
     }
 
     public function conditions()
     {
-        return $this->belongsToMany(Condition::class, 'domain_condition')->withPivot('count');
+        return $this->belongsToMany(Condition::class, 'domain_condition')->withPivot('count' , 'domain_id');
     }
 
     public function fuels()
     {
-        return $this->belongsToMany(Fuel::class, 'domain_fuel')->withPivot('count');
+        return $this->belongsToMany(Fuel::class, 'domain_fuel')->withPivot('count' , 'domain_id');
     }
 
-    public function sellerTypes()
+    public function seller_types()
     {
-        return $this->belongsToMany(SellerType::class, 'domain_seller_type')->withPivot('count');
+        return $this->belongsToMany(SellerType::class, 'domain_seller_type')->withPivot('count' , 'domain_id');
     }
 
-    public function driveWheels()
+    public function drive_wheels()
     {
-        return $this->belongsToMany(DriveWheel::class, 'domain_drive_wheel')->withPivot('count');
+        return $this->belongsToMany(DriveWheel::class, 'domain_drive_wheel')->withPivot('count' , 'domain_id');
     }
 
     public function transmissions()
     {
-        return $this->belongsToMany(Transmission::class, 'domain_transmission')->withPivot('count');
+        return $this->belongsToMany(Transmission::class, 'domain_transmission')->withPivot('count' , 'domain_id');
     }
 
-    public function detailedTitles()
+    public function detailed_titles()
     {
-        return $this->belongsToMany(DetailedTitle::class, 'domain_detailed_title')->withPivot('count');
+        return $this->belongsToMany(DetailedTitle::class, 'domain_detailed_title')->withPivot('count' , 'domain_id');
     }
 
     public function damages()
     {
-        return $this->belongsToMany(Damage::class, 'domain_damage')->withPivot('count');
+        return $this->belongsToMany(Damage::class, 'domain_damage')->withPivot('count' , 'domain_id');
     }
 
     public function years()
     {
-        return $this->belongsToMany(Year::class, 'domain_year')->withPivot('count');
+        return $this->belongsToMany(Year::class, 'domain_year')->withPivot('count' , 'domain_id');
     }
 
     public function buyNows()
     {
-        return $this->belongsToMany(BuyNow::class, 'domain_buy_now')->withPivot('count');
+        return $this->belongsToMany(BuyNow::class, 'domain_buy_now')->withPivot('count' , 'domain_id');
     }
 }

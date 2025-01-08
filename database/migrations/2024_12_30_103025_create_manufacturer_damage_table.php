@@ -15,13 +15,15 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('manufacturer_id')->nulable();
             $table->unsignedBigInteger('damage_id')->nulable();
+            $table->unsignedBigInteger('domain_id')->nullable();
             $table->integer('count')->default(0);
             $table->timestamps();
 
             $table->foreign('manufacturer_id')->references('id')->on('manufacturers')->onDelete('cascade');
             $table->foreign('damage_id')->references('id')->on('damages')->onDelete('cascade');
+            $table->foreign('domain_id')->references('id')->on('domains')->onDelete('cascade');
             // Shorten the unique constraint name
-            $table->unique(['manufacturer_id', 'damage_id'], 'unique_manufacturer_damage');
+            $table->unique(['manufacturer_id', 'damage_id', 'domain_id'], 'unique_manufacturer_damage_domain');
         });
     }
 

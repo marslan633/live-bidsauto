@@ -16,12 +16,16 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('manufacturer_id')->nullable();
             $table->unsignedBigInteger('year_id')->nullable();
+            $table->unsignedBigInteger('domain_id')->nullable();
             $table->integer('count')->default(0);
             $table->timestamps();
 
-            $table->unique(['manufacturer_id', 'year_id'], 'unique_manufacturer_year');
+            
             $table->foreign('manufacturer_id')->references('id')->on('manufacturers')->onDelete('cascade');
             $table->foreign('year_id')->references('id')->on('years')->onDelete('cascade');
+            $table->foreign('domain_id')->references('id')->on('domains')->onDelete('cascade');
+
+            $table->unique(['manufacturer_id', 'year_id', 'domain_id'], 'unique_manufacturer_year_domain');
         });
 
         // Vehicle Model Year
@@ -29,12 +33,14 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('vehicle_model_id')->nullable();
             $table->unsignedBigInteger('year_id')->nullable();
+            $table->unsignedBigInteger('domain_id')->nullable();
             $table->integer('count')->default(0);
             $table->timestamps();
 
-            $table->unique(['vehicle_model_id', 'year_id'], 'unique_vehicle_model_year');
+            $table->unique(['vehicle_model_id', 'year_id', 'domain_id'], 'unique_vehicle_model_year_domain');
             $table->foreign('vehicle_model_id')->references('id')->on('vehicle_models')->onDelete('cascade');
             $table->foreign('year_id')->references('id')->on('years')->onDelete('cascade');
+            $table->foreign('domain_id')->references('id')->on('domains')->onDelete('cascade');
         });
 
         // Vehicle Type Year
@@ -42,12 +48,14 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('vehicle_type_id')->nullable();
             $table->unsignedBigInteger('year_id')->nullable();
+            $table->unsignedBigInteger('domain_id')->nullable();
             $table->integer('count')->default(0);
             $table->timestamps();
 
-            $table->unique(['vehicle_type_id', 'year_id'], 'unique_vehicle_type_year');
+            $table->unique(['vehicle_type_id', 'year_id', 'domain_id'], 'unique_vehicle_type_year_domain');
             $table->foreign('vehicle_type_id')->references('id')->on('vehicle_types')->onDelete('cascade');
             $table->foreign('year_id')->references('id')->on('years')->onDelete('cascade');
+            $table->foreign('domain_id')->references('id')->on('domains')->onDelete('cascade');
         });
 
         // Condition Year
@@ -55,12 +63,14 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('condition_id')->nullable();
             $table->unsignedBigInteger('year_id')->nullable();
+            $table->unsignedBigInteger('domain_id')->nullable();
             $table->integer('count')->default(0);
             $table->timestamps();
 
-            $table->unique(['condition_id', 'year_id'], 'unique_condition_year');
+            $table->unique(['condition_id', 'year_id', 'domain_id'], 'unique_condition_year_domain');
             $table->foreign('condition_id')->references('id')->on('conditions')->onDelete('cascade');
             $table->foreign('year_id')->references('id')->on('years')->onDelete('cascade');
+            $table->foreign('domain_id')->references('id')->on('domains')->onDelete('cascade');
         });
 
         // Fuel Year
@@ -68,12 +78,14 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('fuel_id')->nullable();
             $table->unsignedBigInteger('year_id')->nullable();
+            $table->unsignedBigInteger('domain_id')->nullable();
             $table->integer('count')->default(0);
             $table->timestamps();
 
-            $table->unique(['fuel_id', 'year_id'], 'unique_fuel_year');
+            $table->unique(['fuel_id', 'year_id', 'domain_id'], 'unique_fuel_year_domain');
             $table->foreign('fuel_id')->references('id')->on('fuels')->onDelete('cascade');
             $table->foreign('year_id')->references('id')->on('years')->onDelete('cascade');
+            $table->foreign('domain_id')->references('id')->on('domains')->onDelete('cascade');
         });
 
         // Seller Type Year
@@ -81,12 +93,14 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('seller_type_id')->nullable();
             $table->unsignedBigInteger('year_id')->nullable();
+            $table->unsignedBigInteger('domain_id')->nullable();
             $table->integer('count')->default(0);
             $table->timestamps();
 
-            $table->unique(['seller_type_id', 'year_id'], 'unique_seller_type_year');
+            $table->unique(['seller_type_id', 'year_id', 'domain_id'], 'unique_seller_type_year_domain');
             $table->foreign('seller_type_id')->references('id')->on('seller_types')->onDelete('cascade');
             $table->foreign('year_id')->references('id')->on('years')->onDelete('cascade');
+            $table->foreign('domain_id')->references('id')->on('domains')->onDelete('cascade');
         });
 
         // Drive Wheel Year
@@ -94,12 +108,14 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('drive_wheel_id')->nullable();
             $table->unsignedBigInteger('year_id')->nullable();
+            $table->unsignedBigInteger('domain_id')->nullable();
             $table->integer('count')->default(0);
             $table->timestamps();
 
-            $table->unique(['drive_wheel_id', 'year_id'], 'unique_drive_wheel_year');
+            $table->unique(['drive_wheel_id', 'year_id', 'domain_id'], 'unique_drive_wheel_year_domain');
             $table->foreign('drive_wheel_id')->references('id')->on('drive_wheels')->onDelete('cascade');
             $table->foreign('year_id')->references('id')->on('years')->onDelete('cascade');
+            $table->foreign('domain_id')->references('id')->on('domains')->onDelete('cascade');
         });
 
         // Transmission Year
@@ -107,12 +123,14 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('transmission_id')->nullable();
             $table->unsignedBigInteger('year_id')->nullable();
+            $table->unsignedBigInteger('domain_id')->nullable();
             $table->integer('count')->default(0);
             $table->timestamps();
 
-            $table->unique(['transmission_id', 'year_id'], 'unique_transmission_year');
+            $table->unique(['transmission_id', 'year_id', 'domain_id'], 'unique_transmission_year_domain');
             $table->foreign('transmission_id')->references('id')->on('transmissions')->onDelete('cascade');
             $table->foreign('year_id')->references('id')->on('years')->onDelete('cascade');
+            $table->foreign('domain_id')->references('id')->on('domains')->onDelete('cascade');
         });
 
         // Detailed Title Year
@@ -120,12 +138,14 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('detailed_title_id')->nullable();
             $table->unsignedBigInteger('year_id')->nullable();
+            $table->unsignedBigInteger('domain_id')->nullable();
             $table->integer('count')->default(0);
             $table->timestamps();
 
-            $table->unique(['detailed_title_id', 'year_id'], 'unique_detailed_title_year');
+            $table->unique(['detailed_title_id', 'year_id', 'domain_id'], 'unique_detailed_title_year_domain');
             $table->foreign('detailed_title_id')->references('id')->on('detailed_titles')->onDelete('cascade');
             $table->foreign('year_id')->references('id')->on('years')->onDelete('cascade');
+            $table->foreign('domain_id')->references('id')->on('domains')->onDelete('cascade');
         });
 
         // Damage Year
@@ -133,12 +153,14 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('damage_id')->nullable();
             $table->unsignedBigInteger('year_id')->nullable();
+            $table->unsignedBigInteger('domain_id')->nullable();
             $table->integer('count')->default(0);
             $table->timestamps();
 
-            $table->unique(['damage_id', 'year_id'], 'unique_damage_year');
+            $table->unique(['damage_id', 'year_id', 'domain_id'], 'unique_damage_year_domain');
             $table->foreign('damage_id')->references('id')->on('damages')->onDelete('cascade');
             $table->foreign('year_id')->references('id')->on('years')->onDelete('cascade');
+            $table->foreign('domain_id')->references('id')->on('domains')->onDelete('cascade');
         });
 
         // Domain Year

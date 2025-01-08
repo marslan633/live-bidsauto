@@ -16,12 +16,14 @@ return new class extends Migration
             $table->unsignedBigInteger('seller_type_id')->nullable();
             $table->unsignedBigInteger('damage_id')->nullable();
             $table->integer('count')->default(0);
+            $table->unsignedBigInteger('domain_id')->nullable();
             $table->timestamps();
 
-            $table->unique(['seller_type_id', 'damage_id'], 'unique_seller_type_damage');
+            $table->unique(['seller_type_id', 'damage_id', 'domain_id'], 'unique_seller_type_damage_domain');
 
             $table->foreign('seller_type_id')->references('id')->on('seller_types')->onDelete('cascade');
             $table->foreign('damage_id')->references('id')->on('damages')->onDelete('cascade');
+            $table->foreign('domain_id')->references('id')->on('domains')->onDelete('cascade');
         });
     }
 

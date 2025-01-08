@@ -15,13 +15,15 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('drive_wheel_id')->nullable();
             $table->unsignedBigInteger('manufacturer_id')->nullable();
+            $table->unsignedBigInteger('domain_id')->nullable();
             $table->integer('count')->default(0);
             $table->timestamps();
 
-            $table->unique(['drive_wheel_id', 'manufacturer_id'], 'unique_drive_wheel_manufacturer');
+            $table->unique(['drive_wheel_id', 'manufacturer_id', 'domain_id'], 'unique_drive_wheel_manufacturer_domain');
 
             $table->foreign('drive_wheel_id')->references('id')->on('drive_wheels')->onDelete('cascade');
             $table->foreign('manufacturer_id')->references('id')->on('manufacturers')->onDelete('cascade');
+            $table->foreign('domain_id')->references('id')->on('domains')->onDelete('cascade');
         });
     }
 

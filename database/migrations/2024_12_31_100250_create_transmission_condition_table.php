@@ -15,13 +15,15 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('transmission_id')->nullable();
             $table->unsignedBigInteger('condition_id')->nullable();
+            $table->unsignedBigInteger('domain_id')->nullable();
             $table->integer('count')->default(0);
             $table->timestamps();
 
-            $table->unique(['transmission_id', 'condition_id'], 'unique_transmission_condition');
+            $table->unique(['transmission_id', 'condition_id', 'domain_id'], 'unique_transmission_condition_domain');
 
             $table->foreign('transmission_id')->references('id')->on('transmissions')->onDelete('cascade');
             $table->foreign('condition_id')->references('id')->on('conditions')->onDelete('cascade');
+            $table->foreign('domain_id')->references('id')->on('domains')->onDelete('cascade');
         });
     }
 

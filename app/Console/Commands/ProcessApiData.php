@@ -42,14 +42,20 @@ class ProcessApiData extends Command
         // Starting URL for the first page
         // $apiUrl = 'http://carstat.dev/api/cars?minutes=4320&page=1&per_page=1000';
 
-        $apiUrl = 'http://carstat.dev/api/cars?minutes=20&page=1&per_page=1000';
+        $apiUrl = 'http://carstat.dev/api/cars?minutes=50&page=1&per_page=500';
         do {
             // Fetch data from the API
             $response = Http::withHeaders([
                 'x-api-key' => env('CAR_API_KEY'),
-            ])->timeout(60) // Increase timeout
-            ->retry(3, 500) // Retry up to 3 times with 500ms delay
+            ])
+            ->timeout(120) // Timeout set to 120 seconds
+            ->retry(3, 1000) // Retry 3 times with a 1-second delay
             ->get($apiUrl);
+
+            $start = microtime(true);
+            // Log response time for performance monitoring
+            $end = microtime(true);
+            \Log::info("API URL: $apiUrl, Response time: " . ($end - $start) . " seconds");
 
             // Log the API hit URL for debugging purposes
             $this->info("API URL: $apiUrl");
@@ -75,6 +81,8 @@ class ProcessApiData extends Command
                 // Check the 'next' link to fetch the next page
                 $nextUrl = $response->json()['links']['next'];
 
+                $lastUrl = $response->json()['links']['last'];
+                \Log::info("Last Page API URL: $lastUrl");
                 // If there is a next page, update $apiUrl to fetch the next page, otherwise end the loop
                 if ($nextUrl) {
                     $apiUrl = $nextUrl;

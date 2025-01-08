@@ -15,13 +15,15 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('transmission_id')->nullable();
             $table->unsignedBigInteger('fuel_id')->nullable();
+            $table->unsignedBigInteger('domain_id')->nullable();
             $table->integer('count')->default(0);
             $table->timestamps();
 
-            $table->unique(['transmission_id', 'fuel_id'], 'unique_transmission_fuel');
+            $table->unique(['transmission_id', 'fuel_id', 'domain_id'], 'unique_transmission_fuel_domain');
 
             $table->foreign('transmission_id')->references('id')->on('transmissions')->onDelete('cascade');
             $table->foreign('fuel_id')->references('id')->on('fuels')->onDelete('cascade');
+            $table->foreign('domain_id')->references('id')->on('domains')->onDelete('cascade');
         });
     }
 

@@ -15,13 +15,15 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('manufacturer_id')->nullable();
             $table->unsignedBigInteger('fuel_id')->nullable();
+            $table->unsignedBigInteger('domain_id')->nullable();
             $table->integer('count')->default(0);
             $table->timestamps();
 
             $table->foreign('manufacturer_id')->references('id')->on('manufacturers')->onDelete('cascade');
             $table->foreign('fuel_id')->references('id')->on('fuels')->onDelete('cascade');
+            $table->foreign('domain_id')->references('id')->on('domains')->onDelete('cascade');
             // Shorten the unique constraint name
-            $table->unique(['manufacturer_id', 'fuel_id'], 'unique_manufacturer_fuel');
+            $table->unique(['manufacturer_id', 'fuel_id', 'domain_id'], 'unique_manufacturer_fuel_domain');
         });
     }
 
