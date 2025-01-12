@@ -523,6 +523,54 @@ class VehicleController extends Controller
         $domainId = $request->input('domain_id');
         $ids = $request->input($attribute);
         try {
+            // Handle year filtering when manufacturerIdsArray is given in request.
+            $yearFrom = $request->input('year_from');
+            $yearTo = $request->input('year_to');
+
+            if ($yearFrom && $yearTo && $attribute) {
+                $yearIds = Year::whereBetween('name', [$yearFrom, $yearTo])->pluck('id')->toArray();
+                $attributeTableMapping = [
+                    'manufacturers' => 'manufacturer_year',
+                    'vehicle_models' => 'vehicle_model_year',
+                    'vehicle_types' => 'vehicle_type_year',
+                    'conditions' => 'condition_year',
+                    'fuels' => 'fuel_year',
+                    'seller_types' => 'seller_type_year',
+                    'drive_wheels' => 'drive_wheel_year',
+                    'transmissions' => 'transmission_year',
+                    'detailed_titles' => 'detailed_title_year',
+                    'damages' => 'damage_year',
+                    'buy_now' => 'buy_now_year',
+                ];
+
+                if (isset($attributeTableMapping[$attribute])) {
+                    $table = $attributeTableMapping[$attribute];
+                    $columnId = ($attribute === 'buy_now') ? 'id' : rtrim($attribute, 's') . '_id'; // Dynamically derive the column name
+                    
+                    // Handle the 'buy_now' special condition
+                    if ($attribute === 'buy_now') {
+                        if ($request->buy_now == true) {
+                            $ids = BuyNow::where('name', 'buyNowWithoutPrice')->pluck('id')->toArray();
+                        } elseif ($request->buy_now == false) {
+                            $ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
+                                ->pluck('id')
+                                ->toArray();
+                        }
+                    }
+
+                    // Fetch IDs based on year range
+                    $ids = DB::table($table)
+                        ->whereIn($columnId, $ids) // Filter by the current IDs
+                        ->whereIn('year_id', $yearIds) // Filter by year range
+                        ->pluck($columnId)
+                        ->unique()
+                        ->values()
+                        ->toArray();
+                }
+            }
+            
+            
+            // This below code should run only when years parameter will set.
             if($attribute == 'years') {
                 // Extract year range from the request
                 $yearFrom = $request->input('year_from');
@@ -533,8 +581,16 @@ class VehicleController extends Controller
                     $ids = Year::whereBetween('name', [$yearFrom, $yearTo])->pluck('id')->toArray();
                 }
             }
-            if($attribute == 'buy_now' && $request->buy_now == true) {
-                $ids = BuyNow::where('name', 'buyNowWithoutPrice')->select('id')->pluck('id')->toArray();
+            if ($attribute === 'buy_now') {
+                if ($request->buy_now == true && !($yearFrom && $yearTo)) {
+                    $ids = BuyNow::where('name', 'buyNowWithoutPrice')
+                        ->pluck('id')
+                        ->toArray();
+                } elseif ($request->buy_now == false) {
+                    $ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
+                        ->pluck('id')
+                        ->toArray();
+                }
             }
 
             // Define model-to-relation mappings

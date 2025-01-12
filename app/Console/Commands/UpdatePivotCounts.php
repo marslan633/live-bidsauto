@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 
 class UpdatePivotCounts extends Command
 {
@@ -258,11 +259,14 @@ class UpdatePivotCounts extends Command
 
                 $singularBase = Str::singular($base);
 
+                $lastRunTime = Cache::get('last_second_cron_run', now()->subDay());
                 $relatedRecords = DB::table('vehicle_records')
                     ->where("{$singularBase}_id", $baseId)
                     ->whereNotNull('sale_date')
+                    ->where('processed_at', '>=', $lastRunTime)
+                    ->where('is_new', true)
                     ->get();
-
+               
                 foreach ($data['relations'] as $relation => $relationData) {
                     $pivotTable = $relationData['pivot'];
                     $foreignKey = $relationData['foreign_key'];
@@ -284,6 +288,26 @@ class UpdatePivotCounts extends Command
                             return $group->count();
                         });
 
+                    // foreach ($counts as $groupKey => $count) {
+                    //     [$relatedId, $domainId] = explode('_', $groupKey);
+
+                    //     if ($relatedId === null || !is_numeric($relatedId) || $domainId === null || !is_numeric($domainId)) {
+                    //         continue;
+                    //     }
+
+                    //     DB::table($pivotTable)->updateOrInsert(
+                    //         [
+                    //             "{$singularBase}_id" => $baseId,
+                    //             $foreignKey => $relatedId,
+                    //             'domain_id' => $domainId, // Add domain_id
+                    //         ],
+                    //         [
+                    //             'count' => $count,
+                    //             'created_at' => now(),
+                    //             'updated_at' => now(),
+                    //         ]
+                    //     );
+                    // }
                     foreach ($counts as $groupKey => $count) {
                         [$relatedId, $domainId] = explode('_', $groupKey);
 
@@ -291,24 +315,44 @@ class UpdatePivotCounts extends Command
                             continue;
                         }
 
-                        DB::table($pivotTable)->updateOrInsert(
-                            [
+                        $existingRecord = DB::table($pivotTable)
+                            ->where("{$singularBase}_id", $baseId)
+                            ->where($foreignKey, $relatedId)
+                            ->where('domain_id', $domainId)
+                            ->first();
+
+                        if ($existingRecord) {
+                            // Increment the count if the record already exists
+                            $updatedCount = $existingRecord->count + $count;
+                            DB::table($pivotTable)->where('id', $existingRecord->id)->update([
+                                'count' => $updatedCount,
+                                'updated_at' => now(),
+                            ]);
+                        } else {
+                            // Insert a new record if it doesn't exist
+                            DB::table($pivotTable)->insert([
                                 "{$singularBase}_id" => $baseId,
                                 $foreignKey => $relatedId,
-                                'domain_id' => $domainId, // Add domain_id
-                            ],
-                            [
+                                'domain_id' => $domainId,
                                 'count' => $count,
                                 'created_at' => now(),
                                 'updated_at' => now(),
-                            ]
-                        );
+                            ]);
+                        }
                     }
 
                     $this->info("Updated pivot table: {$pivotTable} for {$base} ID: {$baseId}");
                 }
             }
         }
+
+         // Mark processed records
+        DB::table('vehicle_records')
+            ->whereIn('id', $relatedRecords->pluck('id'))
+            ->update(['is_new' => false, 'processed_at' => now()]);
+
+        // Update the last run time
+        Cache::put('last_second_cron_run', now());
 
         $endTime = now();
         $executionTime = $startTime->diffInSeconds($endTime);

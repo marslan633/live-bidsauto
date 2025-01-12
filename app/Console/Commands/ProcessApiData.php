@@ -42,7 +42,7 @@ class ProcessApiData extends Command
         // Starting URL for the first page
         // $apiUrl = 'http://carstat.dev/api/cars?minutes=4320&page=1&per_page=1000';
 
-        $apiUrl = 'http://carstat.dev/api/cars?minutes=50&page=1&per_page=500';
+        $apiUrl = 'http://carstat.dev/api/cars?minutes=5&page=1&per_page=500';
         do {
             // Fetch data from the API
             $response = Http::withHeaders([
@@ -89,6 +89,11 @@ class ProcessApiData extends Command
                 } else {
                     $this->info('No more pages to fetch.');
                     \Log::info('No more pages to fetch.');
+
+                    // Call the second cron job when 'next' is null
+                    $this->info('Triggering the second cron job: update:pivot-counts');
+                    \Log::info('Triggering the second cron job: update:pivot-counts');
+                    $this->call('update:pivot-counts');
                 }
 
             } else {
@@ -222,9 +227,18 @@ class ProcessApiData extends Command
                 'drive_wheel_id' => $driveWheel?->id,
                 'vehicle_type_id' => $vehicleType?->id,
                 'fuel_id' => $fuel?->id,
-                'cylinders' => $car['cylinders']
+                'cylinders' => $car['cylinders'],
+                // 'processed_at' => Carbon::now(),
+                // 'is_new' => true,
             ]
         );
+        // Check if the record was newly created
+        if ($vehicleRecord->wasRecentlyCreated) {
+            $vehicleRecord->update([
+                'processed_at' => Carbon::now(),
+                'is_new' => true,
+            ]);
+        }
 
         // Process lots
         foreach ($car['lots'] as $lot) {
