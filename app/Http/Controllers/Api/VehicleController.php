@@ -27,10 +27,17 @@ class VehicleController extends Controller
                 $query->where('domain_id', $request->input('domain_id'));
             }
 
-            // Handling 'Buy Now'
+            // Handle the 'buy_now'
             if ($request->has('buy_now')) {
-                $buy_now_id = BuyNow::where('name', 'buyNowWithoutPrice')->pluck('id');
-                $query->where('buy_now_id', $buy_now_id);
+                if ($request->buy_now == true) {  
+                    $buy_now_id = BuyNow::where('name', 'buyNowWithoutPrice')->pluck('id');
+                    $query->where('buy_now_id', $buy_now_id);
+                } elseif ($request->buy_now == false) {
+                    $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
+                            ->pluck('id')
+                            ->toArray();
+                        $query->whereIn('buy_now_id', $buy_now_ids);
+                }
             }
 
             // Handling 'year_from' and 'year_to'
