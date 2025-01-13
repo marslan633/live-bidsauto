@@ -8,7 +8,7 @@ use App\Models\{
     VehicleRecord, Manufacturer, VehicleModel, Generation, BodyType, Color,
     Transmission, DriveWheel, Fuel, Condition, Status, VehicleType, Domain,
     Engine, Seller, SellerType, Title, DetailedTitle, Damage, Image, Country,
-    State, City, Location, SellingBranch, Year, BuyNow
+    State, City, Location, SellingBranch, Year, BuyNow, Odometer
 };
 use Carbon\Carbon;
 
@@ -42,7 +42,7 @@ class ProcessApiData extends Command
         // Starting URL for the first page
         // $apiUrl = 'http://carstat.dev/api/cars?minutes=4320&page=1&per_page=1000';
 
-        $apiUrl = 'http://carstat.dev/api/cars?minutes=5&page=1&per_page=500';
+        $apiUrl = 'http://carstat.dev/api/cars?minutes=1440&page=1&per_page=500';
         do {
             // Fetch data from the API
             $response = Http::withHeaders([
@@ -275,6 +275,11 @@ class ProcessApiData extends Command
             ]
         ) : null;
 
+        // Process Odometer
+        $odometer = $lot['odometer']['mi'] ? Odometer::firstOrCreate(
+            ['name' => $lot['odometer']['mi']]
+        ) : null;
+
 
         // Process Seller
         $seller = $lot['seller'] ? Seller::firstOrCreate(
@@ -405,6 +410,7 @@ class ProcessApiData extends Command
             'external_id' => $lot['external_id'] ?? null,
             'odometer_km' => $lot['odometer']['km'] ?? null,
             'odometer_mi' => $lot['odometer']['mi'] ?? null,
+            'odometer_id' => $odometer?->id,
             'odometer_status' => $lot['odometer']['status']['name'] ?? null,
             'estimate_repair_price' => $lot['estimate_repair_price'] ?? null,
             'pre_accident_price' => $lot['pre_accident_price'] ?? null,
