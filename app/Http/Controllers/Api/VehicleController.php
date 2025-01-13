@@ -570,7 +570,8 @@ class VehicleController extends Controller
                 'transmissions' => 'transmissions',
                 'detailed_titles' => 'detailed_titles',
                 'damages' => 'damages',
-                'years' => ['year_from', 'year_to']
+                'years' => ['year_from', 'year_to'],
+                'buy_now' => 'buy_now'
             ];
 
             // Check if the attribute exists in the mappings
@@ -589,7 +590,7 @@ class VehicleController extends Controller
                     }
                 }
             }
-        
+            
             // Handle year filtering when manufacturerIdsArray is given in request.
             $yearFrom = $request->input('year_from');
             $yearTo = $request->input('year_to');
@@ -648,8 +649,53 @@ class VehicleController extends Controller
                     }
                 }
             }
-            
-            
+
+            // Check if buy_now is set in the request and if $ids is not empty
+            if (isset($buyNow) && $ids) {
+                if ($request->buy_now == true) {
+                    $buy_now_ids = BuyNow::where('name', 'buyNowWithPrice')->pluck('id')->toArray();
+                } elseif ($request->buy_now == false) {
+                    $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
+                                ->pluck('id')
+                                ->toArray();
+                }
+                        
+                
+                // Attribute to table mapping for 'buy_now' related filters
+                $attributeBuyNowTableMapping = [
+                    'manufacturers' => 'manufacturer_buy_now',
+                    'vehicle_models' => 'vehicle_model_buy_now',
+                    'vehicle_types' => 'vehicle_type_buy_now',
+                    'conditions' => 'condition_buy_now',
+                    'fuels' => 'fuel_buy_now',
+                    'seller_types' => 'seller_type_buy_now',
+                    'drive_wheels' => 'drive_wheel_buy_now',
+                    'transmissions' => 'transmission_buy_now',
+                    'detailed_titles' => 'detailed_title_buy_now',
+                    'damages' => 'damage_buy_now',
+                ];
+
+                // Dynamically select the table based on the attribute
+                if (isset($attributeBuyNowTableMapping[$attribute])) {
+                    $tableBuyNow = $attributeBuyNowTableMapping[$attribute];
+                    
+                    // Dynamically derive the column ID based on the attribute (e.g., 'manufacturer_id' for 'manufacturers')
+                    $columnId = ($attribute === 'buy_now') ? 'buy_now_id' : rtrim($attribute, 's') . '_id';
+                    
+                    // Fetch IDs based on the selected table, $ids, and the filtered $buy_now_ids
+                    $attribute_buy_now = DB::table($tableBuyNow)
+                        ->whereIn($columnId, $ids)               // Filter by the current IDs
+                        ->whereIn('buy_now_id', $buy_now_ids)    // Filter by the 'buy_now' IDs
+                        ->pluck($columnId)                       // Retrieve the column IDs
+                        ->unique()                               // Ensure uniqueness
+                        ->values()                               // Reindex the result array
+                        ->toArray();
+
+                    // Update $ids with the filtered results
+                    $ids = $attribute_buy_now;
+                }
+            }
+
             // This below code should run only when years parameter will set.
             if($attribute == 'years') {
                 // Extract year range from the request
