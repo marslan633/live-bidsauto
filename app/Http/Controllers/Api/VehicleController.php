@@ -597,7 +597,7 @@ class VehicleController extends Controller
             $buyNow = $request->buy_now; // To simplify condition checks
 
             // Only proceed if yearFrom, yearTo, and ids are present
-            if ($yearFrom && $yearTo && $ids) {
+            if ($yearFrom && $yearTo && isset($ids)) {
                 // Fetch year IDs
                 $yearIds = Year::whereBetween('name', [$yearFrom, $yearTo])->pluck('id')->toArray();
                 
@@ -622,6 +622,18 @@ class VehicleController extends Controller
 
                     // Dynamically derive the column ID
                     $columnId = ($attribute === 'buy_now') ? 'buy_now_id' : rtrim($attribute, 's') . '_id';
+
+                    if ($columnId === 'buy_now_id') {
+                        if($request->buy_now == true) {
+                            $ids = BuyNow::where('name', 'buyNowWithPrice')
+                                ->pluck('id')
+                                ->toArray();
+                        } elseif ($request->buy_now == false) {
+                            $ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
+                                ->pluck('id')
+                                ->toArray();
+                        }
+                    } 
 
                     // Filter by year range and current IDs
                     $ids = DB::table($table)
