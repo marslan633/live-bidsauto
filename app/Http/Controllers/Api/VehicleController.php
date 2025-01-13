@@ -27,10 +27,38 @@ class VehicleController extends Controller
                 $query->where('domain_id', $request->input('domain_id'));
             }
 
+            // Handling 'bid_amount' sorting
+            if ($request->has('bid_amount')) {
+                $order = $request->input('bid_amount') === 'highest' ? 'DESC' : 'ASC';
+                $query->orderBy('bid', $order);
+            }
+
+            // Handling 'buy_now_sort' filter
+            if ($request->has('buy_now_sort')) {
+                $order = $request->input('buy_now_sort') == true ? 'DESC' : 'ASC';
+                $query->orderBy('buy_now', $order);
+            }
+
+            // Get the current date
+            $currentDate = \Carbon\Carbon::now()->toDateString();
+
+            // Determine the sorting order for sale date
+            $saleDateOrder = $request->input('sale_date_order', 'sooner');
+
+            if ($saleDateOrder === 'farthest') {
+                // Focus on future sale dates (on or after today) and sort them from latest to earliest
+                $query->orderByRaw('DATE(sale_date) >= ? DESC', [$currentDate])
+                    ->orderBy('sale_date', 'desc');
+            } else {
+                // Focus on future sale dates (on or after today) and sort them from earliest to latest
+                $query->orderByRaw('DATE(sale_date) >= ? DESC', [$currentDate])
+                    ->orderBy('sale_date', 'asc');
+            }
+
             // Handle the 'buy_now'
             if ($request->has('buy_now')) {
                 if ($request->buy_now == true) {  
-                    $buy_now_id = BuyNow::where('name', 'buyNowWithoutPrice')->pluck('id');
+                    $buy_now_id = BuyNow::where('name', 'buyNowWithPrice')->pluck('id');
                     $query->where('buy_now_id', $buy_now_id);
                 } elseif ($request->buy_now == false) {
                     $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
@@ -552,19 +580,19 @@ class VehicleController extends Controller
 
                 if (isset($attributeTableMapping[$attribute])) {
                     $table = $attributeTableMapping[$attribute];
-                    $columnId = ($attribute === 'buy_now') ? 'id' : rtrim($attribute, 's') . '_id'; // Dynamically derive the column name
+                    $columnId = ($attribute === 'buy_now') ? 'buy_now_id' : rtrim($attribute, 's') . '_id'; // Dynamically derive the column name
                     
                     // Handle the 'buy_now' special condition
                     if ($attribute === 'buy_now') {
                         if ($request->buy_now == true) {
-                            $ids = BuyNow::where('name', 'buyNowWithoutPrice')->pluck('id')->toArray();
+                            $ids = BuyNow::where('name', 'buyNowWithPrice')->pluck('id')->toArray();
                         } elseif ($request->buy_now == false) {
                             $ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
                                 ->pluck('id')
                                 ->toArray();
                         }
                     }
-
+                    
                     // Fetch IDs based on year range
                     $ids = DB::table($table)
                         ->whereIn($columnId, $ids) // Filter by the current IDs
@@ -590,7 +618,7 @@ class VehicleController extends Controller
             }
             if ($attribute === 'buy_now') {
                 if ($request->buy_now == true && !($yearFrom && $yearTo)) {
-                    $ids = BuyNow::where('name', 'buyNowWithoutPrice')
+                    $ids = BuyNow::where('name', 'buyNowWithPrice')
                         ->pluck('id')
                         ->toArray();
                 } elseif ($request->buy_now == false) {
