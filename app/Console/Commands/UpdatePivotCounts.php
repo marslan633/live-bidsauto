@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Cache;
 
 class UpdatePivotCounts extends Command
 {
@@ -259,7 +258,13 @@ class UpdatePivotCounts extends Command
 
                 $singularBase = Str::singular($base);
 
-                $lastRunTime = Cache::get('last_second_cron_run', now()->subDay());
+                $lastRunTime = DB::table('cron_run_history')
+                    ->where('cron_name', 'process_vehicle_data')
+                    ->whereNotNull('start_time')
+                    ->latest('start_time')
+                    ->value('start_time') ?? now()->subDay();
+
+                
                 $relatedRecords = DB::table('vehicle_records')
                     ->where("{$singularBase}_id", $baseId)
                     ->whereNotNull('sale_date')
@@ -350,9 +355,6 @@ class UpdatePivotCounts extends Command
         DB::table('vehicle_records')
             ->whereIn('id', $relatedRecords->pluck('id'))
             ->update(['is_new' => false, 'processed_at' => now()]);
-
-        // Update the last run time
-        Cache::put('last_second_cron_run', now());
 
         $endTime = now();
         $executionTime = $startTime->diffInSeconds($endTime);

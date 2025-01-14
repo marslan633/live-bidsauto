@@ -11,6 +11,7 @@ use App\Models\{
     State, City, Location, SellingBranch, Year, BuyNow, Odometer
 };
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ProcessApiData extends Command
 {
@@ -39,71 +40,101 @@ class ProcessApiData extends Command
         $this->info("Process started at: " . $startDateTime);
         \Log::info("Process started at: " . $startDateTime);
 
+        // Create an entry in the cron_run_history table
+        $cronRun = DB::table('cron_run_history')->insertGetId([
+            'cron_name' => 'process_vehicle_data',
+            'start_time' => $startDateTime,
+            'status' => 'running',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
         // Starting URL for the first page
         // $apiUrl = 'http://carstat.dev/api/cars?minutes=4320&page=1&per_page=1000';
 
-        $apiUrl = 'http://carstat.dev/api/cars?minutes=1440&page=1&per_page=500';
-        do {
-            // Fetch data from the API
-            $response = Http::withHeaders([
-                'x-api-key' => env('CAR_API_KEY'),
-            ])
-            ->timeout(120) // Timeout set to 120 seconds
-            ->retry(3, 1000) // Retry 3 times with a 1-second delay
-            ->get($apiUrl);
+        $apiUrl = 'http://carstat.dev/api/cars?minutes=5&page=1&per_page=500';
+        try {
+            do {
+                // Fetch data from the API
+                $response = Http::withHeaders([
+                    'x-api-key' => env('CAR_API_KEY'),
+                ])
+                ->timeout(120) // Timeout set to 120 seconds
+                ->retry(3, 1000) // Retry 3 times with a 1-second delay
+                ->get($apiUrl);
 
-            $start = microtime(true);
-            // Log response time for performance monitoring
-            $end = microtime(true);
-            \Log::info("API URL: $apiUrl, Response time: " . ($end - $start) . " seconds");
+                $start = microtime(true);
+                // Log response time for performance monitoring
+                $end = microtime(true);
+                \Log::info("API URL: $apiUrl, Response time: " . ($end - $start) . " seconds");
 
-            // Log the API hit URL for debugging purposes
-            $this->info("API URL: $apiUrl");
-            \Log::info("API URL: $apiUrl");
+                // Log the API hit URL for debugging purposes
+                $this->info("API URL: $apiUrl");
+                \Log::info("API URL: $apiUrl");
 
-            // Log the full response for debugging purposes
-            $this->info("Response: " . $response->body());
-            // \Log::info("Response: " . $response->body());
+                // Log the full response for debugging purposes
+                $this->info("Response: " . $response->body());
+                // \Log::info("Response: " . $response->body());
 
-            if ($response->successful()) {
-                // Extract the data from the response
-                $data = $response->json()['data'];
+                if ($response->successful()) {
+                    // Extract the data from the response
+                    $data = $response->json()['data'];
+                    
+                    // Process each car's data
+                    foreach ($data as $car) {
+                        $this->processCarData($car);
+                    }
 
-                // Process each car's data
-                foreach ($data as $car) {
-                    $this->processCarData($car);
-                }
+                    // Log successful data processing
+                    $this->info('Data processed successfully.');
+                    \Log::info('Data processed successfully.');
 
-                // Log successful data processing
-                $this->info('Data processed successfully.');
-                \Log::info('Data processed successfully.');
+                    // Check the 'next' link to fetch the next page
+                    $nextUrl = $response->json()['links']['next'];
 
-                // Check the 'next' link to fetch the next page
-                $nextUrl = $response->json()['links']['next'];
+                    $lastUrl = $response->json()['links']['last'];
+                    \Log::info("Last Page API URL: $lastUrl");
+                    // If there is a next page, update $apiUrl to fetch the next page, otherwise end the loop
+                    if ($nextUrl) {
+                        $apiUrl = $nextUrl;
+                    } else {
+                        // Update cron_run_history with successful status
+                        DB::table('cron_run_history')->where('id', $cronRun)->update([
+                            'end_time' => Carbon::now(),
+                            'status' => 'success',
+                            'updated_at' => now(),
+                        ]);
+                        $this->info('No more pages to fetch.');
+                        \Log::info('No more pages to fetch.');
 
-                $lastUrl = $response->json()['links']['last'];
-                \Log::info("Last Page API URL: $lastUrl");
-                // If there is a next page, update $apiUrl to fetch the next page, otherwise end the loop
-                if ($nextUrl) {
-                    $apiUrl = $nextUrl;
+                        // Call the second cron job when 'next' is null
+                        $this->info('Triggering the second cron job: update:pivot-counts');
+                        \Log::info('Triggering the second cron job: update:pivot-counts');
+                        // $this->call('update:pivot-counts');
+                    }
+
                 } else {
-                    $this->info('No more pages to fetch.');
-                    \Log::info('No more pages to fetch.');
-
-                    // Call the second cron job when 'next' is null
-                    $this->info('Triggering the second cron job: update:pivot-counts');
-                    \Log::info('Triggering the second cron job: update:pivot-counts');
-                    $this->call('update:pivot-counts');
+                    // Handle failed API request
+                    $this->error('Failed to fetch API data.');
+                    \Log::info('Failed to fetch API data.');
+                    break; // Exit the loop if the API request fails
                 }
 
-            } else {
-                // Handle failed API request
-                $this->error('Failed to fetch API data.');
-                \Log::info('Failed to fetch API data.');
-                break; // Exit the loop if the API request fails
-            }
+            } while ($nextUrl !== null); // Continue fetching until 'next' is null
+            
+        } catch (\Exception $e) {
+            // Log the exception and update the cron_run_history table with the error status
+            $this->error("Error: " . $e->getMessage());
+            \Log::error("Error: " . $e->getMessage());
 
-        } while ($nextUrl !== null); // Continue fetching until 'next' is null
+            DB::table('cron_run_history')->where('id', $cronRun)->update([
+                'end_time' => Carbon::now(),
+                'status' => 'failed',
+                'error_message' => $e->getMessage(),
+                'updated_at' => now(),
+            ]);
+        }
+        
 
         // Log the ending time of the process
         $endTime = microtime(true);
@@ -238,6 +269,13 @@ class ProcessApiData extends Command
                 'processed_at' => Carbon::now(),
                 'is_new' => true,
             ]);
+        } elseif ($vehicleRecord->wasChanged()) {
+            // Updated record
+            if ($vehicleRecord->is_new) {
+                $vehicleRecord->update([
+                    'processed_at' => Carbon::now(),
+                ]);
+            }
         }
 
         // Process lots
