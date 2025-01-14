@@ -20,7 +20,7 @@ class VehicleController extends Controller
                 'condition', 'image', 'country', 'state', 'city', 'location', 'sellingBranch'
             ]);
             
-            $query->whereNotNull('sale_date');
+            $query->whereNotNull('sale_date')->where('is_new', false);
 
             // Handling 'Domain'
             if ($request->has('domain_id')) {
