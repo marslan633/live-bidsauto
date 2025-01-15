@@ -351,10 +351,23 @@ class UpdatePivotCounts extends Command
             }
         }
 
-         // Mark processed records
+        $tot = DB::table('vehicle_records')
+                    ->whereNotNull('sale_date')
+                    ->where('processed_at', '>=', $lastRunTime)
+                    ->where('is_new', true)
+                    ->count();
+        // Mark processed records     
         DB::table('vehicle_records')
-            ->whereIn('id', $relatedRecords->pluck('id'))
+            ->whereNotNull('sale_date')
+            ->where('processed_at', '>=', $lastRunTime)
+            ->where('is_new', true)
             ->update(['is_new' => false, 'processed_at' => now()]);
+            
+        $this->info("Total executed record: {$tot}");
+         // Mark processed records
+        // DB::table('vehicle_records')
+        //     ->whereIn('id', $relatedRecords->pluck('id'))
+        //     ->update(['is_new' => false, 'processed_at' => now()]);
 
         $endTime = now();
         $executionTime = $startTime->diffInSeconds($endTime);

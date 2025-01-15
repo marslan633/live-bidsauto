@@ -110,7 +110,7 @@ class ProcessApiData extends Command
                         // Call the second cron job when 'next' is null
                         $this->info('Triggering the second cron job: update:pivot-counts');
                         \Log::info('Triggering the second cron job: update:pivot-counts');
-                        // $this->call('update:pivot-counts');
+                        $this->call('update:pivot-counts');
                     }
 
                 } else {

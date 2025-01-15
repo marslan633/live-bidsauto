@@ -1068,4 +1068,146 @@ class VehicleController extends Controller
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }
     }
+
+    public function testCron() 
+        {
+        $startTime = now();
+
+        // Configuration for relationships
+        $config = [
+            'vehicle_types' => [
+                'relations' => [
+                    'manufacturers' => ['pivot' => 'vehicle_type_manufacturer', 'foreign_key' => 'manufacturer_id'],
+                    'vehicle_models' => ['pivot' => 'vehicle_type_vehicle_model', 'foreign_key' => 'vehicle_model_id'],
+                    'conditions' => ['pivot' => 'vehicle_type_condition', 'foreign_key' => 'condition_id'],
+                    'fuels' => ['pivot' => 'vehicle_type_fuel', 'foreign_key' => 'fuel_id'],
+                    'seller_types' => ['pivot' => 'vehicle_type_seller_type', 'foreign_key' => 'seller_type_id'],
+                    'drive_wheels' => ['pivot' => 'vehicle_type_drive_wheel', 'foreign_key' => 'drive_wheel_id'],
+                    'transmissions' => ['pivot' => 'vehicle_type_transmission', 'foreign_key' => 'transmission_id'],
+                    'detailed_titles' => ['pivot' => 'vehicle_type_detailed_title', 'foreign_key' => 'detailed_title_id'],
+                    'damages' => ['pivot' => 'vehicle_type_damage', 'foreign_key' => 'damage_id', 'custom_field' => 'damage_main'],
+                    'domains' => ['pivot' => 'vehicle_type_domain', 'foreign_key' => 'domain_id'],
+                    'years' => ['pivot' => 'vehicle_type_year', 'foreign_key' => 'year_id'],
+                    'buy_nows' => ['pivot' => 'vehicle_type_buy_now', 'foreign_key' => 'buy_now_id'],
+                ],
+            ],
+            'domains' => [
+                'relations' => [
+                    'manufacturers' => ['pivot' => 'domain_manufacturer', 'foreign_key' => 'manufacturer_id'],
+                    'vehicle_models' => ['pivot' => 'domain_vehicle_model', 'foreign_key' => 'vehicle_model_id'],
+                    'vehicle_types' => ['pivot' => 'domain_vehicle_type', 'foreign_key' => 'vehicle_type_id'],
+                    'conditions' => ['pivot' => 'domain_condition', 'foreign_key' => 'condition_id'],
+                    'fuels' => ['pivot' => 'domain_fuel', 'foreign_key' => 'fuel_id'],
+                    'seller_types' => ['pivot' => 'domain_seller_type', 'foreign_key' => 'seller_type_id'],
+                    'drive_wheels' => ['pivot' => 'domain_drive_wheel', 'foreign_key' => 'drive_wheel_id'],
+                    'transmissions' => ['pivot' => 'domain_transmission', 'foreign_key' => 'transmission_id'],
+                    'detailed_titles' => ['pivot' => 'domain_detailed_title', 'foreign_key' => 'detailed_title_id'],
+                    'damages' => ['pivot' => 'domain_damage', 'foreign_key' => 'damage_id', 'custom_field' => 'damage_main'],
+                    'years' => ['pivot' => 'domain_year', 'foreign_key' => 'year_id'],
+                    'buy_nows' => ['pivot' => 'domain_buy_now', 'foreign_key' => 'buy_now_id'],
+                ],
+            ],
+            
+        ];
+
+        foreach ($config as $base => $data) {
+            $baseRecords = DB::table($base)->get();
+            foreach ($baseRecords as $baseRecord) {
+                $baseId = $baseRecord->id;
+                $singularBase = Str::singular($base);
+
+                $lastRunTime = DB::table('cron_run_history')
+                    ->where('cron_name', 'process_vehicle_data')
+                    ->whereNotNull('start_time')
+                    ->latest('start_time')
+                    ->value('start_time') ?? now()->subDay();
+                    
+                $relatedRecords = DB::table('vehicle_records')
+                    // ->where("{$singularBase}_id", $baseId)
+                    ->whereNotNull('sale_date')
+                    ->where('processed_at', '>=', $lastRunTime)
+                    ->where('is_new', true)
+                    ->count();
+                dd($relatedRecords) ;
+                $allRelatedRecords[] = $relatedRecords;
+                // dd($relatedRecords);
+                
+                foreach ($data['relations'] as $relation => $relationData) {
+                    
+                    $pivotTable = $relationData['pivot'];
+                    $foreignKey = $relationData['foreign_key'];
+                    
+                    // Check if a custom field is specified
+                    $fieldToGroupBy = $relationData['custom_field'] ?? $foreignKey;
+       
+                    $counts = $relatedRecords
+                        ->filter(function ($record) use ($fieldToGroupBy) {
+                          
+                            return isset($record->{$fieldToGroupBy}) && is_numeric($record->{$fieldToGroupBy});
+                        })
+                        ->groupBy(function ($record) use ($fieldToGroupBy) {
+                           
+                            return $record->{$fieldToGroupBy} . '_' . $record->domain_id; // Group by field and domain_id
+                        })
+                        ->map(function ($group) {
+                            return $group->count();
+                        });
+                    
+
+                    foreach ($counts as $groupKey => $count) {
+
+                        [$relatedId, $domainId] = explode('_', $groupKey);
+                        
+                        if ($relatedId === null || !is_numeric($relatedId) || $domainId === null || !is_numeric($domainId)) {
+                            continue;
+                        }
+
+                        $existingRecord = DB::table($pivotTable)
+                            ->where("{$singularBase}_id", $baseId)
+                            ->where($foreignKey, $relatedId)
+                            ->where('domain_id', $domainId)
+                            ->first();
+                        if ($existingRecord) {
+                            // Increment the count if the record already exists
+                            $updatedCount = $existingRecord->count + $count;
+                            DB::table($pivotTable)->where('id', $existingRecord->id)->update([
+                                'count' => $updatedCount,
+                                'updated_at' => now(),
+                            ]);
+                        } else {
+                            // Insert a new record if it doesn't exist
+                            DB::table($pivotTable)->insert([
+                                "{$singularBase}_id" => $baseId,
+                                $foreignKey => $relatedId,
+                                'domain_id' => $domainId,
+                                'count' => $count,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    }
+
+                   
+                }
+            }
+        }
+ 
+        DB::table('vehicle_records')
+    ->whereNotNull('sale_date')
+    ->where('processed_at', '>=', $lastRunTime)
+    ->where('is_new', false)
+    ->update(['is_new' => false, 'processed_at' => now()]);
+
+        $latestRecords = DB::table('vehicle_records')
+                    ->whereNotNull('sale_date')
+                    ->where('processed_at', '>=', $lastRunTime)
+                    ->where('is_new', false)
+                    ->get();
+         // Mark processed records
+        DB::table('vehicle_records')
+            ->whereIn('id', $latestRecords->pluck('id'))
+            ->update(['is_new' => false, 'processed_at' => now()]);
+
+            return'sdd';
+    }
 }

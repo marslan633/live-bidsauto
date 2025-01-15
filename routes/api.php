@@ -14,3 +14,4 @@ Route::prefix('vehicles')->group(function () {
 });
 Route::post('domain/attributes', [VehicleController::class, 'getRelatedAttributes']);
 Route::post('filter-attributes/{attribute}', [VehicleController::class, 'filterAttributes']);
+Route::get('/test-cron', [VehicleController::class, 'testCron']);
