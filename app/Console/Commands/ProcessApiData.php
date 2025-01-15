@@ -52,7 +52,7 @@ class ProcessApiData extends Command
         // Starting URL for the first page
         // $apiUrl = 'http://carstat.dev/api/cars?minutes=4320&page=1&per_page=1000';
 
-        $apiUrl = 'http://carstat.dev/api/cars?minutes=5&page=1&per_page=500';
+        $apiUrl = 'http://carstat.dev/api/cars?minutes=500&page=1&per_page=500';
         try {
             do {
                 // Fetch data from the API
