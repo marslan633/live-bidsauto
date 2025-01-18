@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\{VehicleRecord, VehicleType, Domain, Manufacturer, VehicleModel, Condition, Fuel, SellerType, DriveWheel, Transmission, DetailedTitle, Damage, Year, BuyNow};
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 
 class VehicleController extends Controller
 {
@@ -20,7 +21,8 @@ class VehicleController extends Controller
                 'condition', 'image', 'country', 'state', 'city', 'location', 'sellingBranch'
             ]);
             
-            $query->whereNotNull('sale_date')->where('is_new', false);
+            $query->whereNotNull('sale_date');
+            // ->where('is_new', false);
 
             // Handling 'Domain'
             if ($request->has('domain_id')) {
@@ -553,521 +555,521 @@ class VehicleController extends Controller
     //     }
     // }
 
-    public function filterAttributes(Request $request, $attribute)
-    {
-        $domainId = $request->input('domain_id');
-        $ids = $request->input($attribute);
-        try {
-            // Define the attribute-to-body parameter mappings
-            $attributeBodyMappings = [
-                'manufacturers' => 'manufacturers',
-                'vehicle_models' => 'vehicle_models',
-                'vehicle_types' => 'vehicle_types',
-                'conditions' => 'conditions',
-                'fuels' => 'fuels',
-                'seller_types' => 'seller_types',
-                'drive_wheels' => 'drive_wheels',
-                'transmissions' => 'transmissions',
-                'detailed_titles' => 'detailed_titles',
-                'damages' => 'damages',
-                'years' => ['year_from', 'year_to'],
-                'buy_now' => 'buy_now'
-            ];
+    // public function filterAttributes(Request $request, $attribute)
+    // {
+    //     $domainId = $request->input('domain_id');
+    //     $ids = $request->input($attribute);
+    //     try {
+    //         // Define the attribute-to-body parameter mappings
+    //         $attributeBodyMappings = [
+    //             'manufacturers' => 'manufacturers',
+    //             'vehicle_models' => 'vehicle_models',
+    //             'vehicle_types' => 'vehicle_types',
+    //             'conditions' => 'conditions',
+    //             'fuels' => 'fuels',
+    //             'seller_types' => 'seller_types',
+    //             'drive_wheels' => 'drive_wheels',
+    //             'transmissions' => 'transmissions',
+    //             'detailed_titles' => 'detailed_titles',
+    //             'damages' => 'damages',
+    //             'years' => ['year_from', 'year_to'],
+    //             'buy_now' => 'buy_now'
+    //         ];
 
-            // Check if the attribute exists in the mappings
-            if (array_key_exists($attribute, $attributeBodyMappings)) {
-                $requiredParams = $attributeBodyMappings[$attribute];
+    //         // Check if the attribute exists in the mappings
+    //         if (array_key_exists($attribute, $attributeBodyMappings)) {
+    //             $requiredParams = $attributeBodyMappings[$attribute];
 
-                // Handle 'years' separately since it requires two parameters
-                if ($attribute === 'years') {
-                    if (!$request->has($requiredParams[0]) || !$request->has($requiredParams[1])) {
-                        return sendResponse(false, 400, 'Invalid request: Body parameters "year_from and year_to" are required when "years" is passed in the URL.', '', 200);
-                    }
-                } else {
-                    // Check if the corresponding body parameter exists
-                    if (!$request->has($requiredParams)) {
-                        return sendResponse(false, 400, "Invalid request: Body parameter \"$requiredParams\" is required when \"$attribute\" is passed in the URL.", '', 200);
-                    }
-                }
-            }
+    //             // Handle 'years' separately since it requires two parameters
+    //             if ($attribute === 'years') {
+    //                 if (!$request->has($requiredParams[0]) || !$request->has($requiredParams[1])) {
+    //                     return sendResponse(false, 400, 'Invalid request: Body parameters "year_from and year_to" are required when "years" is passed in the URL.', '', 200);
+    //                 }
+    //             } else {
+    //                 // Check if the corresponding body parameter exists
+    //                 if (!$request->has($requiredParams)) {
+    //                     return sendResponse(false, 400, "Invalid request: Body parameter \"$requiredParams\" is required when \"$attribute\" is passed in the URL.", '', 200);
+    //                 }
+    //             }
+    //         }
             
-            // Handle year filtering when manufacturerIdsArray is given in request.
-            $yearFrom = $request->input('year_from');
-            $yearTo = $request->input('year_to');
-            $buyNow = $request->buy_now; // To simplify condition checks
+    //         // Handle year filtering when manufacturerIdsArray is given in request.
+    //         $yearFrom = $request->input('year_from');
+    //         $yearTo = $request->input('year_to');
+    //         $buyNow = $request->buy_now; // To simplify condition checks
 
-            // Only proceed if yearFrom, yearTo, and ids are present
-            if ($yearFrom && $yearTo && isset($ids)) {
-                // Fetch year IDs
-                $yearIds = Year::whereBetween('name', [$yearFrom, $yearTo])->pluck('id')->toArray();
+    //         // Only proceed if yearFrom, yearTo, and ids are present
+    //         if ($yearFrom && $yearTo && isset($ids)) {
+    //             // Fetch year IDs
+    //             $yearIds = Year::whereBetween('name', [$yearFrom, $yearTo])->pluck('id')->toArray();
                 
-                // Combine both attribute mappings into one
-                $attributeMappings = [
-                    'manufacturers' => ['manufacturer_year', 'manufacturer_buy_now'],
-                    'vehicle_models' => ['vehicle_model_year', 'vehicle_model_buy_now'],
-                    'vehicle_types' => ['vehicle_type_year', 'vehicle_type_buy_now'],
-                    'conditions' => ['condition_year', 'condition_buy_now'],
-                    'fuels' => ['fuel_year', 'fuel_buy_now'],
-                    'seller_types' => ['seller_type_year', 'seller_type_buy_now'],
-                    'drive_wheels' => ['drive_wheel_year', 'drive_wheel_buy_now'],
-                    'transmissions' => ['transmission_year', 'transmission_buy_now'],
-                    'detailed_titles' => ['detailed_title_year', 'detailed_title_buy_now'],
-                    'damages' => ['damage_year', 'damage_buy_now'],
-                    'buy_now' => ['buy_now_year', 'buy_now_year'],
-                ];
+    //             // Combine both attribute mappings into one
+    //             $attributeMappings = [
+    //                 'manufacturers' => ['manufacturer_year', 'manufacturer_buy_now'],
+    //                 'vehicle_models' => ['vehicle_model_year', 'vehicle_model_buy_now'],
+    //                 'vehicle_types' => ['vehicle_type_year', 'vehicle_type_buy_now'],
+    //                 'conditions' => ['condition_year', 'condition_buy_now'],
+    //                 'fuels' => ['fuel_year', 'fuel_buy_now'],
+    //                 'seller_types' => ['seller_type_year', 'seller_type_buy_now'],
+    //                 'drive_wheels' => ['drive_wheel_year', 'drive_wheel_buy_now'],
+    //                 'transmissions' => ['transmission_year', 'transmission_buy_now'],
+    //                 'detailed_titles' => ['detailed_title_year', 'detailed_title_buy_now'],
+    //                 'damages' => ['damage_year', 'damage_buy_now'],
+    //                 'buy_now' => ['buy_now_year', 'buy_now_year'],
+    //             ];
 
-                if (isset($attributeMappings[$attribute])) {
-                    // Get the table names
-                    [$table, $tableBuyNow] = $attributeMappings[$attribute];
+    //             if (isset($attributeMappings[$attribute])) {
+    //                 // Get the table names
+    //                 [$table, $tableBuyNow] = $attributeMappings[$attribute];
 
-                    // Dynamically derive the column ID
-                    $columnId = ($attribute === 'buy_now') ? 'buy_now_id' : rtrim($attribute, 's') . '_id';
+    //                 // Dynamically derive the column ID
+    //                 $columnId = ($attribute === 'buy_now') ? 'buy_now_id' : rtrim($attribute, 's') . '_id';
 
-                    if ($columnId === 'buy_now_id') {
-                        if($request->buy_now == true) {
-                            $ids = BuyNow::where('name', 'buyNowWithPrice')
-                                ->pluck('id')
-                                ->toArray();
-                        } elseif ($request->buy_now == false) {
-                            $ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
-                                ->pluck('id')
-                                ->toArray();
-                        }
-                    } 
+    //                 if ($columnId === 'buy_now_id') {
+    //                     if($request->buy_now == true) {
+    //                         $ids = BuyNow::where('name', 'buyNowWithPrice')
+    //                             ->pluck('id')
+    //                             ->toArray();
+    //                     } elseif ($request->buy_now == false) {
+    //                         $ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
+    //                             ->pluck('id')
+    //                             ->toArray();
+    //                     }
+    //                 } 
 
-                    // Filter by year range and current IDs
-                    $ids = DB::table($table)
-                        ->whereIn($columnId, $ids) // Filter by the current IDs
-                        ->whereIn('year_id', $yearIds) // Filter by year range
-                        ->pluck($columnId)
-                        ->unique()
-                        ->values()
-                        ->toArray();
+    //                 // Filter by year range and current IDs
+    //                 $ids = DB::table($table)
+    //                     ->whereIn($columnId, $ids) // Filter by the current IDs
+    //                     ->whereIn('year_id', $yearIds) // Filter by year range
+    //                     ->pluck($columnId)
+    //                     ->unique()
+    //                     ->values()
+    //                     ->toArray();
 
-                    // Check and handle the 'buy_now' filtering if present in the request
-                    if ($buyNow !== null) {
-                        // Fetch BuyNow IDs based on the value of buy_now
-                        $buyNowIds = $buyNow ? BuyNow::where('name', 'buyNowWithPrice')->pluck('id')->toArray() : 
-                            BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->toArray();
+    //                 // Check and handle the 'buy_now' filtering if present in the request
+    //                 if ($buyNow !== null) {
+    //                     // Fetch BuyNow IDs based on the value of buy_now
+    //                     $buyNowIds = $buyNow ? BuyNow::where('name', 'buyNowWithPrice')->pluck('id')->toArray() : 
+    //                         BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->toArray();
 
-                        // Fetch IDs based on buy_now filtering
-                        $ids = DB::table($tableBuyNow)
-                            ->whereIn($columnId, $ids)
-                            ->whereIn('buy_now_id', $buyNowIds)
-                            ->pluck($columnId)
-                            ->unique()
-                            ->values()
-                            ->toArray();
-                    }
-                }
-            }
+    //                     // Fetch IDs based on buy_now filtering
+    //                     $ids = DB::table($tableBuyNow)
+    //                         ->whereIn($columnId, $ids)
+    //                         ->whereIn('buy_now_id', $buyNowIds)
+    //                         ->pluck($columnId)
+    //                         ->unique()
+    //                         ->values()
+    //                         ->toArray();
+    //                 }
+    //             }
+    //         }
 
-            // Check if buy_now is set in the request and if $ids is not empty
-            if (isset($buyNow) && $ids) {
-                if ($request->buy_now == true) {
-                    $buy_now_ids = BuyNow::where('name', 'buyNowWithPrice')->pluck('id')->toArray();
-                } elseif ($request->buy_now == false) {
-                    $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
-                                ->pluck('id')
-                                ->toArray();
-                }
+    //         // Check if buy_now is set in the request and if $ids is not empty
+    //         if (isset($buyNow) && $ids) {
+    //             if ($request->buy_now == true) {
+    //                 $buy_now_ids = BuyNow::where('name', 'buyNowWithPrice')->pluck('id')->toArray();
+    //             } elseif ($request->buy_now == false) {
+    //                 $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
+    //                             ->pluck('id')
+    //                             ->toArray();
+    //             }
                         
                 
-                // Attribute to table mapping for 'buy_now' related filters
-                $attributeBuyNowTableMapping = [
-                    'manufacturers' => 'manufacturer_buy_now',
-                    'vehicle_models' => 'vehicle_model_buy_now',
-                    'vehicle_types' => 'vehicle_type_buy_now',
-                    'conditions' => 'condition_buy_now',
-                    'fuels' => 'fuel_buy_now',
-                    'seller_types' => 'seller_type_buy_now',
-                    'drive_wheels' => 'drive_wheel_buy_now',
-                    'transmissions' => 'transmission_buy_now',
-                    'detailed_titles' => 'detailed_title_buy_now',
-                    'damages' => 'damage_buy_now',
-                ];
+    //             // Attribute to table mapping for 'buy_now' related filters
+    //             $attributeBuyNowTableMapping = [
+    //                 'manufacturers' => 'manufacturer_buy_now',
+    //                 'vehicle_models' => 'vehicle_model_buy_now',
+    //                 'vehicle_types' => 'vehicle_type_buy_now',
+    //                 'conditions' => 'condition_buy_now',
+    //                 'fuels' => 'fuel_buy_now',
+    //                 'seller_types' => 'seller_type_buy_now',
+    //                 'drive_wheels' => 'drive_wheel_buy_now',
+    //                 'transmissions' => 'transmission_buy_now',
+    //                 'detailed_titles' => 'detailed_title_buy_now',
+    //                 'damages' => 'damage_buy_now',
+    //             ];
 
-                // Dynamically select the table based on the attribute
-                if (isset($attributeBuyNowTableMapping[$attribute])) {
-                    $tableBuyNow = $attributeBuyNowTableMapping[$attribute];
+    //             // Dynamically select the table based on the attribute
+    //             if (isset($attributeBuyNowTableMapping[$attribute])) {
+    //                 $tableBuyNow = $attributeBuyNowTableMapping[$attribute];
                     
-                    // Dynamically derive the column ID based on the attribute (e.g., 'manufacturer_id' for 'manufacturers')
-                    $columnId = ($attribute === 'buy_now') ? 'buy_now_id' : rtrim($attribute, 's') . '_id';
+    //                 // Dynamically derive the column ID based on the attribute (e.g., 'manufacturer_id' for 'manufacturers')
+    //                 $columnId = ($attribute === 'buy_now') ? 'buy_now_id' : rtrim($attribute, 's') . '_id';
                     
-                    // Fetch IDs based on the selected table, $ids, and the filtered $buy_now_ids
-                    $attribute_buy_now = DB::table($tableBuyNow)
-                        ->whereIn($columnId, $ids)               // Filter by the current IDs
-                        ->whereIn('buy_now_id', $buy_now_ids)    // Filter by the 'buy_now' IDs
-                        ->pluck($columnId)                       // Retrieve the column IDs
-                        ->unique()                               // Ensure uniqueness
-                        ->values()                               // Reindex the result array
-                        ->toArray();
+    //                 // Fetch IDs based on the selected table, $ids, and the filtered $buy_now_ids
+    //                 $attribute_buy_now = DB::table($tableBuyNow)
+    //                     ->whereIn($columnId, $ids)               // Filter by the current IDs
+    //                     ->whereIn('buy_now_id', $buy_now_ids)    // Filter by the 'buy_now' IDs
+    //                     ->pluck($columnId)                       // Retrieve the column IDs
+    //                     ->unique()                               // Ensure uniqueness
+    //                     ->values()                               // Reindex the result array
+    //                     ->toArray();
 
-                    // Update $ids with the filtered results
-                    $ids = $attribute_buy_now;
-                }
-            }
+    //                 // Update $ids with the filtered results
+    //                 $ids = $attribute_buy_now;
+    //             }
+    //         }
 
-            // This below code should run only when years parameter will set.
-            if($attribute == 'years') {
-                // Extract year range from the request
-                $yearFrom = $request->input('year_from');
-                $yearTo = $request->input('year_to');
-                $yearIds = [];
+    //         // This below code should run only when years parameter will set.
+    //         if($attribute == 'years') {
+    //             // Extract year range from the request
+    //             $yearFrom = $request->input('year_from');
+    //             $yearTo = $request->input('year_to');
+    //             $yearIds = [];
 
-                if ($yearFrom && $yearTo) {
-                    $ids = Year::whereBetween('name', [$yearFrom, $yearTo])->pluck('id')->toArray();
-                }
-            }
-            if ($attribute === 'buy_now' && $request->has('buy_now')) {
-                if ($request->buy_now == true && !($yearFrom && $yearTo)) {
-                    $ids = BuyNow::where('name', 'buyNowWithPrice')
-                        ->pluck('id')
-                        ->toArray();
-                } elseif ($request->buy_now == false) {
-                    $ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
-                        ->pluck('id')
-                        ->toArray();
-                }
-            }
+    //             if ($yearFrom && $yearTo) {
+    //                 $ids = Year::whereBetween('name', [$yearFrom, $yearTo])->pluck('id')->toArray();
+    //             }
+    //         }
+    //         if ($attribute === 'buy_now' && $request->has('buy_now')) {
+    //             if ($request->buy_now == true && !($yearFrom && $yearTo)) {
+    //                 $ids = BuyNow::where('name', 'buyNowWithPrice')
+    //                     ->pluck('id')
+    //                     ->toArray();
+    //             } elseif ($request->buy_now == false) {
+    //                 $ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
+    //                     ->pluck('id')
+    //                     ->toArray();
+    //             }
+    //         }
 
-            // Define model-to-relation mappings
-            $relationMappings = [
-                'manufacturers' => [
-                    'model' => Manufacturer::class,
-                    'relations' => [
-                        'vehicle_models' => 'manufacturer_vehicle_model',
-                        'vehicle_types' => 'manufacturer_vehicle_type',
-                        'conditions' => 'manufacturer_condition',
-                        'fuels' => 'manufacturer_fuel',
-                        'seller_types' => 'manufacturer_seller_type',
-                        'drive_wheels' => 'manufacturer_drive_wheel',
-                        'transmissions' => 'manufacturer_transmission',
-                        'detailed_titles' => 'manufacturer_detailed_title',
-                        'damages' => 'manufacturer_damage',
-                        'years' => 'manufacturer_year',
-                        'buyNows' => 'manufacturer_buy_now',
-                    ],
-                ],
-                'vehicle_models' => [
-                    'model' => VehicleModel::class,
-                    'relations' => [
-                        'manufacturers' => 'vehicle_model_manufacturer',
-                        'vehicle_types' => 'vehicle_model_vehicle_type',
-                        'conditions' => 'vehicle_model_condition',
-                        'fuels' => 'vehicle_model_fuel',
-                        'seller_types' => 'vehicle_model_seller_type',
-                        'drive_wheels' => 'vehicle_model_drive_wheel',
-                        'transmissions' => 'vehicle_model_transmission',
-                        'detailed_titles' => 'vehicle_model_detailed_title',
-                        'damages' => 'vehicle_model_damage',
-                        'years' => 'vehicle_model_year',
-                        'buyNows' => 'vehicle_model_buy_now',
-                    ],
-                ],
-                'vehicle_types' => [
-                    'model' => VehicleType::class,
-                    'relations' => [
-                        'manufacturers' => 'vehicle_type_manufacturer',
-                        'vehicle_models' => 'vehicle_type_vehicle_model',
-                        'conditions' => 'vehicle_type_condition',
-                        'fuels' => 'vehicle_type_fuel',
-                        'seller_types' => 'vehicle_type_seller_type',
-                        'drive_wheels' => 'vehicle_type_drive_wheel',
-                        'transmissions' => 'vehicle_type_transmission',
-                        'detailed_titles' => 'vehicle_type_detailed_title',
-                        'damages' => 'vehicle_type_damage',
-                        'years' => 'vehicle_type_year',
-                        'buyNows' => 'vehicle_type_buy_now',
-                    ],
-                ],
-                'conditions' => [
-                    'model' => Condition::class,
-                    'relations' => [
-                        'manufacturers' => 'condition_manufacturer',
-                        'vehicle_models' => 'condition_vehicle_model',
-                        'vehicle_types' => 'condition_vehicle_type',
-                        'fuels' => 'condition_fuel',
-                        'seller_types' => 'condition_seller_type',
-                        'drive_wheels' => 'condition_drive_wheel',
-                        'transmissions' => 'condition_transmission',
-                        'detailed_titles' => 'condition_detailed_title',
-                        'damages' => 'condition_damage',
-                        'years' => 'condition_year',
-                        'buyNows' => 'condition_buy_now',
-                    ],
-                ],
-                'fuels' => [
-                    'model' => Fuel::class,
-                    'relations' => [
-                        'manufacturers' => 'fuel_manufacturer',
-                        'vehicle_models' => 'fuel_vehicle_model',
-                        'vehicle_types' => 'fuel_vehicle_type',
-                        'conditions' => 'fuel_condition',
-                        'seller_types' => 'fuel_seller_type',
-                        'drive_wheels' => 'fuel_drive_wheel',
-                        'transmissions' => 'fuel_transmission',
-                        'detailed_titles' => 'fuel_detailed_title',
-                        'damages' => 'fuel_damage',
-                        'years' => 'fuel_year',
-                        'buyNows' => 'fuel_buy_now',
-                    ],
-                ],
-                'seller_types' => [
-                    'model' => SellerType::class,
-                    'relations' => [
-                        'manufacturers' => 'seller_type_manufacturer',
-                        'vehicle_models' => 'seller_type_vehicle_model',
-                        'vehicle_types' => 'seller_type_vehicle_type',
-                        'conditions' => 'seller_type_condition',
-                        'fuels' => 'seller_type_fuel',
-                        'drive_wheels' => 'seller_type_drive_wheel',
-                        'transmissions' => 'seller_type_transmission',
-                        'detailed_titles' => 'seller_type_detailed_title',
-                        'damages' => 'seller_type_damage',
-                        'years' => 'seller_type_year',
-                        'buyNows' => 'seller_type_buy_now',
-                    ],
-                ],
-                'drive_wheels' => [
-                    'model' => DriveWheel::class,
-                    'relations' => [
-                        'manufacturers' => 'drive_wheel_manufacturer',
-                        'vehicle_models' => 'drive_wheel_vehicle_model',
-                        'vehicle_types' => 'drive_wheel_vehicle_type',
-                        'conditions' => 'drive_wheel_condition',
-                        'fuels' => 'drive_wheel_fuel',
-                        'seller_types' => 'drive_wheel_seller_type',
-                        'transmissions' => 'drive_wheel_transmission',
-                        'detailed_titles' => 'drive_wheel_detailed_title',
-                        'damages' => 'drive_wheel_damage',
-                        'years' => 'drive_wheel_year',
-                        'buyNows' => 'drive_wheel_buy_now',
-                    ],
-                ],
-                'transmissions' => [
-                    'model' => Transmission::class,
-                    'relations' => [
-                        'manufacturers' => 'transmission_manufacturer',
-                        'vehicle_models' => 'transmission_vehicle_model',
-                        'vehicle_types' => 'transmission_vehicle_type',
-                        'conditions' => 'transmission_condition',
-                        'fuels' => 'transmission_fuel',
-                        'seller_types' => 'transmission_seller_type',
-                        'drive_wheels' => 'transmission_drive_wheel',
-                        'detailed_titles' => 'transmission_detailed_title',
-                        'damages' => 'transmission_damage',
-                        'years' => 'transmission_year',
-                        'buyNows' => 'transmission_buy_now',
-                    ],
-                ],
-                'detailed_titles' => [
-                    'model' => DetailedTitle::class,
-                    'relations' => [
-                        'manufacturers' => 'detailed_title_manufacturer',
-                        'vehicle_models' => 'detailed_title_vehicle_model',
-                        'vehicle_types' => 'detailed_title_vehicle_type',
-                        'conditions' => 'detailed_title_condition',
-                        'fuels' => 'detailed_title_fuel',
-                        'seller_types' => 'detailed_title_seller_type',
-                        'drive_wheels' => 'detailed_title_drive_wheel',
-                        'transmissions' => 'detailed_title_transmission',
-                        'damages' => 'detailed_title_damage',
-                        'years' => 'detailed_title_year',
-                        'buyNows' => 'detailed_title_buy_now',
-                    ],
-                ],
-                'damages' => [
-                    'model' => Damage::class,
-                    'relations' => [
-                        'manufacturers' => 'damage_manufacturer',
-                        'vehicle_models' => 'damage_vehicle_model',
-                        'vehicle_types' => 'damage_vehicle_type',
-                        'conditions' => 'damage_condition',
-                        'fuels' => 'damage_fuel',
-                        'seller_types' => 'damage_seller_type',
-                        'drive_wheels' => 'damage_drive_wheel',
-                        'transmissions' => 'damage_transmission',
-                        'detailed_titles' => 'damage_detailed_title',
-                        'years' => 'damage_year',
-                        'buyNows' => 'damage_buy_now',
-                    ],
-                ],
-                'years' => [
-                    'model' => Year::class,
-                    'relations' => [
-                        'manufacturers' => 'year_manufacturer',
-                        'vehicle_models' => 'year_vehicle_model',
-                        'vehicle_types' => 'year_vehicle_type',
-                        'conditions' => 'year_condition',
-                        'fuels' => 'year_fuel',
-                        'seller_types' => 'year_seller_type',
-                        'drive_wheels' => 'year_drive_wheel',
-                        'transmissions' => 'year_transmission',
-                        'detailed_titles' => 'year_detailed_title',
-                        'damages' => 'year_damage',
-                        'buyNows' => 'year_buy_now',
-                    ],
-                ],
-                'buy_now' => [
-                    'model' => BuyNow::class,
-                    'relations' => [
-                        'manufacturers' => 'buy_now_manufacturer',
-                        'vehicle_models' => 'buy_now_vehicle_model',
-                        'vehicle_types' => 'buy_now_vehicle_type',
-                        'conditions' => 'buy_now_condition',
-                        'fuels' => 'buy_now_fuel',
-                        'seller_types' => 'buy_now_seller_type',
-                        'drive_wheels' => 'buy_now_drive_wheel',
-                        'transmissions' => 'buy_now_transmission',
-                        'detailed_titles' => 'buy_now_detailed_title',
-                        'damages' => 'buy_now_damage',
-                        'years' => 'buy_now_year',
-                    ],
-                ],
-            ];
+    //         // Define model-to-relation mappings
+    //         $relationMappings = [
+    //             'manufacturers' => [
+    //                 'model' => Manufacturer::class,
+    //                 'relations' => [
+    //                     'vehicle_models' => 'manufacturer_vehicle_model',
+    //                     'vehicle_types' => 'manufacturer_vehicle_type',
+    //                     'conditions' => 'manufacturer_condition',
+    //                     'fuels' => 'manufacturer_fuel',
+    //                     'seller_types' => 'manufacturer_seller_type',
+    //                     'drive_wheels' => 'manufacturer_drive_wheel',
+    //                     'transmissions' => 'manufacturer_transmission',
+    //                     'detailed_titles' => 'manufacturer_detailed_title',
+    //                     'damages' => 'manufacturer_damage',
+    //                     'years' => 'manufacturer_year',
+    //                     'buyNows' => 'manufacturer_buy_now',
+    //                 ],
+    //             ],
+    //             'vehicle_models' => [
+    //                 'model' => VehicleModel::class,
+    //                 'relations' => [
+    //                     'manufacturers' => 'vehicle_model_manufacturer',
+    //                     'vehicle_types' => 'vehicle_model_vehicle_type',
+    //                     'conditions' => 'vehicle_model_condition',
+    //                     'fuels' => 'vehicle_model_fuel',
+    //                     'seller_types' => 'vehicle_model_seller_type',
+    //                     'drive_wheels' => 'vehicle_model_drive_wheel',
+    //                     'transmissions' => 'vehicle_model_transmission',
+    //                     'detailed_titles' => 'vehicle_model_detailed_title',
+    //                     'damages' => 'vehicle_model_damage',
+    //                     'years' => 'vehicle_model_year',
+    //                     'buyNows' => 'vehicle_model_buy_now',
+    //                 ],
+    //             ],
+    //             'vehicle_types' => [
+    //                 'model' => VehicleType::class,
+    //                 'relations' => [
+    //                     'manufacturers' => 'vehicle_type_manufacturer',
+    //                     'vehicle_models' => 'vehicle_type_vehicle_model',
+    //                     'conditions' => 'vehicle_type_condition',
+    //                     'fuels' => 'vehicle_type_fuel',
+    //                     'seller_types' => 'vehicle_type_seller_type',
+    //                     'drive_wheels' => 'vehicle_type_drive_wheel',
+    //                     'transmissions' => 'vehicle_type_transmission',
+    //                     'detailed_titles' => 'vehicle_type_detailed_title',
+    //                     'damages' => 'vehicle_type_damage',
+    //                     'years' => 'vehicle_type_year',
+    //                     'buyNows' => 'vehicle_type_buy_now',
+    //                 ],
+    //             ],
+    //             'conditions' => [
+    //                 'model' => Condition::class,
+    //                 'relations' => [
+    //                     'manufacturers' => 'condition_manufacturer',
+    //                     'vehicle_models' => 'condition_vehicle_model',
+    //                     'vehicle_types' => 'condition_vehicle_type',
+    //                     'fuels' => 'condition_fuel',
+    //                     'seller_types' => 'condition_seller_type',
+    //                     'drive_wheels' => 'condition_drive_wheel',
+    //                     'transmissions' => 'condition_transmission',
+    //                     'detailed_titles' => 'condition_detailed_title',
+    //                     'damages' => 'condition_damage',
+    //                     'years' => 'condition_year',
+    //                     'buyNows' => 'condition_buy_now',
+    //                 ],
+    //             ],
+    //             'fuels' => [
+    //                 'model' => Fuel::class,
+    //                 'relations' => [
+    //                     'manufacturers' => 'fuel_manufacturer',
+    //                     'vehicle_models' => 'fuel_vehicle_model',
+    //                     'vehicle_types' => 'fuel_vehicle_type',
+    //                     'conditions' => 'fuel_condition',
+    //                     'seller_types' => 'fuel_seller_type',
+    //                     'drive_wheels' => 'fuel_drive_wheel',
+    //                     'transmissions' => 'fuel_transmission',
+    //                     'detailed_titles' => 'fuel_detailed_title',
+    //                     'damages' => 'fuel_damage',
+    //                     'years' => 'fuel_year',
+    //                     'buyNows' => 'fuel_buy_now',
+    //                 ],
+    //             ],
+    //             'seller_types' => [
+    //                 'model' => SellerType::class,
+    //                 'relations' => [
+    //                     'manufacturers' => 'seller_type_manufacturer',
+    //                     'vehicle_models' => 'seller_type_vehicle_model',
+    //                     'vehicle_types' => 'seller_type_vehicle_type',
+    //                     'conditions' => 'seller_type_condition',
+    //                     'fuels' => 'seller_type_fuel',
+    //                     'drive_wheels' => 'seller_type_drive_wheel',
+    //                     'transmissions' => 'seller_type_transmission',
+    //                     'detailed_titles' => 'seller_type_detailed_title',
+    //                     'damages' => 'seller_type_damage',
+    //                     'years' => 'seller_type_year',
+    //                     'buyNows' => 'seller_type_buy_now',
+    //                 ],
+    //             ],
+    //             'drive_wheels' => [
+    //                 'model' => DriveWheel::class,
+    //                 'relations' => [
+    //                     'manufacturers' => 'drive_wheel_manufacturer',
+    //                     'vehicle_models' => 'drive_wheel_vehicle_model',
+    //                     'vehicle_types' => 'drive_wheel_vehicle_type',
+    //                     'conditions' => 'drive_wheel_condition',
+    //                     'fuels' => 'drive_wheel_fuel',
+    //                     'seller_types' => 'drive_wheel_seller_type',
+    //                     'transmissions' => 'drive_wheel_transmission',
+    //                     'detailed_titles' => 'drive_wheel_detailed_title',
+    //                     'damages' => 'drive_wheel_damage',
+    //                     'years' => 'drive_wheel_year',
+    //                     'buyNows' => 'drive_wheel_buy_now',
+    //                 ],
+    //             ],
+    //             'transmissions' => [
+    //                 'model' => Transmission::class,
+    //                 'relations' => [
+    //                     'manufacturers' => 'transmission_manufacturer',
+    //                     'vehicle_models' => 'transmission_vehicle_model',
+    //                     'vehicle_types' => 'transmission_vehicle_type',
+    //                     'conditions' => 'transmission_condition',
+    //                     'fuels' => 'transmission_fuel',
+    //                     'seller_types' => 'transmission_seller_type',
+    //                     'drive_wheels' => 'transmission_drive_wheel',
+    //                     'detailed_titles' => 'transmission_detailed_title',
+    //                     'damages' => 'transmission_damage',
+    //                     'years' => 'transmission_year',
+    //                     'buyNows' => 'transmission_buy_now',
+    //                 ],
+    //             ],
+    //             'detailed_titles' => [
+    //                 'model' => DetailedTitle::class,
+    //                 'relations' => [
+    //                     'manufacturers' => 'detailed_title_manufacturer',
+    //                     'vehicle_models' => 'detailed_title_vehicle_model',
+    //                     'vehicle_types' => 'detailed_title_vehicle_type',
+    //                     'conditions' => 'detailed_title_condition',
+    //                     'fuels' => 'detailed_title_fuel',
+    //                     'seller_types' => 'detailed_title_seller_type',
+    //                     'drive_wheels' => 'detailed_title_drive_wheel',
+    //                     'transmissions' => 'detailed_title_transmission',
+    //                     'damages' => 'detailed_title_damage',
+    //                     'years' => 'detailed_title_year',
+    //                     'buyNows' => 'detailed_title_buy_now',
+    //                 ],
+    //             ],
+    //             'damages' => [
+    //                 'model' => Damage::class,
+    //                 'relations' => [
+    //                     'manufacturers' => 'damage_manufacturer',
+    //                     'vehicle_models' => 'damage_vehicle_model',
+    //                     'vehicle_types' => 'damage_vehicle_type',
+    //                     'conditions' => 'damage_condition',
+    //                     'fuels' => 'damage_fuel',
+    //                     'seller_types' => 'damage_seller_type',
+    //                     'drive_wheels' => 'damage_drive_wheel',
+    //                     'transmissions' => 'damage_transmission',
+    //                     'detailed_titles' => 'damage_detailed_title',
+    //                     'years' => 'damage_year',
+    //                     'buyNows' => 'damage_buy_now',
+    //                 ],
+    //             ],
+    //             'years' => [
+    //                 'model' => Year::class,
+    //                 'relations' => [
+    //                     'manufacturers' => 'year_manufacturer',
+    //                     'vehicle_models' => 'year_vehicle_model',
+    //                     'vehicle_types' => 'year_vehicle_type',
+    //                     'conditions' => 'year_condition',
+    //                     'fuels' => 'year_fuel',
+    //                     'seller_types' => 'year_seller_type',
+    //                     'drive_wheels' => 'year_drive_wheel',
+    //                     'transmissions' => 'year_transmission',
+    //                     'detailed_titles' => 'year_detailed_title',
+    //                     'damages' => 'year_damage',
+    //                     'buyNows' => 'year_buy_now',
+    //                 ],
+    //             ],
+    //             'buy_now' => [
+    //                 'model' => BuyNow::class,
+    //                 'relations' => [
+    //                     'manufacturers' => 'buy_now_manufacturer',
+    //                     'vehicle_models' => 'buy_now_vehicle_model',
+    //                     'vehicle_types' => 'buy_now_vehicle_type',
+    //                     'conditions' => 'buy_now_condition',
+    //                     'fuels' => 'buy_now_fuel',
+    //                     'seller_types' => 'buy_now_seller_type',
+    //                     'drive_wheels' => 'buy_now_drive_wheel',
+    //                     'transmissions' => 'buy_now_transmission',
+    //                     'detailed_titles' => 'buy_now_detailed_title',
+    //                     'damages' => 'buy_now_damage',
+    //                     'years' => 'buy_now_year',
+    //                 ],
+    //             ],
+    //         ];
 
-            if (!isset($relationMappings[$attribute])) {
-                return sendResponse(false, 400, 'Invalid attribute type.', '', 200);
-            }
+    //         if (!isset($relationMappings[$attribute])) {
+    //             return sendResponse(false, 400, 'Invalid attribute type.', '', 200);
+    //         }
 
-            $modelClass = $relationMappings[$attribute]['model'];
-            $relations = $relationMappings[$attribute]['relations'];
-            $attributes = array_fill_keys(array_keys($relations), []);
+    //         $modelClass = $relationMappings[$attribute]['model'];
+    //         $relations = $relationMappings[$attribute]['relations'];
+    //         $attributes = array_fill_keys(array_keys($relations), []);
             
-            // Handle the dynamic attribute explicitly for domain filtering and count
-            if (in_array($attribute, ['manufacturers', 'vehicle_models', 'vehicle_types', 'conditions', 'fuels', 'seller_types', 'drive_wheels', 'transmissions', 'detailed_titles', 'damages'])) {
-                // Define pivot table mappings for each attribute
-                $pivotTableMappings = [
-                    'manufacturers' => [
-                        'pivotTable' => 'manufacturer_domain',
-                        'foreignKey' => 'manufacturer_id',
-                        'model' => Manufacturer::class,
-                    ],
-                    'vehicle_models' => [
-                        'pivotTable' => 'vehicle_model_domain',
-                        'foreignKey' => 'vehicle_model_id',
-                        'model' => VehicleModel::class,
-                    ],
-                    'vehicle_types' => [
-                        'pivotTable' => 'vehicle_type_domain',
-                        'foreignKey' => 'vehicle_type_id',
-                        'model' => VehicleType::class,
-                    ],
-                    'conditions' => [
-                        'pivotTable' => 'condition_domain',
-                        'foreignKey' => 'condition_id',
-                        'model' => Condition::class,
-                    ],
-                    'fuels' => [
-                        'pivotTable' => 'fuel_domain',
-                        'foreignKey' => 'fuel_id',
-                        'model' => Fuel::class,
-                    ],
-                    'seller_types' => [
-                        'pivotTable' => 'seller_type_domain',
-                        'foreignKey' => 'seller_type_id',
-                        'model' => SellerType::class,
-                    ],
-                    'drive_wheels' => [
-                        'pivotTable' => 'drive_wheel_domain',
-                        'foreignKey' => 'drive_wheel_id',
-                        'model' => DriveWheel::class,
-                    ],
-                    'transmissions' => [
-                        'pivotTable' => 'transmission_domain',
-                        'foreignKey' => 'transmission_id',
-                        'model' => Transmission::class,
-                    ],
-                    'detailed_titles' => [
-                        'pivotTable' => 'detailed_title_domain',
-                        'foreignKey' => 'detailed_title_id',
-                        'model' => DetailedTitle::class,
-                    ],
-                    'damages' => [
-                        'pivotTable' => 'damage_domain',
-                        'foreignKey' => 'damage_id',
-                        'model' => Damage::class,
-                    ],
-                ];
+    //         // Handle the dynamic attribute explicitly for domain filtering and count
+    //         if (in_array($attribute, ['manufacturers', 'vehicle_models', 'vehicle_types', 'conditions', 'fuels', 'seller_types', 'drive_wheels', 'transmissions', 'detailed_titles', 'damages'])) {
+    //             // Define pivot table mappings for each attribute
+    //             $pivotTableMappings = [
+    //                 'manufacturers' => [
+    //                     'pivotTable' => 'manufacturer_domain',
+    //                     'foreignKey' => 'manufacturer_id',
+    //                     'model' => Manufacturer::class,
+    //                 ],
+    //                 'vehicle_models' => [
+    //                     'pivotTable' => 'vehicle_model_domain',
+    //                     'foreignKey' => 'vehicle_model_id',
+    //                     'model' => VehicleModel::class,
+    //                 ],
+    //                 'vehicle_types' => [
+    //                     'pivotTable' => 'vehicle_type_domain',
+    //                     'foreignKey' => 'vehicle_type_id',
+    //                     'model' => VehicleType::class,
+    //                 ],
+    //                 'conditions' => [
+    //                     'pivotTable' => 'condition_domain',
+    //                     'foreignKey' => 'condition_id',
+    //                     'model' => Condition::class,
+    //                 ],
+    //                 'fuels' => [
+    //                     'pivotTable' => 'fuel_domain',
+    //                     'foreignKey' => 'fuel_id',
+    //                     'model' => Fuel::class,
+    //                 ],
+    //                 'seller_types' => [
+    //                     'pivotTable' => 'seller_type_domain',
+    //                     'foreignKey' => 'seller_type_id',
+    //                     'model' => SellerType::class,
+    //                 ],
+    //                 'drive_wheels' => [
+    //                     'pivotTable' => 'drive_wheel_domain',
+    //                     'foreignKey' => 'drive_wheel_id',
+    //                     'model' => DriveWheel::class,
+    //                 ],
+    //                 'transmissions' => [
+    //                     'pivotTable' => 'transmission_domain',
+    //                     'foreignKey' => 'transmission_id',
+    //                     'model' => Transmission::class,
+    //                 ],
+    //                 'detailed_titles' => [
+    //                     'pivotTable' => 'detailed_title_domain',
+    //                     'foreignKey' => 'detailed_title_id',
+    //                     'model' => DetailedTitle::class,
+    //                 ],
+    //                 'damages' => [
+    //                     'pivotTable' => 'damage_domain',
+    //                     'foreignKey' => 'damage_id',
+    //                     'model' => Damage::class,
+    //                 ],
+    //             ];
 
-                if (!isset($pivotTableMappings[$attribute])) {
-                    return sendResponse(false, 400, 'Invalid attribute type.', '', 200);
-                }
+    //             if (!isset($pivotTableMappings[$attribute])) {
+    //                 return sendResponse(false, 400, 'Invalid attribute type.', '', 200);
+    //             }
 
-                $pivotTable = $pivotTableMappings[$attribute]['pivotTable'];
-                $foreignKey = $pivotTableMappings[$attribute]['foreignKey'];
-                $modelClass = $pivotTableMappings[$attribute]['model'];
+    //             $pivotTable = $pivotTableMappings[$attribute]['pivotTable'];
+    //             $foreignKey = $pivotTableMappings[$attribute]['foreignKey'];
+    //             $modelClass = $pivotTableMappings[$attribute]['model'];
 
-                // Query the pivot table for the relevant data
-                $data = \DB::table($pivotTable)
-                    ->where('domain_id', $domainId)
-                    ->select(
-                        $foreignKey,
-                        \DB::raw('CAST(SUM(count) AS UNSIGNED) as total_count')
-                    )
-                    ->groupBy($foreignKey)
-                    ->get();
+    //             // Query the pivot table for the relevant data
+    //             $data = \DB::table($pivotTable)
+    //                 ->where('domain_id', $domainId)
+    //                 ->select(
+    //                     $foreignKey,
+    //                     \DB::raw('CAST(SUM(count) AS UNSIGNED) as total_count')
+    //                 )
+    //                 ->groupBy($foreignKey)
+    //                 ->get();
 
-                $entityIds = $data->pluck($foreignKey)->toArray();
+    //             $entityIds = $data->pluck($foreignKey)->toArray();
 
-                // Fetch entities from the respective model
-                $entities = $modelClass::whereIn('id', $entityIds)
-                    ->get(['id', 'name']);
+    //             // Fetch entities from the respective model
+    //             $entities = $modelClass::whereIn('id', $entityIds)
+    //                 ->get(['id', 'name']);
 
-                // Map entities to include their count from the pivot table
-                $attributes[$attribute] = $entities->map(function ($entity) use ($data, $foreignKey) {
-                    $count = $data->firstWhere($foreignKey, $entity->id)->total_count ?? 0;
-                    return [
-                        'id' => $entity->id,
-                        'name' => $entity->name,
-                        'count' => $count, // Include count from pivot table
-                    ];
-                })->toArray();
-            }
+    //             // Map entities to include their count from the pivot table
+    //             $attributes[$attribute] = $entities->map(function ($entity) use ($data, $foreignKey) {
+    //                 $count = $data->firstWhere($foreignKey, $entity->id)->total_count ?? 0;
+    //                 return [
+    //                     'id' => $entity->id,
+    //                     'name' => $entity->name,
+    //                     'count' => $count, // Include count from pivot table
+    //                 ];
+    //             })->toArray();
+    //         }
 
-            // Define constraints for filtering by domain_id
-            $relationConstraints = [];
-            foreach ($relations as $relationName => $pivotTable) {
-                $relationConstraints[$relationName] = function ($query) use ($domainId) {
-                    $query->where('domain_id', $domainId);
-                };
-            }
+    //         // Define constraints for filtering by domain_id
+    //         $relationConstraints = [];
+    //         foreach ($relations as $relationName => $pivotTable) {
+    //             $relationConstraints[$relationName] = function ($query) use ($domainId) {
+    //                 $query->where('domain_id', $domainId);
+    //             };
+    //         }
 
-            // Fetch data with domain_id filtering applied
-            $modelClass::with($relationConstraints)
-                ->whereIn('id', $ids)
-                ->chunk(1000, function ($items) use (&$attributes, $relations) {
-                    foreach ($items as $item) {
-                        foreach ($relations as $relationName => $pivotTable) {
-                            $relation = $item->$relationName;
+    //         // Fetch data with domain_id filtering applied
+    //         $modelClass::with($relationConstraints)
+    //             ->whereIn('id', $ids)
+    //             ->chunk(1000, function ($items) use (&$attributes, $relations) {
+    //                 foreach ($items as $item) {
+    //                     foreach ($relations as $relationName => $pivotTable) {
+    //                         $relation = $item->$relationName;
 
-                            if ($relation) {
-                                foreach ($relation as $relatedItem) {
-                                    $existingIndex = !empty($attributes[$relationName]) 
-                                        ? array_search($relatedItem->id, array_column($attributes[$relationName], 'id')) 
-                                        : false;
+    //                         if ($relation) {
+    //                             foreach ($relation as $relatedItem) {
+    //                                 $existingIndex = !empty($attributes[$relationName]) 
+    //                                     ? array_search($relatedItem->id, array_column($attributes[$relationName], 'id')) 
+    //                                     : false;
 
-                                    if ($existingIndex !== false) {
-                                        $attributes[$relationName][$existingIndex]['count'] += $relatedItem->pivot->count ?? 0;
-                                    } else {
-                                        $attributes[$relationName][] = [
-                                            'id' => $relatedItem->id,
-                                            'name' => $relatedItem->name,
-                                            'count' => $relatedItem->pivot->count ?? 0,
-                                        ];
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
+    //                                 if ($existingIndex !== false) {
+    //                                     $attributes[$relationName][$existingIndex]['count'] += $relatedItem->pivot->count ?? 0;
+    //                                 } else {
+    //                                     $attributes[$relationName][] = [
+    //                                         'id' => $relatedItem->id,
+    //                                         'name' => $relatedItem->name,
+    //                                         'count' => $relatedItem->pivot->count ?? 0,
+    //                                     ];
+    //                                 }
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             });
 
-            return sendResponse(true, 200, 'Attributes fetched successfully.', $attributes, 200);
-        } catch (\Exception $ex) {
-            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
-        }
-    }
+    //         return sendResponse(true, 200, 'Attributes fetched successfully.', $attributes, 200);
+    //     } catch (\Exception $ex) {
+    //         return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+    //     }
+    // }
 
     public function testCron() 
         {
@@ -1210,4 +1212,297 @@ class VehicleController extends Controller
 
             return'sdd';
     }
+    // public function filterAttributes(Request $request)
+    // {
+    //     try {
+    //         // Initialize the base query
+    //         $query = VehicleRecord::query();
+
+    //         $query->whereNotNull('sale_date')->where('is_new', false);
+
+    //         // Handle domain filter
+    //         if ($request->has('domain_id')) {
+    //             $query->where('domain_id', $request->input('domain_id'));
+    //         }
+
+    //         // Define filters dynamically
+    //         $filters = [
+    //             'manufacturers' => 'manufacturer_id',
+    //             'vehicle_models' => 'vehicle_model_id',
+    //             'vehicle_types' => 'vehicle_type_id',
+    //             'conditions' => 'condition_id',
+    //             'fuels' => 'fuel_id',
+    //             'seller_types' => 'seller_type_id',
+    //             'drive_wheels' => 'drive_wheel_id',
+    //             'transmissions' => 'transmission_id',
+    //             'detailed_titles' => 'detailed_title_id',
+    //             'damages' => 'damage_id',
+    //             'years' => 'year',
+    //             'buy_now' => 'buy_now_id',
+    //         ];
+
+    //         // Apply filters dynamically
+    //         foreach ($filters as $requestKey => $dbColumn) {
+    //             if ($request->has($requestKey) && is_array($request->input($requestKey))) {
+    //                 $query->whereIn($dbColumn, $request->input($requestKey));
+    //             }
+    //         }
+
+    //          // Prepare the response structure
+    //         $response = [
+    //             "data" => [
+    //                 "manufacturers" => [],
+    //                 "vehicle_models" => [],
+    //                 "vehicle_types" => [],
+    //                 "conditions" => [],
+    //                 "fuels" => [],
+    //                 "seller_types" => [],
+    //                 "drive_wheels" => [],
+    //                 "transmissions" => [],
+    //                 "detailed_titles" => [],
+    //                 "damages" => [],
+    //                 "years" => []
+    //             ]
+    //         ];
+
+    //         // Fetch counts for each attribute
+    //         foreach ($filters as $key => $column) {
+    //             $attributeQuery = clone $query;
+    //             $results = $attributeQuery
+    //                 ->selectRaw("$column, COUNT(*) as count")
+    //                 ->groupBy($column)
+    //                 ->with($key) // Fetch related data if applicable
+    //                 ->get();
+
+    //             // Map results to the response structure
+    //             $response['data'][$key] = $results->map(function ($item) use ($key) {
+    //                 return [
+    //                     "{$key}_id" => $item->{$key . '_id'},
+    //                     'name' => $item->{$key}->name ?? 'Unknown',
+    //                     'count' => $item->count
+    //                 ];
+    //             });
+    //         }
+
+    //         return sendResponse(true, 200, 'Attributes Fetched Successfully!', $response, 200);
+    //     } catch (\Exception $ex) {
+    //         return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+    //     }
+    // }
+
+
+    // public function filterAttributes(Request $request)
+    // {
+    //     try {
+    //         // Initialize the base query
+    //         $query = VehicleRecord::query();
+
+    //         $query->whereNotNull('sale_date')->where('is_new', false);
+
+    //         // Apply domain filter if provided
+    //         if ($request->has('domain_id')) {
+    //             $query->where('domain_id', $request->input('domain_id'));
+    //         }
+
+    //         // Define filters and relationships dynamically
+    //         $filters = [
+    //             'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer'],
+    //             'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel'],
+    //             'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType'],
+    //             'conditions' => ['column' => 'condition_id', 'relation' => 'condition'],
+    //             'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel'],
+    //             'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType'],
+    //             'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel'],
+    //             'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission'],
+    //             'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle'],
+    //             'damages' => ['column' => 'damage_id', 'relation' => 'damageMain'], // Assuming main damage
+            
+    //         ];
+
+    //         // Apply input filters dynamically
+    //         foreach ($filters as $key => $details) {
+    //             if ($request->has($key) && is_array($request->input($key))) {
+    //                 $query->whereIn($details['column'], $request->input($key));
+    //             }
+    //         }
+           
+          
+    //         // Prepare the response structure
+    //         $response = ["data" => array_fill_keys(array_keys($filters), [])];
+
+    //         // Fetch counts for each attribute
+    //         foreach ($filters as $key => $details) {
+                
+    //             $attributeQuery = clone $query;
+    //             $results = $attributeQuery
+    //                 ->selectRaw("{$details['column']} as id, COUNT(*) as count")
+    //                 ->groupBy($details['column'])
+    //                 ->with($details['relation']) // Include related model if relation exists
+    //                 ->get();
+              
+    //             // Map results to the response structure
+    //             $response['data'][$key] = $results->map(function ($item) use ($details) {
+                    
+                
+    //                 $relatedName = $details['relation'] 
+    //                     ? $item->{$details['relation']}->name ?? 'Unknown' 
+    //                     : $item->id; // Fallback for non-related attributes like `year`
+                     
+    //                 return [
+    //                     "{$details['relation']}_id" => $item->id,
+    //                     'name' => $relatedName,
+    //                     'count' => $item->count
+    //                 ];
+    //             });
+    //         }
+
+    //         return sendResponse(true, 200, 'Attributes Fetched Successfully!', $response, 200);
+    //     } catch (\Exception $ex) {
+    //         return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+    //     }
+    // }
+
+    // Final static query
+    // public function filterAttributes(Request $request)
+    // {
+    //     try {
+    //         // Initialize the base query
+    //         $query = VehicleRecord::query();
+
+    //         $query->whereNotNull('sale_date')->where('is_new', false);
+
+    //         // Apply domain filter if provided
+    //         if ($request->has('domain_id')) {
+    //             $query->where('domain_id', $request->input('domain_id'));
+    //         }
+
+    //         // Define filters and relationships dynamically
+    //         $filters = [
+    //             'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers'],
+    //             'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models'],
+    //             'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types'],
+    //             'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions'],
+    //             'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels'],
+    //             'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types'],
+    //             'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels'],
+    //             'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions'],
+    //             'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles'],
+    //             'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages'], // Assuming main damage
+    //         ];
+
+    //         // Apply input filters dynamically
+    //         foreach ($filters as $key => $details) {
+    //             if ($request->has($key) && is_array($request->input($key))) {
+    //                 $query->whereIn($details['column'], $request->input($key));
+    //             }
+    //         }
+
+    //         // Fetch counts for each attribute
+    //         foreach ($filters as $key => $details) {
+    //             $attributeQuery = clone $query;
+
+    //             // Join the related table using the specified table name and column
+    //             $results = $attributeQuery
+    //                 ->selectRaw("{$details['column']} as id, COUNT(*) as count, r.name as related_name")
+    //                 ->join("{$details['table']} as r", "r.id", "=", "{$details['column']}") // Join related table
+    //                 ->groupBy("{$details['column']}", 'r.name') // Include the related field in GROUP BY
+    //                 ->get();
+
+    //             // Map results to the response structure
+    //             $response[$key] = $results->map(function ($item) use ($details) {
+    //                 $relatedName = $item->related_name ?? 'Unknown';  // Access the related field directly
+                    
+    //                 return [
+    //                     "{$details['relation']}_id" => $item->id,
+    //                     'name' => $relatedName,
+    //                     'count' => $item->count
+    //                 ];
+    //             });
+    //         }
+
+    //         return sendResponse(true, 200, 'Attributes Fetched Successfully!', $response, 200);
+    //     } catch (\Exception $ex) {
+    //         return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+    //     }
+    // }
+
+public function filterAttributes(Request $request)
+{
+    try {
+        // Define filters and relationships dynamically
+        $filters = [
+            'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers'],
+            'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models'],
+            'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types'],
+            'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions'],
+            'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels'],
+            'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types'],
+            'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels'],
+            'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions'],
+            'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles'],
+            'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages'],
+        ];
+
+            $response = [];
+
+            foreach ($filters as $key => $details) {
+                $query = VehicleRecord::query()
+                    ->whereNotNull('sale_date');
+                    // ->where('is_new', false);
+
+                // Apply domain filter if provided
+                if ($request->has('domain_id')) {
+                    $query->where('domain_id', $request->input('domain_id'));
+                }
+                // Handle the 'buy_now'
+                if ($request->has('buy_now')) {
+                    if ($request->buy_now == true) {  
+                        $buy_now_id = BuyNow::where('name', 'buyNowWithPrice')->pluck('id');
+                        $query->where('buy_now_id', $buy_now_id);
+                    } elseif ($request->buy_now == false) {
+                        $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
+                                ->pluck('id')
+                                ->toArray();
+                            $query->whereIn('buy_now_id', $buy_now_ids);
+                    }
+                }
+
+                // Handling 'year_from' and 'year_to'
+                if ($request->has('year_from') && $request->has('year_to')) {
+                    $query->whereBetween('year', [(int) $request->input('year_from'), (int) $request->input('year_to')]);
+                }
+
+                // Apply input filters dynamically
+                foreach ($filters as $filterKey => $filterDetails) {
+                    if ($request->has($filterKey) && is_array($request->input($filterKey))) {
+                        $query->whereIn($filterDetails['column'], $request->input($filterKey));
+                    }
+                }
+
+                // Fetch aggregated data with counts
+                $results = $query
+                    ->selectRaw("{$details['column']} as id, COUNT(*) as count")
+                    ->groupBy("{$details['column']}")
+                    ->get();
+
+                // Fetch related names in bulk for better performance
+                $relatedNames = DB::table($details['table'])
+                    ->whereIn('id', $results->pluck('id'))
+                    ->pluck('name', 'id');
+
+                // Map results to the response structure
+                $response[$key] = $results->map(function ($item) use ($relatedNames, $details) {
+                    return [
+                        "id" => $item->id,
+                        'name' => $relatedNames[$item->id] ?? 'Unknown',
+                        'count' => $item->count,
+                    ];
+                });
+            }
+
+        return sendResponse(true, 200, 'Attributes Fetched Successfully!', $response, 200);
+    } catch (\Exception $ex) {
+        return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+    }
+}
 }
