@@ -2085,4 +2085,31 @@ public function filterAttributes(Request $request)
         return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
     }
 }
+
+    /**
+    * Get Vehicle Records Count.
+    */
+    public function filteredRecordsCount()
+    {
+        try {
+            // Query the VehicleRecord model and filter by sale_date
+            $vehicleRecords = VehicleRecord::selectRaw("
+                COUNT(CASE WHEN sale_date IS NOT NULL THEN 1 END) as sale_records,
+                COUNT(CASE WHEN sale_date IS NULL THEN 1 END) as no_sale_records,
+                MAX(updated_at) as latest_update_time_utc
+            ")
+            ->first();
+
+            // Prepare data for response
+            $data = [
+                'sale_records' => $vehicleRecords->sale_records,
+                'no_sale_records' => $vehicleRecords->no_sale_records,
+                'latest_update_time_utc' => $vehicleRecords->latest_update_time_utc,
+            ];
+
+            return sendResponse(true, 200, 'Filtered records fetched successfully!', $data, 200);
+        } catch (\Exception $ex) {
+            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+        }
+    }
 }

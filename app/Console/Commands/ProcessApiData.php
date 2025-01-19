@@ -167,7 +167,7 @@ class ProcessApiData extends Command
             'updated_at' => now(),
         ]);
 
-        $minutes = 100; // Time frame in minutes
+        $minutes = 15; // Time frame in minutes
         $perPage = 500; // Records per page
         $baseUrl = 'http://carstat.dev/api/cars';
         $totalPages = 0;
@@ -184,10 +184,12 @@ class ProcessApiData extends Command
             if ($response->successful()) {
                 $totalRecords = $response->json()['meta']['total'] ?? 0;
                 $this->info("Fetching total number of record: {$totalRecords}");
+                \Log::info("Fetching total number of record: {$totalRecords}");
 
                 if ($totalRecords > 0) {
                     $totalPages = ceil($totalRecords / $perPage); // Calculate total API calls required
                     $this->info("Total Pages: $totalPages");
+                    \Log::info("Total Pages: $totalPages");
                     
                     for ($page = 1; $page <= $totalPages; $page++) {
                         $apiUrl = "{$baseUrl}?minutes={$minutes}&page={$page}&per_page={$perPage}";
@@ -247,12 +249,13 @@ class ProcessApiData extends Command
                 'error_message' => $e->getMessage(),
                 'updated_at' => now(),
             ]);
-        } finally {
-            // Ensure the second cron job is always called
-            $this->info('Triggering the second cron job: update:pivot-counts');
-            \Log::info('Triggering the second cron job: update:pivot-counts');
-            // $this->call('update:pivot-counts');
-        }
+        } 
+        // finally {
+        //     // Ensure the second cron job is always called
+        //     $this->info('Triggering the second cron job: update:pivot-counts');
+        //     \Log::info('Triggering the second cron job: update:pivot-counts');
+        //     // $this->call('update:pivot-counts');
+        // }
 
         $endTime = microtime(true);
         $endDateTime = Carbon::now();
