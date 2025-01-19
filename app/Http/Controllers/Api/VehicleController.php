@@ -75,6 +75,34 @@ class VehicleController extends Controller
                 $query->whereBetween('year', [(int) $request->input('year_from'), (int) $request->input('year_to')]);
             }
 
+            // Handling 'odometer_min' and 'odometer_max'
+            if ($request->has('odometer_min') && $request->has('odometer_max')) {
+                // Remove commas and cast to integers
+                $odometerMin = (int) str_replace(',', '', $request->input('odometer_min'));
+                $odometerMax = (int) str_replace(',', '', $request->input('odometer_max'));
+                
+                // Perform query filtering
+                $query->whereBetween('odometer_mi', [$odometerMin, $odometerMax]);
+            }
+
+            // Handling 'auction_date' and 'auction_date_from' and 'auction_date_to
+            if ($request->has('auction_date')) {
+                $auctionDateInput = $request->input('auction_date');
+
+                // Check if it's a date range (contains "to")
+                if (strpos($auctionDateInput, 'to') !== false) {
+                    [$auctionDateFrom, $auctionDateTo] = explode(' to ', $auctionDateInput);
+                    $auctionDateFrom = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->startOfDay();
+                    $auctionDateTo = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo))->endOfDay();
+
+                    $query->whereBetween('sale_date', [$auctionDateFrom, $auctionDateTo]);
+                } else {
+                    // Single date case
+                    $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', $auctionDateInput)->startOfDay();
+                    $query->whereDate('sale_date', $auctionDate);
+                }
+            }
+
             // Define filters with their corresponding column names
             $filters = [
                 'manufacturers' => 'manufacturer_id',
@@ -1426,79 +1454,631 @@ class VehicleController extends Controller
     //     }
     // }
 
+    // Final dynamic query with proper counts
+// public function filterAttributes(Request $request)
+// {
+//     try {
+//         // Define filters and relationships dynamically
+//         $filters = [
+//             'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers'],
+//             'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models'],
+//             'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types'],
+//             'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions'],
+//             'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels'],
+//             'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types'],
+//             'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels'],
+//             'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions'],
+//             'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles'],
+//             'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages'],
+//         ];
+
+//             $response = [];
+
+//             foreach ($filters as $key => $details) {
+//                 $query = VehicleRecord::query()
+//                     ->whereNotNull('sale_date');
+//                     // ->where('is_new', false);
+
+//                 // Apply domain filter if provided
+//                 if ($request->has('domain_id')) {
+//                     $query->where('domain_id', $request->input('domain_id'));
+//                 }
+//                 // Handle the 'buy_now'
+//                 if ($request->has('buy_now')) {
+//                     if ($request->buy_now == true) {  
+//                         $buy_now_id = BuyNow::where('name', 'buyNowWithPrice')->pluck('id');
+//                         $query->where('buy_now_id', $buy_now_id);
+//                     } elseif ($request->buy_now == false) {
+//                         $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
+//                                 ->pluck('id')
+//                                 ->toArray();
+//                             $query->whereIn('buy_now_id', $buy_now_ids);
+//                     }
+//                 }
+
+//                 // Handling 'year_from' and 'year_to'
+//                 if ($request->has('year_from') && $request->has('year_to')) {
+//                     $query->whereBetween('year', [(int) $request->input('year_from'), (int) $request->input('year_to')]);
+//                 }
+
+//                 // Handling 'odometer_min' and 'odometer_max'
+//                 if ($request->has('odometer_min') && $request->has('odometer_max')) {
+//                     // Remove commas and cast to integers
+//                     $odometerMin = (int) str_replace(',', '', $request->input('odometer_min'));
+//                     $odometerMax = (int) str_replace(',', '', $request->input('odometer_max'));
+                    
+//                     // Perform query filtering
+//                     $query->whereBetween('odometer_mi', [$odometerMin, $odometerMax]);
+//                 }
+
+//                 // Handling 'auction_date' and 'auction_date_from' and 'auction_date_to
+//                 if ($request->has('auction_date')) {
+//                     $auctionDateInput = $request->input('auction_date');
+
+//                     // Check if it's a date range (contains "to")
+//                     if (strpos($auctionDateInput, 'to') !== false) {
+//                         [$auctionDateFrom, $auctionDateTo] = explode(' to ', $auctionDateInput);
+//                         $auctionDateFrom = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->startOfDay();
+//                         $auctionDateTo = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo))->endOfDay();
+
+//                         $query->whereBetween('sale_date', [$auctionDateFrom, $auctionDateTo]);
+//                     } else {
+//                         // Single date case
+//                         $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', $auctionDateInput)->startOfDay();
+//                         $query->whereDate('sale_date', $auctionDate);
+//                     }
+//                 }
+
+//                 // Apply input filters dynamically
+//                 foreach ($filters as $filterKey => $filterDetails) {
+//                     if ($request->has($filterKey) && is_array($request->input($filterKey))) {
+//                         $query->whereIn($filterDetails['column'], $request->input($filterKey));
+//                     }
+//                 }
+
+//                 // Fetch aggregated data with counts
+//                 $results = $query
+//                     ->selectRaw("{$details['column']} as id, COUNT(*) as count")
+//                     ->groupBy("{$details['column']}")
+//                     ->get();
+
+//                 // Fetch related names in bulk for better performance
+//                 $relatedNames = DB::table($details['table'])
+//                     ->whereIn('id', $results->pluck('id'))
+//                     ->pluck('name', 'id');
+
+//                 // Map results to the response structure
+//                 $response[$key] = $results->map(function ($item) use ($relatedNames, $details) {
+//                     return [
+//                         "id" => $item->id,
+//                         'name' => $relatedNames[$item->id] ?? 'Unknown',
+//                         'count' => $item->count,
+//                     ];
+//                 });
+//             }
+
+//         return sendResponse(true, 200, 'Attributes Fetched Successfully!', $response, 200);
+//     } catch (\Exception $ex) {
+//         return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+//     }
+// }
+
+// Final dynamic query with proper counts with pagination
+// public function filterAttributes(Request $request)
+// {
+//     try {
+//         // Define filters and relationships dynamically
+//         $filters = [
+//             'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers', 'paginate' => true],
+//             'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models', 'paginate' => true],
+//             'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types', 'paginate' => false],
+//             'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions', 'paginate' => false],
+//             'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels', 'paginate' => false],
+//             'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types', 'paginate' => false],
+//             'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels', 'paginate' => false],
+//             'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions', 'paginate' => false],
+//             'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles', 'paginate' => true],
+//             'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages', 'paginate' => false],
+//         ];
+
+//         $response = [];
+//         $page = $request->input('page', 1); // Default to page 1 if not provided
+//         $perPage = $request->input('size', 10); // Default to 10 items per page
+
+//         foreach ($filters as $key => $details) {
+//             $query = VehicleRecord::query()
+//                 ->whereNotNull('sale_date');
+//                 // ->where('is_new', false);
+
+//             // Apply domain filter if provided
+//             if ($request->has('domain_id')) {
+//                 $query->where('domain_id', $request->input('domain_id'));
+//             }
+
+//             // Handle the 'buy_now'
+//             if ($request->has('buy_now')) {
+//                 if ($request->buy_now == true) {
+//                     $buy_now_id = BuyNow::where('name', 'buyNowWithPrice')->pluck('id');
+//                     $query->where('buy_now_id', $buy_now_id);
+//                 } elseif ($request->buy_now == false) {
+//                     $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
+//                         ->pluck('id')
+//                         ->toArray();
+//                     $query->whereIn('buy_now_id', $buy_now_ids);
+//                 }
+//             }
+
+//             // Handling 'year_from' and 'year_to'
+//             if ($request->has('year_from') && $request->has('year_to')) {
+//                 $query->whereBetween('year', [(int) $request->input('year_from'), (int) $request->input('year_to')]);
+//             }
+
+//             // Handling 'odometer_min' and 'odometer_max'
+//             if ($request->has('odometer_min') && $request->has('odometer_max')) {
+//                 // Remove commas and cast to integers
+//                 $odometerMin = (int) str_replace(',', '', $request->input('odometer_min'));
+//                 $odometerMax = (int) str_replace(',', '', $request->input('odometer_max'));
+                
+//                 // Perform query filtering
+//                 $query->whereBetween('odometer_mi', [$odometerMin, $odometerMax]);
+//             }
+
+//             // Handling 'auction_date' and 'auction_date_from' and 'auction_date_to'
+//             if ($request->has('auction_date')) {
+//                 $auctionDateInput = $request->input('auction_date');
+
+//                 // Check if it's a date range (contains "to")
+//                 if (strpos($auctionDateInput, 'to') !== false) {
+//                     [$auctionDateFrom, $auctionDateTo] = explode(' to ', $auctionDateInput);
+//                     $auctionDateFrom = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->startOfDay();
+//                     $auctionDateTo = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo))->endOfDay();
+
+//                     $query->whereBetween('sale_date', [$auctionDateFrom, $auctionDateTo]);
+//                 } else {
+//                     // Single date case
+//                     $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', $auctionDateInput)->startOfDay();
+//                     $query->whereDate('sale_date', $auctionDate);
+//                 }
+//             }
+
+//             // Apply input filters dynamically
+//             foreach ($filters as $filterKey => $filterDetails) {
+//                 if ($request->has($filterKey) && is_array($request->input($filterKey))) {
+//                     $query->whereIn($filterDetails['column'], $request->input($filterKey));
+//                 }
+//             }
+
+//             // Apply pagination only for manufacturers, vehicle_models, and detailed_titles
+//             if ($details['paginate']) {
+//                 $results = $query
+//                     ->selectRaw("{$details['column']} as id, COUNT(*) as count")
+//                     ->groupBy("{$details['column']}")
+//                     ->paginate($perPage, ['*'], 'page', $page);
+//             } else {
+//                 // Fetch all data for other attributes
+//                 $results = $query
+//                     ->selectRaw("{$details['column']} as id, COUNT(*) as count")
+//                     ->groupBy("{$details['column']}")
+//                     ->get();
+//             }
+
+//             // Fetch related names in bulk for better performance
+//             $relatedNames = DB::table($details['table'])
+//                 ->whereIn('id', $results->pluck('id'))
+//                 ->pluck('name', 'id');
+
+//             // Map results to the response structure
+//             $response[$key] = $results->map(function ($item) use ($relatedNames, $details) {
+//                 return [
+//                     "id" => $item->id,
+//                     'name' => $relatedNames[$item->id] ?? 'Unknown',
+//                     'count' => $item->count,
+//                 ];
+//             });
+//         }
+
+//         return sendResponse(true, 200, 'Attributes Fetched Successfully!', $response, 200);
+//     } catch (\Exception $ex) {
+//         return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+//     }
+// }
+
+
+// Final dynamic query with proper counts with pagination and specific
+// public function filterAttributes(Request $request)
+// {
+//     try {
+//         // Define filters and relationships dynamically
+//         $filters = [
+//             'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers', 'paginate' => true],
+//             'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models', 'paginate' => true],
+//             'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types', 'paginate' => true],
+//             'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions', 'paginate' => true],
+//             'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels', 'paginate' => true],
+//             'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types', 'paginate' => true],
+//             'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels', 'paginate' => true],
+//             'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions', 'paginate' => true],
+//             'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles', 'paginate' => true],
+//             'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages', 'paginate' => true],
+//         ];
+
+//         $response = [];
+//         $page = $request->input('page', 1); // Default to page 1 if not provided
+//         $perPage = $request->input('size', 20); // Default to 20 items per page
+
+//         // Check if specific filters are set
+//         $listing = $request->input('listing');
+
+//         // Map of listing to active filter key
+//         $validListings = [
+//             'manufacturers', 'vehicle_models', 'detailed_titles', 'vehicle_types',
+//             'conditions', 'fuels', 'seller_types', 'drive_wheels', 'transmissions', 'damages'
+//         ];
+
+//         // Check if the listing is valid and determine the active filter key
+//         $activeFilterKey = in_array($listing, $validListings) ? $listing : null;
+
+//         foreach ($filters as $key => $details) {
+//             // Skip other attributes if an active filter is set
+//             if ($activeFilterKey && $key !== $activeFilterKey) {
+//                 continue;
+//             }
+
+//             $query = VehicleRecord::query()->whereNotNull('sale_date');
+
+//             // Apply domain filter if provided
+//             if ($request->has('domain_id')) {
+//                 $query->where('domain_id', $request->input('domain_id'));
+//             }
+
+//             // Handle the 'buy_now'
+//             if ($request->has('buy_now')) {
+//                 if ($request->buy_now == true) {
+//                     $buy_now_id = BuyNow::where('name', 'buyNowWithPrice')->pluck('id');
+//                     $query->where('buy_now_id', $buy_now_id);
+//                 } elseif ($request->buy_now == false) {
+//                     $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
+//                         ->pluck('id')
+//                         ->toArray();
+//                     $query->whereIn('buy_now_id', $buy_now_ids);
+//                 }
+//             }
+
+//             // Handling 'year_from' and 'year_to'
+//             if ($request->has('year_from') && $request->has('year_to')) {
+//                 $query->whereBetween('year', [(int) $request->input('year_from'), (int) $request->input('year_to')]);
+//             }
+
+//             // Handling 'odometer_min' and 'odometer_max'
+//             if ($request->has('odometer_min') && $request->has('odometer_max')) {
+//                 $query->whereBetween('odometer_mi', [
+//                     (int) str_replace(',', '', $request->input('odometer_min')),
+//                     (int) str_replace(',', '', $request->input('odometer_max'))
+//                 ]);
+//             }
+
+//             // Handling 'auction_date' and 'auction_date_from' and 'auction_date_to'
+//             if ($request->has('auction_date')) {
+//                 $auctionDateInput = $request->input('auction_date');
+
+//                 // Check if it's a date range (contains "to")
+//                 if (strpos($auctionDateInput, 'to') !== false) {
+//                     [$auctionDateFrom, $auctionDateTo] = explode(' to ', $auctionDateInput);
+//                     $auctionDateFrom = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->startOfDay();
+//                     $auctionDateTo = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo))->endOfDay();
+
+//                     $query->whereBetween('sale_date', [$auctionDateFrom, $auctionDateTo]);
+//                 } else {
+//                     // Single date case
+//                     $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', $auctionDateInput)->startOfDay();
+//                     $query->whereDate('sale_date', $auctionDate);
+//                 }
+//             }
+
+//             // Apply input filters dynamically
+//             foreach ($filters as $filterKey => $filterDetails) {
+//                 if ($request->has($filterKey) && is_array($request->input($filterKey))) {
+//                     $query->whereIn($filterDetails['column'], $request->input($filterKey));
+//                 }
+//             }
+
+//             // Apply pagination logic dynamically
+//             if ($details['paginate'] && (!$activeFilterKey || $key === $activeFilterKey)) {
+//                 $results = $query
+//                     ->selectRaw("{$details['column']} as id, COUNT(*) as count")
+//                     ->groupBy("{$details['column']}")
+//                     ->paginate($perPage, ['*'], 'page', $page);
+//             } 
+//             else {
+//                 $results = $query
+//                     ->selectRaw("{$details['column']} as id, COUNT(*) as count")
+//                     ->groupBy("{$details['column']}")
+//                     ->get();
+//             }
+
+//             // Fetch related names in bulk
+//             $relatedNames = DB::table($details['table'])
+//                 ->whereIn('id', $results->pluck('id'))
+//                 ->pluck('name', 'id');
+
+//             // Map results to the response structure
+//             $response[$key] = $results->map(function ($item) use ($relatedNames, $details) {
+//                 return [
+//                     "id" => $item->id,
+//                     'name' => $relatedNames[$item->id] ?? 'Unknown',
+//                     'count' => $item->count,
+//                 ];
+//             });
+//         }
+        
+//         // Return only the active filter's data if a specific filter is set
+//         if ($activeFilterKey) {
+//             return sendResponse(true, 200, ucfirst(str_replace('_', ' ', $activeFilterKey)) . ' Fetched Successfully!', [
+//                 $activeFilterKey => $response[$activeFilterKey]
+//             ], 200);
+//         }
+
+//         return sendResponse(true, 200, 'Attributes Fetched Successfully!', $response, 200);
+//     } catch (\Exception $ex) {
+//         return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+//     }
+// }
+
+
 public function filterAttributes(Request $request)
 {
     try {
         // Define filters and relationships dynamically
         $filters = [
-            'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers'],
-            'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models'],
-            'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types'],
-            'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions'],
-            'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels'],
-            'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types'],
-            'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels'],
-            'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions'],
-            'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles'],
-            'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages'],
+            'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers', 'paginate' => true],
+            'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models', 'paginate' => true],
+            'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types', 'paginate' => true],
+            'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions', 'paginate' => true],
+            'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels', 'paginate' => true],
+            'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types', 'paginate' => true],
+            'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels', 'paginate' => true],
+            'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions', 'paginate' => true],
+            'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles', 'paginate' => true],
+            'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages', 'paginate' => true],
         ];
 
-            $response = [];
+        $response = [];
+        $page = $request->input('page', 1); // Default to page 1 if not provided
+        $perPage = $request->input('size', 20); // Default to 20 items per page
 
-            foreach ($filters as $key => $details) {
-                $query = VehicleRecord::query()
-                    ->whereNotNull('sale_date');
-                    // ->where('is_new', false);
+        // Get the current_hit_attribute from the request
+        $currentHitAttribute = $request->input('current_hit_attribute');
 
-                // Apply domain filter if provided
-                if ($request->has('domain_id')) {
-                    $query->where('domain_id', $request->input('domain_id'));
+        // Check if specific filters are set
+        $listing = $request->input('listing');
+
+        // Map of listing to active filter key
+        $validListings = [
+            'manufacturers', 'vehicle_models', 'detailed_titles', 'vehicle_types',
+            'conditions', 'fuels', 'seller_types', 'drive_wheels', 'transmissions', 'damages'
+        ];
+
+        // Check if the listing is valid and determine the active filter key
+        $activeFilterKey = in_array($listing, $validListings) ? $listing : null;
+
+        foreach ($filters as $key => $details) {
+            // Skip other attributes if an active filter is set
+            if ($activeFilterKey && $key !== $activeFilterKey) {
+                continue;
+            }
+
+            // If current_hit_attribute is set and matches the current filter, skip changing this filter
+            // if ($currentHitAttribute && $currentHitAttribute === $key) {
+
+            //     // Get the current results for this filter (do not change them)
+            //     $existingResults = DB::table('vehicle_records')
+            //         ->whereNotNull('sale_date');
+
+            //     // Apply domain filter if provided
+            //     if ($request->has('domain_id')) {
+            //         $existingResults->where('domain_id', $request->input('domain_id'));
+            //     }
+
+            //     // Handle the 'buy_now' logic
+            //     if ($request->has('buy_now')) {
+            //         if ($request->buy_now == true) {
+            //             $buy_now_id = BuyNow::where('name', 'buyNowWithPrice')->pluck('id')->first();
+            //             $existingResults->where('buy_now_id', $buy_now_id);
+            //         } elseif ($request->buy_now == false) {
+            //             $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
+            //                 ->pluck('id')
+            //                 ->toArray();
+            //             $existingResults->whereIn('buy_now_id', $buy_now_ids);
+            //         }
+            //     }
+
+            //     // Handling 'year_from' and 'year_to'
+            //     if ($request->has('year_from') && $request->has('year_to')) {
+            //         $existingResults->whereBetween('year', [(int) $request->input('year_from'), (int) $request->input('year_to')]);
+            //     }
+
+            //     // Handling 'odometer_min' and 'odometer_max'
+            //     if ($request->has('odometer_min') && $request->has('odometer_max')) {
+            //         $existingResults->whereBetween('odometer_mi', [
+            //             (int) str_replace(',', '', $request->input('odometer_min')),
+            //             (int) str_replace(',', '', $request->input('odometer_max'))
+            //         ]);
+            //     }
+
+            //     // Handling 'auction_date' and 'auction_date_from' and 'auction_date_to'
+            //     if ($request->has('auction_date')) {
+            //         $auctionDateInput = $request->input('auction_date');
+
+            //         // Check if it's a date range (contains "to")
+            //         if (strpos($auctionDateInput, 'to') !== false) {
+            //             [$auctionDateFrom, $auctionDateTo] = explode(' to ', $auctionDateInput);
+            //             $auctionDateFrom = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->startOfDay();
+            //             $auctionDateTo = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo))->endOfDay();
+
+            //             $existingResults->whereBetween('sale_date', [$auctionDateFrom, $auctionDateTo]);
+            //         } else {
+            //             // Single date case
+            //             $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', $auctionDateInput)->startOfDay();
+            //             $existingResults->whereDate('sale_date', $auctionDate);
+            //         }
+            //     }
+
+            //     // Fetch results
+            //     $existingResults = $existingResults->select("{$details['column']} as id", DB::raw("COUNT(*) as count"))
+            //         ->groupBy("{$details['column']}")
+            //         ->get(); // Fetch the data here
+
+            //     // Fetch related names in bulk
+            //     $relatedNames = DB::table($details['table'])
+            //         ->whereIn('id', $existingResults->pluck('id'))
+            //         ->pluck('name', 'id');
+
+            //     // Map results to the response structure
+            //     $response[$key] = $existingResults->map(function ($item) use ($relatedNames, $details) {
+            //         return [
+            //             "id" => $item->id,
+            //             'name' => $relatedNames[$item->id] ?? 'Unknown',
+            //             'count' => $item->count,
+            //         ];
+            //     });
+
+            //     continue; // Skip to the next filter
+            // }
+
+            $query = VehicleRecord::query()->whereNotNull('sale_date');
+
+            // Apply domain filter if provided
+            if ($request->has('domain_id')) {
+                $query->where('domain_id', $request->input('domain_id'));
+            }
+
+            // Handle the 'buy_now' logic
+            if ($request->has('buy_now')) {
+                if ($request->buy_now == true) {
+                    $buy_now_id = BuyNow::where('name', 'buyNowWithPrice')->pluck('id');
+                    $query->where('buy_now_id', $buy_now_id);
+                } elseif ($request->buy_now == false) {
+                    $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
+                        ->pluck('id')
+                        ->toArray();
+                    $query->whereIn('buy_now_id', $buy_now_ids);
                 }
-                // Handle the 'buy_now'
-                if ($request->has('buy_now')) {
-                    if ($request->buy_now == true) {  
-                        $buy_now_id = BuyNow::where('name', 'buyNowWithPrice')->pluck('id');
-                        $query->where('buy_now_id', $buy_now_id);
-                    } elseif ($request->buy_now == false) {
-                        $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
-                                ->pluck('id')
-                                ->toArray();
-                            $query->whereIn('buy_now_id', $buy_now_ids);
-                    }
-                }
+            }
 
-                // Handling 'year_from' and 'year_to'
-                if ($request->has('year_from') && $request->has('year_to')) {
-                    $query->whereBetween('year', [(int) $request->input('year_from'), (int) $request->input('year_to')]);
-                }
+            // Handling 'year_from' and 'year_to'
+            if ($request->has('year_from') && $request->has('year_to')) {
+                $query->whereBetween('year', [(int) $request->input('year_from'), (int) $request->input('year_to')]);
+            }
 
-                // Apply input filters dynamically
+            // Handling 'odometer_min' and 'odometer_max'
+            if ($request->has('odometer_min') && $request->has('odometer_max')) {
+                $query->whereBetween('odometer_mi', [
+                    (int) str_replace(',', '', $request->input('odometer_min')),
+                    (int) str_replace(',', '', $request->input('odometer_max'))
+                ]);
+            }
+
+            // Handling 'auction_date' and 'auction_date_from' and 'auction_date_to'
+            if ($request->has('auction_date')) {
+                $auctionDateInput = $request->input('auction_date');
+
+                // Check if it's a date range (contains "to")
+                if (strpos($auctionDateInput, 'to') !== false) {
+                    [$auctionDateFrom, $auctionDateTo] = explode(' to ', $auctionDateInput);
+                    $auctionDateFrom = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->startOfDay();
+                    $auctionDateTo = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo))->endOfDay();
+
+                    $query->whereBetween('sale_date', [$auctionDateFrom, $auctionDateTo]);
+                } else {
+                    // Single date case
+                    $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', $auctionDateInput)->startOfDay();
+                    $query->whereDate('sale_date', $auctionDate);
+                }
+            }
+
+            // If current_hit_attribute is set and matches the current filter, skip changing this filter
+            if ($currentHitAttribute && $currentHitAttribute === $key) {
+
+                $existingResults = clone $query;
+
                 foreach ($filters as $filterKey => $filterDetails) {
+                    // Check if the current filter key matches the current_hit_attribute
+                    if ($filterKey === $currentHitAttribute) {
+                        // Skip applying whereIn if it matches the current_hit_attribute
+                        continue;
+                    }
+    
                     if ($request->has($filterKey) && is_array($request->input($filterKey))) {
-                        $query->whereIn($filterDetails['column'], $request->input($filterKey));
+                        // Use the correct column from the filters array for dynamic filtering
+                        $existingResults->whereIn($filterDetails['column'], $request->input($filterKey));
                     }
                 }
 
-                // Fetch aggregated data with counts
-                $results = $query
-                    ->selectRaw("{$details['column']} as id, COUNT(*) as count")
+                // Fetch results
+                $existingResults = $existingResults->select("{$details['column']} as id", DB::raw("COUNT(*) as count"))
                     ->groupBy("{$details['column']}")
-                    ->get();
+                    ->paginate($perPage, ['*'], 'page', $page); // Fetch the data here
 
-                // Fetch related names in bulk for better performance
+                // Fetch related names in bulk
                 $relatedNames = DB::table($details['table'])
-                    ->whereIn('id', $results->pluck('id'))
+                    ->whereIn('id', $existingResults->pluck('id'))
                     ->pluck('name', 'id');
 
+
                 // Map results to the response structure
-                $response[$key] = $results->map(function ($item) use ($relatedNames, $details) {
+                $response[$key] = $existingResults->map(function ($item) use ($relatedNames, $details) {
                     return [
                         "id" => $item->id,
                         'name' => $relatedNames[$item->id] ?? 'Unknown',
                         'count' => $item->count,
                     ];
                 });
+
+                continue; // Skip to the next filter
             }
+
+            // Apply input filters dynamically for the columns that are listed in the filters array
+            foreach ($filters as $filterKey => $filterDetails) {
+                if ($request->has($filterKey) && is_array($request->input($filterKey))) {
+                    // Use the correct column from the filters array for dynamic filtering
+                    $query->whereIn($filterDetails['column'], $request->input($filterKey));
+                }
+            }
+
+            // Apply pagination logic dynamically
+            if ($details['paginate'] && (!$activeFilterKey || $key === $activeFilterKey)) {
+                $results = $query
+                    ->selectRaw("{$details['column']} as id, COUNT(*) as count")
+                    ->groupBy("{$details['column']}")
+                    ->paginate($perPage, ['*'], 'page', $page);
+            } else {
+                $results = $query
+                    ->selectRaw("{$details['column']} as id, COUNT(*) as count")
+                    ->groupBy("{$details['column']}")
+                    ->get();
+            }
+
+            // Fetch related names in bulk
+            $relatedNames = DB::table($details['table'])
+                ->whereIn('id', $results->pluck('id'))
+                ->pluck('name', 'id');
+
+            // Map results to the response structure
+            $response[$key] = $results->map(function ($item) use ($relatedNames, $details) {
+                return [
+                    "id" => $item->id,
+                    'name' => $relatedNames[$item->id] ?? 'Unknown',
+                    'count' => $item->count,
+                ];
+            });
+        }
+
+        // Return only the active filter's data if a specific filter is set
+        if ($activeFilterKey) {
+            return sendResponse(true, 200, ucfirst(str_replace('_', ' ', $activeFilterKey)) . ' Fetched Successfully!', [
+                $activeFilterKey => $response[$activeFilterKey]
+            ], 200);
+        }
 
         return sendResponse(true, 200, 'Attributes Fetched Successfully!', $response, 200);
     } catch (\Exception $ex) {
