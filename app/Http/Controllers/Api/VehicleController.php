@@ -2007,109 +2007,109 @@ public function filterAttributes(Request $request)
         $finalResult = $response; // This is first query result and accurate
 
         // Second Query Block Code, That is getting the select attribute data in the request
-        $responseSecond = [];
-        // Iterate over filters and calculate counts independently.
-        foreach ($filters as $key => $details) {
-            // Skip processing if the current attribute is not in the request body
-            if (!$request->has($key) || !is_array($request->input($key))) {
-                continue;
-            }
+        // $responseSecond = [];
+        // // Iterate over filters and calculate counts independently.
+        // foreach ($filters as $key => $details) {
+        //     // Skip processing if the current attribute is not in the request body
+        //     if (!$request->has($key) || !is_array($request->input($key))) {
+        //         continue;
+        //     }
 
-            $query = VehicleRecord::query()->whereNotNull('sale_date');
+        //     $query = VehicleRecord::query()->whereNotNull('sale_date');
 
-            // Apply domain filter if provided
-            if ($request->has('domain_id')) {
-                $query->where('domain_id', $request->input('domain_id'));
-            }
+        //     // Apply domain filter if provided
+        //     if ($request->has('domain_id')) {
+        //         $query->where('domain_id', $request->input('domain_id'));
+        //     }
 
-            // Handle the 'buy_now' logic
-                    if ($request->has('buy_now')) {
-                        if ($request->buy_now == true) {
-                            $buy_now_id = BuyNow::where('name', 'buyNowWithPrice')->pluck('id');
-                            $query->where('buy_now_id', $buy_now_id);
-                        } elseif ($request->buy_now == false) {
-                            $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
-                                ->pluck('id')
-                                ->toArray();
-                            $query->whereIn('buy_now_id', $buy_now_ids);
-                        }
-                    }
+        //     // Handle the 'buy_now' logic
+        //             if ($request->has('buy_now')) {
+        //                 if ($request->buy_now == true) {
+        //                     $buy_now_id = BuyNow::where('name', 'buyNowWithPrice')->pluck('id');
+        //                     $query->where('buy_now_id', $buy_now_id);
+        //                 } elseif ($request->buy_now == false) {
+        //                     $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
+        //                         ->pluck('id')
+        //                         ->toArray();
+        //                     $query->whereIn('buy_now_id', $buy_now_ids);
+        //                 }
+        //             }
 
-                    // Handling 'year_from' and 'year_to'
-                    if ($request->has('year_from') && $request->has('year_to')) {
-                        $query->whereBetween('year', [(int) $request->input('year_from'), (int) $request->input('year_to')]);
-                    }
+        //             // Handling 'year_from' and 'year_to'
+        //             if ($request->has('year_from') && $request->has('year_to')) {
+        //                 $query->whereBetween('year', [(int) $request->input('year_from'), (int) $request->input('year_to')]);
+        //             }
 
-                    // Handling 'odometer_min' and 'odometer_max'
-                    if ($request->has('odometer_min') && $request->has('odometer_max')) {
-                        $query->whereBetween('odometer_mi', [
-                            (int) str_replace(',', '', $request->input('odometer_min')),
-                            (int) str_replace(',', '', $request->input('odometer_max'))
-                        ]);
-                    }
+        //             // Handling 'odometer_min' and 'odometer_max'
+        //             if ($request->has('odometer_min') && $request->has('odometer_max')) {
+        //                 $query->whereBetween('odometer_mi', [
+        //                     (int) str_replace(',', '', $request->input('odometer_min')),
+        //                     (int) str_replace(',', '', $request->input('odometer_max'))
+        //                 ]);
+        //             }
 
-                    // Handling 'auction_date' and 'auction_date_from' and 'auction_date_to'
-                    if ($request->has('auction_date')) {
-                        $auctionDateInput = $request->input('auction_date');
+        //             // Handling 'auction_date' and 'auction_date_from' and 'auction_date_to'
+        //             if ($request->has('auction_date')) {
+        //                 $auctionDateInput = $request->input('auction_date');
 
-                        // Check if it's a date range (contains "to")
-                        if (strpos($auctionDateInput, 'to') !== false) {
-                            [$auctionDateFrom, $auctionDateTo] = explode(' to ', $auctionDateInput);
-                            $auctionDateFrom = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->startOfDay();
-                            $auctionDateTo = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo))->endOfDay();
+        //                 // Check if it's a date range (contains "to")
+        //                 if (strpos($auctionDateInput, 'to') !== false) {
+        //                     [$auctionDateFrom, $auctionDateTo] = explode(' to ', $auctionDateInput);
+        //                     $auctionDateFrom = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->startOfDay();
+        //                     $auctionDateTo = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo))->endOfDay();
 
-                            $query->whereBetween('sale_date', [$auctionDateFrom, $auctionDateTo]);
-                        } else {
-                            // Single date case
-                            $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', $auctionDateInput)->startOfDay();
-                            $query->whereDate('sale_date', $auctionDate);
-                        }
-                    }
+        //                     $query->whereBetween('sale_date', [$auctionDateFrom, $auctionDateTo]);
+        //                 } else {
+        //                     // Single date case
+        //                     $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', $auctionDateInput)->startOfDay();
+        //                     $query->whereDate('sale_date', $auctionDate);
+        //                 }
+        //             }
             
 
-            // Apply attribute-specific filter dynamically
-            $query->whereIn($details['column'], $request->input($key));
+        //     // Apply attribute-specific filter dynamically
+        //     $query->whereIn($details['column'], $request->input($key));
 
-            $results = $query
-                ->selectRaw("{$details['column']} as id, COUNT(*) as count")
-                ->groupBy("{$details['column']}")
-                ->get();
+        //     $results = $query
+        //         ->selectRaw("{$details['column']} as id, COUNT(*) as count")
+        //         ->groupBy("{$details['column']}")
+        //         ->get();
 
-            // Fetch related names in bulk
-            $relatedNames = DB::table($details['table'])
-                ->whereIn('id', $results->pluck('id'))
-                ->pluck('name', 'id');
+        //     // Fetch related names in bulk
+        //     $relatedNames = DB::table($details['table'])
+        //         ->whereIn('id', $results->pluck('id'))
+        //         ->pluck('name', 'id');
 
-            // Map results to the response structure
-            $responseSecond[$key] = $results->map(function ($item) use ($relatedNames, $details) {
-                return [
-                    "id" => $item->id,
-                    'name' => $relatedNames[$item->id] ?? 'Unknown',
-                    'count' => $item->count,
-                ];
-            });
-        }
-        $secondQueryResult = $responseSecond;
-        // End Second Query Block Code
+        //     // Map results to the response structure
+        //     $responseSecond[$key] = $results->map(function ($item) use ($relatedNames, $details) {
+        //         return [
+        //             "id" => $item->id,
+        //             'name' => $relatedNames[$item->id] ?? 'Unknown',
+        //             'count' => $item->count,
+        //         ];
+        //     });
+        // }
+        // $secondQueryResult = $responseSecond;
+        // // End Second Query Block Code
 
-        // Loop through the second query's response and compare result of first query.
-        foreach ($secondQueryResult as $key => $records) {
+        // // Loop through the second query's response and compare result of first query.
+        // foreach ($secondQueryResult as $key => $records) {
             
-            // Ensure the key exists in the first query's result
-            if (!isset($finalResult[$key])) {
-                $finalResult[$key] = [];
-            }
+        //     // Ensure the key exists in the first query's result
+        //     if (!isset($finalResult[$key])) {
+        //         $finalResult[$key] = [];
+        //     }
 
-            // Get all the `id`s from the first query result for comparison
-            $existingIds = collect($finalResult[$key])->pluck('id')->toArray();
+        //     // Get all the `id`s from the first query result for comparison
+        //     $existingIds = collect($finalResult[$key])->pluck('id')->toArray();
 
-            foreach ($records as $record) {
-                // If the record's `id` does not exist in the first query result, add it
-                if (!in_array($record['id'], $existingIds)) {
-                    $finalResult[$key][] = $record;
-                }
-            }
-        }
+        //     foreach ($records as $record) {
+        //         // If the record's `id` does not exist in the first query result, add it
+        //         if (!in_array($record['id'], $existingIds)) {
+        //             $finalResult[$key][] = $record;
+        //         }
+        //     }
+        // }
 
         return sendResponse(true, 200, 'Attributes Fetched Successfully!', $finalResult, 200);
     } catch (\Exception $ex) {
