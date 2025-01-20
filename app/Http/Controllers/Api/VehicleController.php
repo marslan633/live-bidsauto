@@ -8,6 +8,8 @@ use App\Models\{VehicleRecord, VehicleType, Domain, Manufacturer, VehicleModel, 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\SendQuoteMail;
 
 class VehicleController extends Controller
 {
@@ -2108,6 +2110,23 @@ public function filterAttributes(Request $request)
             ];
 
             return sendResponse(true, 200, 'Filtered records fetched successfully!', $data, 200);
+        } catch (\Exception $ex) {
+            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+        }
+    }
+
+    public function sendQuote(Request $request) {
+        try {
+            $details = [
+                'name' => $request->name,
+                'phone_number' => $request->phone_number,
+                "contact_platform" => $request->contact_platform,
+                "url" => $request->url
+            ];
+    
+            Mail::to($request->receiver_email)->send(new SendQuoteMail($details));
+            
+            return sendResponse(true, 200, 'Quote Sent Successfully!', [], 200);
         } catch (\Exception $ex) {
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }

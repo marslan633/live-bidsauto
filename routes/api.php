@@ -16,3 +16,4 @@ Route::post('domain/attributes', [VehicleController::class, 'getRelatedAttribute
 Route::post('filter-attributes', [VehicleController::class, 'filterAttributes']);
 Route::get('/test-cron', [VehicleController::class, 'testCron']);
 Route::get('filtered-records-count', [VehicleController::class, 'filteredRecordsCount'])->name('filtered.records.count');
+Route::post('/sendQuote', [VehicleController::class, 'sendQuote']);
