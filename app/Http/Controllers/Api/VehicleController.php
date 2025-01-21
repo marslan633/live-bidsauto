@@ -20,7 +20,7 @@ class VehicleController extends Controller
                 'manufacturer', 'vehicleModel', 'generation', 'bodyType', 'color', 'engine', 
                 'transmission', 'driveWheel', 'vehicleType', 'fuel', 'status', 'seller', 
                 'sellerType', 'titleRelation', 'detailedTitle', 'damageMain', 'damageSecond', 
-                'condition', 'image', 'country', 'state', 'city', 'location', 'sellingBranch', 'buyNow'
+                'condition', 'image', 'country', 'state', 'city', 'location', 'sellingBranch', 'buyNowRelation'
             ]);
             
             $query->whereNotNull('sale_date');
@@ -153,7 +153,7 @@ class VehicleController extends Controller
                 'manufacturer', 'vehicleModel', 'generation', 'bodyType', 'color', 'engine', 
                 'transmission', 'driveWheel', 'vehicleType', 'fuel', 'status', 'seller', 
                 'sellerType', 'titleRelation', 'detailedTitle', 'damageMain', 'damageSecond', 
-                'condition', 'image', 'country', 'state', 'city', 'location', 'sellingBranch', 'buyNow'
+                'condition', 'image', 'country', 'state', 'city', 'location', 'sellingBranch', 'buyNowRelation'
             ]);
             
             if ($request->type == 'lot_id') {
@@ -1842,7 +1842,7 @@ public function filterAttributes(Request $request)
             'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions', 'paginate' => true],
             'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles', 'paginate' => true],
             'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages', 'paginate' => true],
-            'buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNow', 'table' => 'buy_nows', 'paginate' => true],
+            'buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows', 'paginate' => true],
         ];
 
         $response = [];

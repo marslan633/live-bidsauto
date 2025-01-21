@@ -181,8 +181,8 @@ class VehicleRecord extends Model
         return $array;
     }
 
-    public function buyNow()
+    public function buyNowRelation()
     {
-        return $this->belongsTo(BuyNow::class);
+        return $this->belongsTo(BuyNow::class, 'buy_now_id');
     }
 }
