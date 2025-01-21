@@ -75,7 +75,7 @@
                       target="_blank"
                     >
                       <img
-                        src="https://email-template-01.netlify.app/img/logo.png"
+                        src="https://live-bidsauto.com/assets/img/logo.png"
                         alt="BidsAuto"
                         style="
                           box-sizing: border-box;

@@ -181,7 +181,7 @@ class VehicleRecordArchived extends Model
         return $array;
     }
 
-    public function buyNow()
+    public function buyNowRelation()
     {
         return $this->belongsTo(BuyNow::class);
     }

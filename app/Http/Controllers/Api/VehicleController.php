@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\{VehicleRecord, VehicleType, Domain, Manufacturer, VehicleModel, Condition, Fuel, SellerType, DriveWheel, Transmission, DetailedTitle, Damage, Year, BuyNow};
+use App\Models\{VehicleRecord, VehicleType, Domain, Manufacturer, VehicleModel, Condition, Fuel, SellerType, DriveWheel, Transmission, DetailedTitle, Damage, Year, BuyNow, VehicleRecordArchived};
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
@@ -16,7 +16,11 @@ class VehicleController extends Controller
     public function vehicleInformations(Request $request)
     {
         try {
-            $query = VehicleRecord::with([
+            // Determine the model based on the 'type' parameter
+            $data_source = $request->input('data_source', 'active'); // Default to 'active'
+            $model = $data_source === 'archived' ? VehicleRecordArchived::class : VehicleRecord::class;
+        
+            $query = $model::with([
                 'manufacturer', 'vehicleModel', 'generation', 'bodyType', 'color', 'engine', 
                 'transmission', 'driveWheel', 'vehicleType', 'fuel', 'status', 'seller', 
                 'sellerType', 'titleRelation', 'detailedTitle', 'damageMain', 'damageSecond', 
@@ -149,7 +153,11 @@ class VehicleController extends Controller
     */    
     public function searchVehicle(Request $request, $id) {
         try {
-            $query = VehicleRecord::with([
+            // Determine the model based on the 'type' parameter
+            $data_source = $request->input('data_source', 'active'); // Default to 'active'
+            $model = $data_source === 'archived' ? VehicleRecordArchived::class : VehicleRecord::class;
+
+            $query = $model::with([
                 'manufacturer', 'vehicleModel', 'generation', 'bodyType', 'color', 'engine', 
                 'transmission', 'driveWheel', 'vehicleType', 'fuel', 'status', 'seller', 
                 'sellerType', 'titleRelation', 'detailedTitle', 'damageMain', 'damageSecond', 
@@ -1870,7 +1878,11 @@ public function filterAttributes(Request $request)
                 continue;
             }
 
-            $query = VehicleRecord::query()->whereNotNull('sale_date');
+            // Determine the model based on the 'type' parameter
+            $data_source = $request->input('data_source', 'active'); // Default to 'active'
+            $model = $data_source === 'archived' ? VehicleRecordArchived::class : VehicleRecord::class;
+
+            $query = $model::query()->whereNotNull('sale_date');
 
             // Apply domain filter if provided
             if ($request->has('domain_id')) {
@@ -2132,10 +2144,13 @@ public function filterAttributes(Request $request)
             ")
             ->first();
 
+            $vehicleRecordArchiveds = VehicleRecordArchived::count();
+
             // Prepare data for response
             $data = [
                 'sale_records' => $vehicleRecords->sale_records,
                 'no_sale_records' => $vehicleRecords->no_sale_records,
+                'archived_vehicle_record' => $vehicleRecordArchiveds,
                 'latest_update_time_utc' => $vehicleRecords->latest_update_time_utc,
             ];
 

@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote')->hourly();
 
 app(Schedule::class)->command('process:api-data')->hourly();
+app(Schedule::class)->command('process:archived-data')->everyThreeHours();
