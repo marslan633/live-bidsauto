@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class VehicleRecord extends Model
+class VehicleRecordArchived extends Model
 {
     protected $fillable = [
         'api_id', 'year', 'year_id', 'title', 'vin', 'manufacturer_id', 'vehicle_model_id', 'generation_id', 
