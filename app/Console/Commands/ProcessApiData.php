@@ -49,10 +49,12 @@ class ProcessApiData extends Command
     //         'updated_at' => now(),
     //     ]);
 
-    //     // Starting URL for the first page
-    //     // $apiUrl = 'http://carstat.dev/api/cars?minutes=4320&page=1&per_page=1000';
+    //     $minutes = 10; // Time frame in minutes
+    //     $perPage = 500; // Records per page
+    //     $baseUrl = 'http://carstat.dev/api/cars';
 
-    //     $apiUrl = 'http://carstat.dev/api/cars?minutes=500&page=1&per_page=500';
+    //     $apiUrl = "{$baseUrl}?minutes={$minutes}&per_page={$perPage}&page=1";
+
     //     try {
     //         do {
     //             // Fetch data from the API
@@ -72,10 +74,6 @@ class ProcessApiData extends Command
     //             $this->info("API URL: $apiUrl");
     //             \Log::info("API URL: $apiUrl");
 
-    //             // Log the full response for debugging purposes
-    //             $this->info("Response: " . $response->body());
-    //             // \Log::info("Response: " . $response->body());
-
     //             if ($response->successful()) {
     //                 // Extract the data from the response
     //                 $data = $response->json()['data'];
@@ -91,8 +89,10 @@ class ProcessApiData extends Command
 
     //                 // Check the 'next' link to fetch the next page
     //                 $nextUrl = $response->json()['links']['next'];
+    //                 $this->info("Next Page API URL: $nextUrl");
 
     //                 $lastUrl = $response->json()['links']['last'];
+    //                 $this->info("Last Page API URL: $lastUrl");
     //                 \Log::info("Last Page API URL: $lastUrl");
     //                 // If there is a next page, update $apiUrl to fetch the next page, otherwise end the loop
     //                 if ($nextUrl) {
@@ -108,9 +108,9 @@ class ProcessApiData extends Command
     //                     \Log::info('No more pages to fetch.');
 
     //                     // Call the second cron job when 'next' is null
-    //                     $this->info('Triggering the second cron job: update:pivot-counts');
-    //                     \Log::info('Triggering the second cron job: update:pivot-counts');
-    //                     $this->call('update:pivot-counts');
+    //                     // $this->info('Triggering the second cron job: update:pivot-counts');
+    //                     // \Log::info('Triggering the second cron job: update:pivot-counts');
+    //                     // $this->call('update:pivot-counts');
     //                 }
 
     //             } else {
@@ -148,7 +148,6 @@ class ProcessApiData extends Command
     //     $this->info("Total execution time: {$formattedTime} seconds");
     //     \Log::info("Total execution time: {$formattedTime} seconds");
 
-    //     // Final completion log
     //     $this->info('Data processing completed.');
     //     \Log::info('Data processing completed.');
     // }

@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\SendQuoteMail;
+use Illuminate\Support\Facades\Http;
 
 class VehicleController extends Controller
 {
@@ -2187,6 +2188,39 @@ public function filterAttributes(Request $request)
         } catch (\Exception $ex) {
             // Handle any exception and return a response
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+        }
+    }
+
+    public function getDataLength()
+    {
+        $apiUrl = 'http://carstat.dev/api/cars?minutes=150';
+
+        try {
+            // Fetch data from the API
+                $response = Http::withHeaders([
+                    'x-api-key' => env('CAR_API_KEY'),
+                ])
+                ->timeout(120) // Timeout set to 120 seconds
+                ->retry(3, 1000) // Retry 3 times with a 1-second delay
+                ->get($apiUrl);
+
+            // Check if the response is successful
+            if ($response->successful()) {
+                $data = $response->json(); // Decode JSON response into an array
+
+                // Check if 'data' key exists
+                if (isset($data['data']) && is_array($data['data'])) {
+                    $length = count($data['data']); // Get the length of the 'data' array
+                    return response()->json(['length' => $length], 200);
+                } else {
+                    return response()->json(['error' => 'Data key is missing or invalid'], 400);
+                }
+            } else {
+                return response()->json(['error' => 'Failed to fetch data'], $response->status());
+            }
+        } catch (\Exception $e) {
+            // Handle exceptions
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 }
