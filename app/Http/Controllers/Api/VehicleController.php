@@ -2176,4 +2176,17 @@ public function filterAttributes(Request $request)
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }
     }
+
+    public function cronJobHistory()
+    {
+        try {
+            // Fetch the latest record(s) from the cron_run_history table
+            $history = DB::table('cron_run_history')->orderBy('id', 'desc')->get();
+
+            return sendResponse(true, 200, 'Filtered records fetched successfully!', $history, 200);
+        } catch (\Exception $ex) {
+            // Handle any exception and return a response
+            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+        }
+    }
 }
