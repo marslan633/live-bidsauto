@@ -8,5 +8,5 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote')->hourly();
 
-app(Schedule::class)->command('process:api-data')->everyFiveMinutes();
-app(Schedule::class)->command('process:archived-data')->everyThreeHours();
+app(Schedule::class)->command('process:api-data')->everyMinute();
+// app(Schedule::class)->command('process:archived-data')->everyThreeHours();

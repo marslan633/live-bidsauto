@@ -182,49 +182,59 @@ class ProcessApiData extends Command
 
             if ($response->successful()) {
                 $totalRecords = $response->json()['meta']['total'] ?? 0;
+
+                // Update the cron_run_history table with the total records
+                DB::table('cron_run_history')
+                    ->where('id', $cronRun)
+                    ->update([
+                        'total_records' => $totalRecords,
+                        'updated_at' => now(),
+                    ]);
+                    
                 $this->info("Fetching total number of record: {$totalRecords}");
                 \Log::info("Fetching total number of record: {$totalRecords}");
 
-                if ($totalRecords > 0) {
-                    $totalPages = ceil($totalRecords / $perPage); // Calculate total API calls required
-                    $this->info("Total Pages: $totalPages");
-                    \Log::info("Total Pages: $totalPages");
+                // This is our actual implementation
+                // if ($totalRecords > 0) {
+                //     $totalPages = ceil($totalRecords / $perPage); // Calculate total API calls required
+                //     $this->info("Total Pages: $totalPages");
+                //     \Log::info("Total Pages: $totalPages");
                     
-                    for ($page = 1; $page <= $totalPages; $page++) {
-                        $apiUrl = "{$baseUrl}?minutes={$minutes}&page={$page}&per_page={$perPage}";
+                //     for ($page = 1; $page <= $totalPages; $page++) {
+                //         $apiUrl = "{$baseUrl}?minutes={$minutes}&page={$page}&per_page={$perPage}";
 
-                        $this->info("Fetching page {$page} of {$totalPages}");
-                        \Log::info("Fetching page {$page} of {$totalPages}, URL: {$apiUrl}");
+                //         $this->info("Fetching page {$page} of {$totalPages}");
+                //         \Log::info("Fetching page {$page} of {$totalPages}, URL: {$apiUrl}");
 
-                        $pageResponse = Http::withHeaders([
-                            'x-api-key' => env('CAR_API_KEY'),
-                        ])
-                        ->timeout(120)
-                        ->retry(3, 1000)
-                        ->get($apiUrl);
+                //         $pageResponse = Http::withHeaders([
+                //             'x-api-key' => env('CAR_API_KEY'),
+                //         ])
+                //         ->timeout(120)
+                //         ->retry(3, 1000)
+                //         ->get($apiUrl);
                         
-                        $this->info("API URL: $apiUrl");
-                        \Log::info("API URL: $apiUrl");
+                //         $this->info("API URL: $apiUrl");
+                //         \Log::info("API URL: $apiUrl");
 
-                        if ($pageResponse->successful()) {
-                            $data = $pageResponse->json()['data'] ?? [];
+                //         if ($pageResponse->successful()) {
+                //             $data = $pageResponse->json()['data'] ?? [];
                             
-                            foreach ($data as $car) {
-                                $this->processCarData($car);
-                            }
+                //             foreach ($data as $car) {
+                //                 $this->processCarData($car);
+                //             }
 
-                            $this->info("Page {$page} processed successfully.");
-                            \Log::info("Page {$page} processed successfully.");
-                        } else {
-                            $this->error("Failed to fetch data for page {$page}.");
-                            \Log::error("Failed to fetch data for page {$page}.");
-                            break;
-                        }
-                    }
-                } else {
-                    $this->info("No records to process.");
-                    \Log::info("No records to process.");
-                }
+                //             $this->info("Page {$page} processed successfully.");
+                //             \Log::info("Page {$page} processed successfully.");
+                //         } else {
+                //             $this->error("Failed to fetch data for page {$page}.");
+                //             \Log::error("Failed to fetch data for page {$page}.");
+                //             break;
+                //         }
+                //     }
+                // } else {
+                //     $this->info("No records to process.");
+                //     \Log::info("No records to process.");
+                // }
             } else {
                 $this->error("Failed to fetch total records.");
                 \Log::error("Failed to fetch total records.");
