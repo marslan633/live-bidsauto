@@ -92,21 +92,48 @@ class VehicleController extends Controller
                 $query->whereBetween('odometer_mi', [$odometerMin, $odometerMax]);
             }
 
-            // Handling 'auction_date' and 'auction_date_from' and 'auction_date_to
+            // // Handling 'auction_date' and 'auction_date_from' and 'auction_date_to
+            // if ($request->has('auction_date')) {
+            //     $auctionDateInput = $request->input('auction_date');
+
+            //     // Check if it's a date range (contains "to")
+            //     if (strpos($auctionDateInput, 'to') !== false) {
+            //         [$auctionDateFrom, $auctionDateTo] = explode(' to ', $auctionDateInput);
+            //         $auctionDateFrom = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->startOfDay();
+            //         $auctionDateTo = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo))->endOfDay();
+
+            //         $query->whereBetween('sale_date', [$auctionDateFrom, $auctionDateTo]);
+            //     } else {
+            //         // Single date case
+            //         $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', $auctionDateInput)->startOfDay();
+            //         $query->whereDate('sale_date', $auctionDate);
+            //     }
+            // }
+            // Handling 'auction_date' 
             if ($request->has('auction_date')) {
                 $auctionDateInput = $request->input('auction_date');
 
-                // Check if it's a date range (contains "to")
-                if (strpos($auctionDateInput, 'to') !== false) {
-                    [$auctionDateFrom, $auctionDateTo] = explode(' to ', $auctionDateInput);
-                    $auctionDateFrom = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->startOfDay();
-                    $auctionDateTo = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo))->endOfDay();
+                // Ensure it's an array with exactly two elements
+                if (is_array($auctionDateInput) && count($auctionDateInput) === 2) {
+                    [$auctionDateFrom, $auctionDateTo] = $auctionDateInput;
 
-                    $query->whereBetween('sale_date', [$auctionDateFrom, $auctionDateTo]);
+                    if ($auctionDateFrom && $auctionDateTo) {
+                        $auctionDateFrom = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->startOfDay();
+                        $auctionDateTo = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo))->endOfDay();
+
+                        if ($auctionDateFrom->eq($auctionDateTo)) {
+                            // Same date, use whereDate
+                            $query->whereDate('sale_date', $auctionDateFrom);
+                        } else {
+                            // Date range
+                            $query->whereBetween('sale_date', [$auctionDateFrom, $auctionDateTo]);
+                        }
+                    } elseif ($auctionDateFrom && !$auctionDateTo) {
+                        $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->startOfDay();
+                        $query->whereDate('sale_date', $auctionDate);
+                    }
                 } else {
-                    // Single date case
-                    $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', $auctionDateInput)->startOfDay();
-                    $query->whereDate('sale_date', $auctionDate);
+                    return sendResponse(true, 400, "Invalid 'auction_date' format. Expecting an array with two elements.", [], 200);
                 }
             }
 
@@ -1917,20 +1944,47 @@ public function filterAttributes(Request $request)
             }
 
             // Handling 'auction_date' and 'auction_date_from' and 'auction_date_to'
+            // if ($request->has('auction_date')) {
+            //     $auctionDateInput = $request->input('auction_date');
+
+            //     // Check if it's a date range (contains "to")
+            //     if (strpos($auctionDateInput, 'to') !== false) {
+            //         [$auctionDateFrom, $auctionDateTo] = explode(' to ', $auctionDateInput);
+            //         $auctionDateFrom = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->startOfDay();
+            //         $auctionDateTo = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo))->endOfDay();
+
+            //         $query->whereBetween('sale_date', [$auctionDateFrom, $auctionDateTo]);
+            //     } else {
+            //         // Single date case
+            //         $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', $auctionDateInput)->startOfDay();
+            //         $query->whereDate('sale_date', $auctionDate);
+            //     }
+            // }
+            // Handling 'auction_date' 
             if ($request->has('auction_date')) {
                 $auctionDateInput = $request->input('auction_date');
 
-                // Check if it's a date range (contains "to")
-                if (strpos($auctionDateInput, 'to') !== false) {
-                    [$auctionDateFrom, $auctionDateTo] = explode(' to ', $auctionDateInput);
-                    $auctionDateFrom = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->startOfDay();
-                    $auctionDateTo = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo))->endOfDay();
+                // Ensure it's an array with exactly two elements
+                if (is_array($auctionDateInput) && count($auctionDateInput) === 2) {
+                    [$auctionDateFrom, $auctionDateTo] = $auctionDateInput;
 
-                    $query->whereBetween('sale_date', [$auctionDateFrom, $auctionDateTo]);
+                    if ($auctionDateFrom && $auctionDateTo) {
+                        $auctionDateFrom = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->startOfDay();
+                        $auctionDateTo = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo))->endOfDay();
+
+                        if ($auctionDateFrom->eq($auctionDateTo)) {
+                            // Same date, use whereDate
+                            $query->whereDate('sale_date', $auctionDateFrom);
+                        } else {
+                            // Date range
+                            $query->whereBetween('sale_date', [$auctionDateFrom, $auctionDateTo]);
+                        }
+                    } elseif ($auctionDateFrom && !$auctionDateTo) {
+                        $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->startOfDay();
+                        $query->whereDate('sale_date', $auctionDate);
+                    }
                 } else {
-                    // Single date case
-                    $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', $auctionDateInput)->startOfDay();
-                    $query->whereDate('sale_date', $auctionDate);
+                    return sendResponse(true, 400, "Invalid 'auction_date' format. Expecting an array with two elements.", [], 200);
                 }
             }
 
