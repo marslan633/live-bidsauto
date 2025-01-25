@@ -2277,4 +2277,21 @@ public function filterAttributes(Request $request)
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
+    public function getMaxRecord(Request $request)
+    {
+        // Query to get the record(s) with the maximum value in total_records
+        $records = DB::table('cron_run_history')
+            ->where('total_records', function ($query) {
+                $query->select(DB::raw('MAX(total_records)'))
+                      ->from('cron_run_history');
+            })
+            ->get();
+
+        // Return the result as JSON
+        return response()->json([
+            'status' => true,
+            'data' => $records
+        ]);
+    }
 }
