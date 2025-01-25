@@ -20,3 +20,4 @@ Route::post('/sendQuote', [VehicleController::class, 'sendQuote']);
 Route::get('cron-job-history', [VehicleController::class, 'cronJobHistory']);
 Route::get('get-data-length', [VehicleController::class, 'getDataLength']);
 Route::get('get-max-record', [VehicleController::class, 'getMaxRecord']);
+Route::post('add-data-archived-table', [VehicleController::class, 'processArchievedData']);
