@@ -40,6 +40,11 @@ class ProcessCachedData extends Command
                         ->orderBy('created_at', 'asc')
                         ->take(50)
                         ->get();
+        // Extract IDs of the fetched records
+        $cacheKeyIds = $cacheKeys->pluck('id');
+
+        // Update the status of the fetched records to 'progress'
+        CacheKey::whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);                
 
         foreach ($cacheKeys as $cacheKey) {
             $key = $cacheKey->cache_key;
@@ -48,10 +53,6 @@ class ProcessCachedData extends Command
             $data = Cache::get($key);
 
             if ($data) {
-
-                // Update the status to 'progress' for the current cache key
-                $cacheKey->update(['status' => 'progress']);
-                
                 try {
                     // Process each car data
                     foreach ($data as $car) {
