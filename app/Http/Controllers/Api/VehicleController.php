@@ -40,7 +40,7 @@ class VehicleController extends Controller
 
             // Handling 'Domain'
             if ($request->has('domain_id')) {
-                $query->where('domain_id', $request->input('domain_id'));
+                $query->whereIn('domain_id', $request->input('domain_id'));
             }
 
             // Handling 'bid_amount' sorting
@@ -1921,7 +1921,7 @@ public function filterAttributes(Request $request)
 
             // Apply domain filter if provided
             if ($request->has('domain_id')) {
-                $query->where('domain_id', $request->input('domain_id'));
+                $query->whereIn('domain_id', $request->input('domain_id'));
             }
 
             // Handle the 'buy_now' logic
