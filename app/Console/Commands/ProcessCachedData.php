@@ -86,7 +86,7 @@ class ProcessCachedData extends Command
 
         // Define placeholders for "Unknown"
         $unknownApiId = 0;
-        $unknownName = 'Unknown';
+        $unknownName = 'unknown';
         
         // Process Manufacturer
         $manufacturer = $car['manufacturer'] ? Manufacturer::firstOrCreate(
@@ -253,7 +253,7 @@ class ProcessCachedData extends Command
     private function processLot($vehicleRecord, $lot)
     {
         $unknownApiId = 0;
-        $unknownName = 'Unknown';
+        $unknownName = 'unknown';
         // Determine buy_now_id based on buy_now value
         $buyNowValue = $lot['buy_now'] ?? null;
         $buyNowId = null;
@@ -314,7 +314,7 @@ class ProcessCachedData extends Command
             ['name' => $lot['condition']['name']]
         ) : Condition::firstOrCreate(
             ['condition_api_id' => $unknownConditionApiId],
-            ['name' => 'Unknown']
+            ['name' => 'unknown']
         );
 
         // Process Status

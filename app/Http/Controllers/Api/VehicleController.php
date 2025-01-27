@@ -348,10 +348,10 @@ public function filterAttributes(Request $request)
                 $response[$key] = $existingResults->map(function ($item) use ($relatedNames, $details) {
                     return [
                         "id" => $item->id,
-                        'name' => $relatedNames[$item->id] ?? 'Unknown',
+                        'name' => $relatedNames[$item->id] ?? 'unknown',
                         'count' => $item->count,
                     ];
-                });
+                })->sortBy('name')->values();
 
                 continue; // Skip to the next filter
             }
@@ -386,10 +386,10 @@ public function filterAttributes(Request $request)
             $response[$key] = $results->map(function ($item) use ($relatedNames, $details) {
                 return [
                     "id" => $item->id,
-                    'name' => $relatedNames[$item->id] ?? 'Unknown',
+                    'name' => $relatedNames[$item->id] ?? 'unknown',
                     'count' => $item->count,
                 ];
-            });
+            })->sortBy('name')->values();
         }
 
         // Return only the active filter's data if a specific filter is set
