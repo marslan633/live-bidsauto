@@ -12,12 +12,8 @@ Route::prefix('vehicles')->group(function () {
     Route::post('/', [VehicleController::class, 'vehicleInformations']);
     Route::get('/{id}', [VehicleController::class, 'searchVehicle']);
 });
-Route::post('domain/attributes', [VehicleController::class, 'getRelatedAttributes']);
 Route::post('filter-attributes', [VehicleController::class, 'filterAttributes']);
-Route::get('/test-cron', [VehicleController::class, 'testCron']);
 Route::get('filtered-records-count', [VehicleController::class, 'filteredRecordsCount'])->name('filtered.records.count');
 Route::post('/sendQuote', [VehicleController::class, 'sendQuote']);
 Route::get('cron-job-history', [VehicleController::class, 'cronJobHistory']);
-Route::get('get-data-length', [VehicleController::class, 'getDataLength']);
 Route::get('get-max-record', [VehicleController::class, 'getMaxRecord']);
-Route::post('add-data-archived-table', [VehicleController::class, 'processArchievedData']);

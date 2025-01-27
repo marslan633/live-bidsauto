@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('odometers', function (Blueprint $table) {
             $table->id();
             $table->string('name')->nullable();
-            $table->integer('count')->default(0)->nullable();
             $table->timestamps();
         });
     }
