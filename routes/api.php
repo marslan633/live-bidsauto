@@ -16,4 +16,5 @@ Route::post('filter-attributes', [VehicleController::class, 'filterAttributes'])
 Route::get('filtered-records-count', [VehicleController::class, 'filteredRecordsCount'])->name('filtered.records.count');
 Route::post('/sendQuote', [VehicleController::class, 'sendQuote']);
 Route::get('cron-job-history', [VehicleController::class, 'cronJobHistory']);
+Route::get('cache-key-history', [VehicleController::class, 'cacheKeyHistory']);
 Route::get('get-max-record', [VehicleController::class, 'getMaxRecord']);

@@ -474,6 +474,22 @@ public function filterAttributes(Request $request)
     }
 
     /**
+     * Fetch Cache Key History Records API
+     */
+    public function cacheKeyHistory()
+    {
+        try {
+            // Fetch the latest record(s) from the cron_run_history table
+            $history = CacheKey::orderBy('id', 'desc')->get();
+
+            return sendResponse(true, 200, 'Cache Keys fetched successfully!', $history, 200);
+        } catch (\Exception $ex) {
+            // Handle any exception and return a response
+            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+        }
+    }
+
+    /**
      * Below Function to get those record who has highest value of total_records field.
      */
     public function getMaxRecord(Request $request)
