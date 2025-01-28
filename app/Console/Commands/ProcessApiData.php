@@ -52,7 +52,7 @@ class ProcessApiData extends Command
             'updated_at' => now(),
         ]);
 
-        $minutes = 15; // Time frame in minutes
+        $minutes = 20; // Time frame in minutes
         $perPage = 1000; // Records per page
         $baseUrl = 'http://carstat.dev/api/cars';
         $totalPages = 0;

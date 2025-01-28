@@ -8,6 +8,6 @@ use Illuminate\Console\Scheduling\Schedule;
 //     $this->comment(Inspiring::quote());
 // })->purpose('Display an inspiring quote')->hourly();
 
-app(Schedule::class)->command('process:api-data')->everyMinute()->withoutOverlapping();
-app(Schedule::class)->command('process:cached-data')->everyFiveMinutes()->withoutOverlapping();
+app(Schedule::class)->command('process:api-data')->everyFifteenMinutes()->withoutOverlapping();
+app(Schedule::class)->command('process:cached-data')->everyTenMinutes()->withoutOverlapping();
 app(Schedule::class)->command('process:archived-data')->everyThreeHours();
