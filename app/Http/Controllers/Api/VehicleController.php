@@ -460,11 +460,16 @@ public function filterAttributes(Request $request)
     /**
      * Fetch Cron Job History Records API
      */
-    public function cronJobHistory()
+    public function cronJobHistory(Request $request)
     {
         try {
+            // Pagination
+            $page = $request->input('page', 1);
+            $size = $request->input('size', 10);
+            
             // Fetch the latest record(s) from the cron_run_history table
-            $history = DB::table('cron_run_history')->orderBy('id', 'desc')->get();
+            $history = DB::table('cron_run_history')->orderBy('id', 'desc')
+                    ->skip(($page - 1) * $size)->take($size)->get();
 
             return sendResponse(true, 200, 'Filtered records fetched successfully!', $history, 200);
         } catch (\Exception $ex) {
