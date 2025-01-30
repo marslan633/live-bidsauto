@@ -229,6 +229,10 @@ public function filterAttributes(Request $request)
         $page = $request->input('page', 1); // Default to page 1 if not provided
         $perPage = $request->input('size', 20); // Default to 20 items per page
 
+        // Search parameters
+        $searchAttribute = $request->input('search_attribute');
+        $searchValue = $request->input('search_value');
+
         // Get the current_hit_attribute from the request
         $currentHitAttribute = $request->input('current_hit_attribute');
 
@@ -357,6 +361,35 @@ public function filterAttributes(Request $request)
                 ];
 
                 continue; // Skip to the next filter
+            }
+
+            // If search_attribute is set and valid, perform search
+            if ($searchAttribute && in_array($searchAttribute, $validListings) && $searchValue) {
+                $cloneQuery = clone $query;
+
+                // Fetch filtered results
+                $filteredResults = $cloneQuery->whereHas($filters[$searchAttribute]['relation'], function ($query) use ($searchValue) {
+                    $query->where('name', 'LIKE', "%$searchValue%");
+                })->select("{$filters[$searchAttribute]['column']} as id", DB::raw("COUNT(*) as count"))
+                ->groupBy("{$filters[$searchAttribute]['column']}")
+                ->paginate($perPage, ['*'], 'page', $page);
+
+                // Fetch related names in bulk
+                $relatedNames = DB::table($filters[$searchAttribute]['table'])
+                    ->whereIn('id', $filteredResults->pluck('id'))
+                    ->pluck('name', 'id');
+
+                // Map results to the response structure
+                $response[$searchAttribute] = [
+                    "total" => $filteredResults->total(),
+                    "data" => $filteredResults->map(function ($item) use ($relatedNames) {
+                        return [
+                            "id" => $item->id,
+                            "name" => $relatedNames[$item->id] ?? 'unknown',
+                            "count" => $item->count,
+                        ];
+                    })->sortBy('name')->values()
+                ];
             }
 
             // Apply input filters dynamically for the columns that are listed in the filters array
