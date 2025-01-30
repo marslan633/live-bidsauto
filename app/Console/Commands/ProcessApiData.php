@@ -13,6 +13,8 @@ use App\Models\{
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\CronJobFailedMail;
 
 class ProcessApiData extends Command
 {
@@ -182,6 +184,10 @@ class ProcessApiData extends Command
                 'error_message' => $e->getMessage(),
                 'updated_at' => now(),
             ]);
+
+            // Send email notification
+            $adminEmail = env('ADMIN_EMAIL');
+            Mail::to($adminEmail)->send(new CronJobFailedMail($e->getMessage()));
         }
     }
 }
