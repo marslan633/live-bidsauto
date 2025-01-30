@@ -46,15 +46,30 @@ class ProcessApiData extends Command
         $this->info("Process started at: " . $startDateTime);
         \Log::info("Process started at: " . $startDateTime);
 
+        // Get the last cron job status
+        $lastCron = DB::table('cron_run_history')
+            ->where('cron_name', 'process_vehicle_data')
+            ->latest('start_time')
+            ->first();
+
+        $minutes = 20; // Default minutes value
+    
+        if ($lastCron && $lastCron->status === 'failed') {
+            $minutes = $lastCron->minutes + 20; // Double the minutes if last run failed
+            $this->info("Last cron job failed. Updating minutes to: {$minutes}");
+            \Log::info("Last cron job failed. Updating minutes to: {$minutes}");
+        }
+
         $cronRun = DB::table('cron_run_history')->insertGetId([
             'cron_name' => 'process_vehicle_data',
             'start_time' => $startDateTime,
             'status' => 'running',
+            'minutes' => $minutes,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        $minutes = 20; // Time frame in minutes
+        // $minutes = 20; // Time frame in minutes
         $perPage = 1000; // Records per page
         $baseUrl = 'http://carstat.dev/api/cars';
         $totalPages = 0;
