@@ -70,7 +70,8 @@ class ProcessArchivedData extends Command
                             $data = $pageResponse->json()['data'] ?? [];
 
                             foreach ($data as $car) {
-                                $this->processCarData($car['lot']);
+                                $lot = (int) $car['lot']; 
+                                $this->processCarData($lot);
                             }
 
                             $this->info("Page {$page} processed successfully.");
