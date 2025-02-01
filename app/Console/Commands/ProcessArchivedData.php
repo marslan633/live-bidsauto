@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Models\{VehicleRecord, VehicleRecordArchived, Status};
+use Illuminate\Support\Facades\Mail;
+use App\Mail\CronJobFailedMail;
 
 class ProcessArchivedData extends Command
 {
@@ -29,7 +31,23 @@ class ProcessArchivedData extends Command
      */
     public function handle()
     {
+        $startTime = microtime(true);
+        $startDateTime = Carbon::now();
+        $this->info("Process Archived Data started at: " . $startDateTime);
+        \Log::info("Process Archived Data started at: " . $startDateTime);
+        
         $minutes = 1000; // Time frame in minutes
+
+        $cronRun = DB::table('cron_run_history')->insertGetId([
+            'cron_name' => 'process_archived_data',
+            'start_time' => $startDateTime,
+            'status' => 'running',
+            'minutes' => $minutes,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        
         $perPage = 100; // Records per page
         $baseUrl = 'http://carstat.dev/api/archived-lots';
         $totalPages = 0;
@@ -45,6 +63,15 @@ class ProcessArchivedData extends Command
 
             if ($response->successful()) {
                 $totalRecords = $response->json()['meta']['total'] ?? 0;
+
+                // Update the cron_run_history table with the total records
+                DB::table('cron_run_history')
+                    ->where('id', $cronRun)
+                    ->update([
+                        'total_records' => $totalRecords,
+                        'updated_at' => now(),
+                    ]);
+                    
                 $this->info("Fetching total number of records: {$totalRecords}");
                 \Log::info("Fetching total number of records: {$totalRecords}");
 
@@ -90,9 +117,27 @@ class ProcessArchivedData extends Command
                 $this->error("Failed to fetch total records.");
                 \Log::error("Failed to fetch total records.");
             }
+
+             DB::table('cron_run_history')->where('id', $cronRun)->update([
+                'end_time' => Carbon::now(),
+                'status' => 'success',
+                'updated_at' => now(),
+            ]);
+
         } catch (\Exception $e) {
             $this->error("Error: " . $e->getMessage());
             \Log::error("Error: " . $e->getMessage());
+
+            DB::table('cron_run_history')->where('id', $cronRun)->update([
+                'end_time' => Carbon::now(),
+                'status' => 'failed',
+                'error_message' => $e->getMessage(),
+                'updated_at' => now(),
+            ]);
+
+            // Send email notification
+            $adminEmail = env('ADMIN_EMAIL');
+            Mail::to($adminEmail)->send(new CronJobFailedMail($e->getMessage()));
         }
     }
 
