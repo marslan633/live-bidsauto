@@ -36,7 +36,7 @@ class ProcessArchivedData extends Command
         $this->info("Process Archived Data started at: " . $startDateTime);
         \Log::info("Process Archived Data started at: " . $startDateTime);
         
-        $minutes = 1000; // Time frame in minutes
+        $minutes = 250; // Time frame in minutes
 
         $cronRun = DB::table('cron_run_history')->insertGetId([
             'cron_name' => 'process_archived_data',
