@@ -232,8 +232,8 @@ public function filterAttributes(Request $request)
         ];
 
         $response = [];
-        $page = $request->input('page', 1); // Default to page 1 if not provided
-        $perPage = $request->input('size', 20); // Default to 20 items per page
+        $page = $request->input('page'); // Default to page 1 if not provided
+        $perPage = $request->input('size'); // Default to 20 items per page
 
         // Search parameters
         $searchAttribute = $request->input('search_attribute');
@@ -351,8 +351,15 @@ public function filterAttributes(Request $request)
 
                 // Fetch results
                 $existingResults = $existingResults->select("{$details['column']} as id", DB::raw("COUNT(*) as count"))
-                    ->groupBy("{$details['column']}")
-                    ->paginate($perPage, ['*'], 'page', $page); // Fetch the data here
+                    ->groupBy("{$details['column']}");
+
+                // Apply pagination if parameters exist
+                if (!empty($perPage) && !empty($page)) {
+                    $existingResults = $existingResults->paginate($perPage, ['*'], 'page', $page);
+                } else {
+                    $existingResults = $existingResults->get();
+                }
+
 
                 // Fetch related names in bulk
                 $relatedNames = DB::table($details['table'])
