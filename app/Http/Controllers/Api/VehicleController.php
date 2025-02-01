@@ -100,8 +100,8 @@ class VehicleController extends Controller
                 // Perform query filtering
                 $query->whereBetween('odometer_mi', [$odometerMin, $odometerMax]);
             }
-
-            // Handling 'auction_date' 
+ 
+            // Handling 'auction_date'
             if ($request->has('auction_date')) {
                 $auctionDateInput = $request->input('auction_date');
 
@@ -110,10 +110,16 @@ class VehicleController extends Controller
                     [$auctionDateFrom, $auctionDateTo] = $auctionDateInput;
 
                     if ($auctionDateFrom && $auctionDateTo) {
-                        $auctionDateFrom = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->startOfDay();
-                        $auctionDateTo = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo))->endOfDay();
+                        // Keep Carbon instances for comparisons
+                        $auctionDateFromCarbon = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom));
+                        $auctionDateToCarbon = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo));
 
-                        if ($auctionDateFrom->eq($auctionDateTo)) {
+                        // Format for database query (string values)
+                        $auctionDateFrom = $auctionDateFromCarbon->format('Y-m-d');
+                        $auctionDateTo = $auctionDateToCarbon->format('Y-m-d');
+
+                        // Compare using Carbon instances
+                        if ($auctionDateFromCarbon->equalTo($auctionDateToCarbon)) {
                             // Same date, use whereDate
                             $query->whereDate('sale_date', $auctionDateFrom);
                         } else {
@@ -121,7 +127,7 @@ class VehicleController extends Controller
                             $query->whereBetween('sale_date', [$auctionDateFrom, $auctionDateTo]);
                         }
                     } elseif ($auctionDateFrom && !$auctionDateTo) {
-                        $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->startOfDay();
+                        $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->format('Y-m-d');
                         $query->whereDate('sale_date', $auctionDate);
                     }
                 } else {
@@ -291,7 +297,7 @@ public function filterAttributes(Request $request)
                 ]);
             }
 
-            // Handling 'auction_date' 
+            // Handling 'auction_date'
             if ($request->has('auction_date')) {
                 $auctionDateInput = $request->input('auction_date');
 
@@ -300,10 +306,16 @@ public function filterAttributes(Request $request)
                     [$auctionDateFrom, $auctionDateTo] = $auctionDateInput;
 
                     if ($auctionDateFrom && $auctionDateTo) {
-                        $auctionDateFrom = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->startOfDay();
-                        $auctionDateTo = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo))->endOfDay();
+                        // Keep Carbon instances for comparisons
+                        $auctionDateFromCarbon = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom));
+                        $auctionDateToCarbon = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo));
 
-                        if ($auctionDateFrom->eq($auctionDateTo)) {
+                        // Format for database query (string values)
+                        $auctionDateFrom = $auctionDateFromCarbon->format('Y-m-d');
+                        $auctionDateTo = $auctionDateToCarbon->format('Y-m-d');
+
+                        // Compare using Carbon instances
+                        if ($auctionDateFromCarbon->equalTo($auctionDateToCarbon)) {
                             // Same date, use whereDate
                             $query->whereDate('sale_date', $auctionDateFrom);
                         } else {
@@ -311,7 +323,7 @@ public function filterAttributes(Request $request)
                             $query->whereBetween('sale_date', [$auctionDateFrom, $auctionDateTo]);
                         }
                     } elseif ($auctionDateFrom && !$auctionDateTo) {
-                        $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->startOfDay();
+                        $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->format('Y-m-d');
                         $query->whereDate('sale_date', $auctionDate);
                     }
                 } else {
