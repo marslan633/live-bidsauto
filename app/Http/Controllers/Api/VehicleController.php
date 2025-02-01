@@ -189,6 +189,11 @@ class VehicleController extends Controller
                 'sellerType', 'titleRelation', 'detailedTitle', 'damageMain', 'damageSecond', 
                 'condition', 'image', 'country', 'state', 'city', 'location', 'sellingBranch', 'buyNowRelation'
             ]);
+
+            // If querying from archived data, include SaleAuctionHistory
+            if ($data_source === 'archived') {
+                $query->with('saleHistories.domain', 'saleHistories.status', 'saleHistories.seller'); // Add the relationship
+            }
             
             if ($request->type == 'lot_id') {
                 $query->where('lot_id', $id);

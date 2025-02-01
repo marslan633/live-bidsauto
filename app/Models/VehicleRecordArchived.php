@@ -185,4 +185,12 @@ class VehicleRecordArchived extends Model
     {
         return $this->belongsTo(BuyNow::class);
     }
+
+    /**
+     * Define the one-to-many relationship with SaleAuctionHistory.
+     */
+    public function saleHistories()
+    {
+        return $this->hasMany(SaleAuctionHistory::class, 'vin', 'vin');
+    }
 }
