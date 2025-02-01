@@ -361,16 +361,13 @@ public function filterAttributes(Request $request)
 
 
                 // Map results to the response structure
-                $response[$key] = [
-                    "total" => $existingResults->total(), // Add total count of items
-                    "data" => $existingResults->map(function ($item) use ($relatedNames, $details) {
-                        return [
-                            "id" => $item->id,
-                            'name' => $relatedNames[$item->id] ?? 'unknown',
-                            'count' => $item->count,
-                        ];
-                    })->sortBy('name')->values()
-                ];
+                $response[$key] = $existingResults->map(function ($item) use ($relatedNames, $details) {
+                    return [
+                        "id" => $item->id,
+                        'name' => $relatedNames[$item->id] ?? 'unknown',
+                        'count' => $item->count,
+                    ];
+                })->sortBy('name')->values();
 
                 continue; // Skip to the next filter
             }
@@ -392,16 +389,13 @@ public function filterAttributes(Request $request)
                     ->pluck('name', 'id');
 
                 // Map results to the response structure
-                $response[$searchAttribute] = [
-                    "total" => $filteredResults->total(),
-                    "data" => $filteredResults->map(function ($item) use ($relatedNames) {
-                        return [
-                            "id" => $item->id,
-                            "name" => $relatedNames[$item->id] ?? 'unknown',
-                            "count" => $item->count,
-                        ];
-                    })->sortBy('name')->values()
-                ];
+                $response[$searchAttribute] = $filteredResults->map(function ($item) use ($relatedNames) {
+                    return [
+                        "id" => $item->id,
+                        'name' => $relatedNames[$item->id] ?? 'unknown',
+                        'count' => $item->count,
+                    ];
+                })->sortBy('name')->values();
             }
 
             // Apply input filters dynamically for the columns that are listed in the filters array
@@ -431,16 +425,13 @@ public function filterAttributes(Request $request)
                 ->pluck('name', 'id');
 
             // Map results to the response structure
-            $response[$key] = [
-                'total' => $results->count(), // Total count of records
-                'data' => $results->map(function ($item) use ($relatedNames, $details) {
-                    return [
-                        "id" => $item->id,
-                        'name' => $relatedNames[$item->id] ?? 'unknown',
-                        'count' => $item->count,
-                    ];
-                })->sortBy('name')->values(),
-            ];
+            $response[$key] = $results->map(function ($item) use ($relatedNames, $details) {
+                return [
+                    "id" => $item->id,
+                    'name' => $relatedNames[$item->id] ?? 'unknown',
+                    'count' => $item->count,
+                ];
+            })->sortBy('name')->values();
 
         }
 
