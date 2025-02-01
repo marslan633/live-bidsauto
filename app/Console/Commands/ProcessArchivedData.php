@@ -29,7 +29,7 @@ class ProcessArchivedData extends Command
      */
     public function handle()
     {
-        $minutes = 250; // Time frame in minutes
+        $minutes = 1000; // Time frame in minutes
         $perPage = 100; // Records per page
         $baseUrl = 'http://carstat.dev/api/archived-lots';
         $totalPages = 0;
