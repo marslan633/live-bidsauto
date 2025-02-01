@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\{VehicleRecord, VehicleRecordArchived, Status};
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
+use Illuminate\Support\Facades\Log;
 
 class ProcessArchivedData extends Command
 {
@@ -34,8 +35,8 @@ class ProcessArchivedData extends Command
         $startTime = microtime(true);
         $startDateTime = Carbon::now();
         $this->info("Process Archived Data started at: " . $startDateTime);
-        \Log::info("Process Archived Data started at: " . $startDateTime);
-        
+        Log::info("Process Archived Data started at: " . $startDateTime);
+
         $minutes = 250; // Time frame in minutes
 
         $cronRun = DB::table('cron_run_history')->insertGetId([
@@ -47,8 +48,7 @@ class ProcessArchivedData extends Command
             'updated_at' => now(),
         ]);
 
-        
-        $perPage = 100; // Records per page
+        $perPage = 100;
         $baseUrl = 'http://carstat.dev/api/archived-lots';
         $totalPages = 0;
 
@@ -64,27 +64,26 @@ class ProcessArchivedData extends Command
             if ($response->successful()) {
                 $totalRecords = $response->json()['meta']['total'] ?? 0;
 
-                // Update the cron_run_history table with the total records
                 DB::table('cron_run_history')
                     ->where('id', $cronRun)
                     ->update([
                         'total_records' => $totalRecords,
                         'updated_at' => now(),
                     ]);
-                    
+
                 $this->info("Fetching total number of records: {$totalRecords}");
-                \Log::info("Fetching total number of records: {$totalRecords}");
+                Log::info("Fetching total number of records: {$totalRecords}");
 
                 if ($totalRecords > 0) {
-                    $totalPages = ceil($totalRecords / $perPage); // Calculate total API calls required
+                    $totalPages = ceil($totalRecords / $perPage);
                     $this->info("Total Pages: $totalPages");
-                    \Log::info("Total Pages: $totalPages");
+                    Log::info("Total Pages: $totalPages");
 
                     for ($page = 1; $page <= $totalPages; $page++) {
                         $apiUrl = "{$baseUrl}?minutes={$minutes}&page={$page}&per_page={$perPage}";
 
                         $this->info("Fetching page {$page} of {$totalPages}");
-                        \Log::info("Fetching page {$page} of {$totalPages}, URL: {$apiUrl}");
+                        Log::info("Fetching page {$page} of {$totalPages}, URL: {$apiUrl}");
 
                         $pageResponse = Http::withHeaders([
                             'x-api-key' => env('CAR_API_KEY'),
@@ -97,36 +96,35 @@ class ProcessArchivedData extends Command
                             $data = $pageResponse->json()['data'] ?? [];
 
                             foreach ($data as $car) {
-                                $lot = (int) $car['lot']; 
-                                $this->processCarData($lot);
+                                $this->updateArchivedRecord($car);
                             }
 
                             $this->info("Page {$page} processed successfully.");
-                            \Log::info("Page {$page} processed successfully.");
+                            Log::info("Page {$page} processed successfully.");
                         } else {
                             $this->error("Failed to fetch data for page {$page}.");
-                            \Log::error("Failed to fetch data for page {$page}.");
+                            Log::error("Failed to fetch data for page {$page}.");
                             break;
                         }
                     }
                 } else {
                     $this->info("No records to process.");
-                    \Log::info("No records to process.");
+                    Log::info("No records to process.");
                 }
             } else {
                 $this->error("Failed to fetch total records.");
-                \Log::error("Failed to fetch total records.");
+                Log::error("Failed to fetch total records.");
             }
 
-             DB::table('cron_run_history')->where('id', $cronRun)->update([
+            DB::table('cron_run_history')->where('id', $cronRun)->update([
                 'end_time' => Carbon::now(),
                 'status' => 'success',
                 'updated_at' => now(),
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error("Error: " . $e->getMessage());
-            \Log::error("Error: " . $e->getMessage());
+            Log::error("Error: " . $e->getMessage());
 
             DB::table('cron_run_history')->where('id', $cronRun)->update([
                 'end_time' => Carbon::now(),
@@ -141,23 +139,52 @@ class ProcessArchivedData extends Command
         }
     }
 
-    private function processCarData($lotId)
+    /**
+     * Update VehicleRecordArchived based on lot_id from third-party API response
+     */
+    private function updateArchivedRecord($car)
     {
-        // Check if the record exists in VehicleRecord
-        $record = VehicleRecord::where('lot_id', $lotId)->first();
+        try {
+            $lotId = $car['lot'];
+            $status = $car['status']['name'];
+            $bid = $car['bid'];
+            $finalBidUpdatedAt = $car['final_bid_updated_at'];
 
-        if ($record) {
-            // Move the record to VehicleRecordArchived
-            VehicleRecordArchived::create($record->toArray());
+            $archivedRecord = VehicleRecordArchived::where('lot_id', $lotId)->first();
 
-            // Delete the record from VehicleRecord
-            $record->delete();
+            if ($archivedRecord) {
+                $archivedRecord->update([
+                    'status' => $status,
+                    'bid' => $bid,
+                    'final_bid_updated_at' => $finalBidUpdatedAt,
+                ]);
 
-            $this->info("Archived and deleted record with lot_id: {$lotId}");
-            \Log::info("Archived and deleted record with lot_id: {$lotId}");
-        } else {
-            $this->info("No record found with lot_id: {$lotId}");
-            \Log::info("No record found with lot_id: {$lotId}");
+                Log::info("Updated archived record for lot_id: {$lotId}");
+            } else {
+                Log::warning("Archived record not found for lot_id: {$lotId}");
+            }
+        } catch (Exception $e) {
+            Log::error("Error updating archived record for lot_id: {$lotId} - " . $e->getMessage());
         }
     }
+
+    // private function processCarData($lotId)
+    // {
+    //     // Check if the record exists in VehicleRecord
+    //     $record = VehicleRecord::where('lot_id', $lotId)->first();
+
+    //     if ($record) {
+    //         // Move the record to VehicleRecordArchived
+    //         VehicleRecordArchived::create($record->toArray());
+
+    //         // Delete the record from VehicleRecord
+    //         $record->delete();
+
+    //         $this->info("Archived and deleted record with lot_id: {$lotId}");
+    //         \Log::info("Archived and deleted record with lot_id: {$lotId}");
+    //     } else {
+    //         $this->info("No record found with lot_id: {$lotId}");
+    //         \Log::info("No record found with lot_id: {$lotId}");
+    //     }
+    // }
 }
