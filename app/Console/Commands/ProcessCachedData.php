@@ -13,6 +13,8 @@ use App\Models\{
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\CronJobFailedMail;
 
 class ProcessCachedData extends Command
 {
@@ -70,6 +72,11 @@ class ProcessCachedData extends Command
                 'error_message' => $e->getMessage(),
                 'updated_at' => now(),
             ]);
+
+            // Send email notification
+            $cronJobName = 'process_cached_data';
+            $adminEmails = explode(',', env('ADMIN_EMAIL'));
+            Mail::to($adminEmails)->send(new CronJobFailedMail($e->getMessage(), $cronJobName));
             return; // Exit to prevent further processing
         }
 
