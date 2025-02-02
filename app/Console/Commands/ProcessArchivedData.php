@@ -25,7 +25,7 @@ class ProcessArchivedData extends Command
      *
      * @var string
      */
-    protected $description = 'Move archived data from VehicleRecord to VehicleRecordArchived based on status_id';
+    protected $description = 'Update the data of archived vehicle table on the base of third party api';
 
     /**
      * Execute the console command.
