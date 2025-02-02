@@ -35,47 +35,88 @@ class ProcessCachedData extends Command
      */
     public function handle()
     {
-        // Get all cache keys for API data
-        $cacheKeys = CacheKey::where('cache_key', 'like', 'vehicle_data%')->where('status', 'pending')
-                        ->orderBy('created_at', 'asc')
-                        ->take(50)
-                        ->get();
-        // Extract IDs of the fetched records
-        $cacheKeyIds = $cacheKeys->pluck('id');
+        $startDateTime = Carbon::now();
+        $this->info("Process started at: " . $startDateTime);
+        \Log::info("Process started at: " . $startDateTime);
 
-        // Update the status of the fetched records to 'progress'
-        CacheKey::whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);                
+        try {
+            $cronRun = DB::table('cron_run_history')->insertGetId([
+                'cron_name' => 'process_cached_data',
+                'start_time' => $startDateTime,
+                'status' => 'running',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // Get all cache keys for API data
+            $cacheKeys = CacheKey::where('cache_key', 'like', 'vehicle_data%')
+                ->where('status', 'pending')
+                ->orderBy('created_at', 'asc')
+                ->take(50)
+                ->get();
+
+            // Extract IDs of the fetched records
+            $cacheKeyIds = $cacheKeys->pluck('id');
+
+            if ($cacheKeyIds->isNotEmpty()) {
+                // Update the status of the fetched records to 'progress'
+                CacheKey::whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
+            }
+        } catch (\Exception $e) {
+            $this->error("Error fetching cache keys or updating status: " . $e->getMessage());
+            DB::table('cron_run_history')->where('id', $cronRun)->update([
+                'end_time' => Carbon::now(),
+                'status' => 'failed',
+                'error_message' => $e->getMessage(),
+                'updated_at' => now(),
+            ]);
+            return; // Exit to prevent further processing
+        }
 
         foreach ($cacheKeys as $cacheKey) {
             $key = $cacheKey->cache_key;
-            
-            // Retrieve data from cache
-            $data = Cache::get($key);
 
-            if ($data) {
+            try {
+                // Retrieve data from cache
+                $data = Cache::get($key);
+                
+                if (!$data) {
+                    $this->warning("No data found in cache for key: {$key}");
+                    continue;
+                }
+
+                // Process each car data
+                foreach ($data as $car) {
+                    $this->processCarData($car);
+                }
+
+                // Log success and remove cache
+                $this->info("Data for cache key '{$key}' processed successfully.");
+
+                // Delete the cache key from the table
+                CacheKey::where('cache_key', $key)->delete();
+
+                // Remove processed data from cache
+                Cache::forget($key);
+            } catch (\Exception $e) {
+                // Log any errors encountered during processing
+                $this->error("Error processing data for cache key {$key}: " . $e->getMessage());
+                
                 try {
-                    // Process each car data
-                    foreach ($data as $car) {
-                        $this->processCarData($car);
-                    }
-
-                    // Log success and remove cache
-                    $this->info("Data for cache key '{$key}' processed successfully.");
-                    
-                    // Delete the cache key from the table
-                    CacheKey::where('cache_key', $key)->delete();
-
-                    // Remove processed data from cache
-                    Cache::forget($key);
-                } catch (\Exception $e) {
-                    // Log any errors encountered during processing
-                    $this->error("Error processing data for cache key {$key}: " . $e->getMessage());
-
                     // Optionally revert the status to 'pending' on failure
                     $cacheKey->update(['status' => 'pending']);
+                } catch (\Exception $updateError) {
+                    $this->error("Failed to revert status for cache key {$key}: " . $updateError->getMessage());
                 }
             }
         }
+
+        // Mark cron as successful
+        DB::table('cron_run_history')->where('id', $cronRun)->update([
+            'end_time' => Carbon::now(),
+            'status' => 'success',
+            'updated_at' => now(),
+        ]);
     }
     
     private function processCarData(array $car)
