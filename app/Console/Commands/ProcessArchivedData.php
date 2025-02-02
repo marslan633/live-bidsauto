@@ -43,10 +43,10 @@ class ProcessArchivedData extends Command
             ->latest('start_time')
             ->first();
 
-        $minutes = 250; // Time frame in minutes
+        $minutes = 45; // Time frame in minutes
 
         if ($lastCron && $lastCron->status === 'failed') {
-            $minutes = $lastCron->minutes + 250; // Double the minutes if last run failed
+            $minutes = $lastCron->minutes + 45; // Double the minutes if last run failed
             $this->info("Last cron job failed. Updating minutes to: {$minutes}");
             \Log::info("Last cron job failed. Updating minutes to: {$minutes}");
         }
@@ -60,7 +60,7 @@ class ProcessArchivedData extends Command
             'updated_at' => now(),
         ]);
 
-        $perPage = 100;
+        $perPage = 1000;
         $baseUrl = 'http://carstat.dev/api/archived-lots';
         $totalPages = 0;
 
