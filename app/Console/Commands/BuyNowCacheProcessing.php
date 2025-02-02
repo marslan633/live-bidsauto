@@ -3,6 +3,12 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\CronJobFailedMail;
+use App\Models\{CacheKey, VehicleRecord};
 
 class BuyNowCacheProcessing extends Command
 {
@@ -25,22 +31,45 @@ class BuyNowCacheProcessing extends Command
      */
     public function handle()
     {
-        // Fetch and update cache keys in a single query
-        $cacheKeys = CacheKey::where('cache_key', 'like', 'buy_now_data%')
-                            ->where('status', 'pending')
-                            ->orderBy('created_at', 'asc')
-                            ->take(50)
-                            ->get();
+        $startDateTime = Carbon::now();
+        $this->info("Process started at: " . $startDateTime);
+        \Log::info("Process started at: " . $startDateTime);
 
-        if ($cacheKeys->isEmpty()) {
-            $this->info('No pending cache keys found.');
+        try {
+            $cronRun = DB::table('cron_run_history')->insertGetId([
+                'cron_name' => 'process_buy_now_data',
+                'start_time' => $startDateTime,
+                'status' => 'running',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // Fetch and update cache keys in a single query
+            $cacheKeys = CacheKey::where('cache_key', 'like', 'buy_now_data%')
+                                ->where('status', 'pending')
+                                ->orderBy('created_at', 'asc')
+                                ->take(50)
+                                ->get();
+
+            if ($cacheKeys->isEmpty()) {
+                $this->info('No pending cache keys found.');
+                return;
+            }
+
+            $cacheKeyIds = $cacheKeys->pluck('id');
+
+            // Update status to 'progress' in a single query
+            CacheKey::whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
+        } catch (\Exception $e) {
+            $this->error("Error fetching cache keys or updating status: " . $e->getMessage());
+            DB::table('cron_run_history')->where('id', $cronRun)->update([
+                'end_time' => Carbon::now(),
+                'status' => 'failed',
+                'error_message' => $e->getMessage(),
+                'updated_at' => now(),
+            ]);
             return;
         }
-
-        $cacheKeyIds = $cacheKeys->pluck('id');
-
-        // Update status to 'progress' in a single query
-        CacheKey::whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
 
         foreach ($cacheKeys as $cacheKey) {
             $key = $cacheKey->cache_key;
@@ -76,8 +105,19 @@ class BuyNowCacheProcessing extends Command
                 \Log::error("Error processing cache key '{$key}': " . $e->getMessage());
 
                 // Revert the status back to 'pending' in case of failure
-                $cacheKey->update(['status' => 'pending']);
+                try {
+                    $cacheKey->update(['status' => 'pending']);
+                } catch (\Exception $updateError) {
+                    $this->error("Failed to revert status for cache key '{$key}': " . $updateError->getMessage());
+                }
             }
         }
+
+        // Mark cron as successful
+        DB::table('cron_run_history')->where('id', $cronRun)->update([
+            'end_time' => Carbon::now(),
+            'status' => 'success',
+            'updated_at' => now(),
+        ]);
     }
 }
