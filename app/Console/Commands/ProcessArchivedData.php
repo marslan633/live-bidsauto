@@ -134,8 +134,9 @@ class ProcessArchivedData extends Command
             ]);
 
             // Send email notification
-            $adminEmail = env('ADMIN_EMAIL');
-            Mail::to($adminEmail)->send(new CronJobFailedMail($e->getMessage()));
+            $cronJobName = 'process_archived_data';
+            $adminEmails = explode(',', env('ADMIN_EMAIL'));
+            Mail::to($adminEmails)->send(new CronJobFailedMail($e->getMessage(), $cronJobName));
         }
     }
 

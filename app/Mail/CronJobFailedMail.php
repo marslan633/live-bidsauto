@@ -14,14 +14,16 @@ class CronJobFailedMail extends Mailable
     use Queueable, SerializesModels;
     
     public $errorMessage;
+    public $cronJobName;
 
 
     /**
      * Create a new message instance.
      */
-    public function __construct($errorMessage)
+    public function __construct($errorMessage, $cronJobName)
     {
         $this->errorMessage = $errorMessage;
+        $this->cronJobName = $cronJobName;
     }
 
     /**
@@ -30,7 +32,7 @@ class CronJobFailedMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Cron Job Failed Mail',
+            subject: 'Cron Job Failed Mail '. $this->cronJobName,
         );
     }
 

@@ -114,7 +114,9 @@ class BuyNowDataProcessing extends Command
                 'updated_at' => now(),
             ]);
 
-            Mail::to(env('ADMIN_EMAIL'))->send(new CronJobFailedMail($e->getMessage()));
+            $cronJobName = 'process_buy_now_data';
+            $adminEmails = explode(',', env('ADMIN_EMAIL'));
+            Mail::to($adminEmails)->send(new CronJobFailedMail($e->getMessage(), $cronJobName));
         }
 
         $endTime = microtime(true);

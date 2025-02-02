@@ -178,7 +178,7 @@
                                 text-align: left;
                               "
                             >
-                              Cron Job Failed
+                              Cron Job Failed: {{ $cronJobName }}
                             </p>
 
                             <p
