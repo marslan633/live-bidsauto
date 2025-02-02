@@ -49,7 +49,7 @@ class ArchiveExpiredAuctions extends Command
                 'updated_at' => now(),
             ]);
         
-            $expiredRecords = VehicleRecord::where('sale_date', '<', now())->get();
+            $expiredRecords = VehicleRecord::whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [now()])->get();
 
             if ($expiredRecords->isEmpty()) {
                 $this->info("No expired auctions found.");

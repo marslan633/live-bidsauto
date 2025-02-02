@@ -570,8 +570,21 @@ public function filterAttributes(Request $request)
         ]);
     }
     public function testApi() {
-        $expiredRecords = VehicleRecord::where('sale_date', '<', now())->take(10)->get();
+        // $now = now();
+        // $sale_date = "2025-02-05T15:00:00.000000Z";
+        
+        // if($now < $sale_date) {
+        //     return "now < sale_date".now();
+        // } else if($now > $sale_date) {
+        //     return "now > sale_date".now();
+        // }
+        // $expiredRecords = VehicleRecord::where('sale_date', '>', now())->take(100)->get();
 
+        // return $expiredRecords;
+
+        $expiredRecords = VehicleRecord::whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [now()])
+            ->take(100)
+            ->get();
         return $expiredRecords;
     }
 }
