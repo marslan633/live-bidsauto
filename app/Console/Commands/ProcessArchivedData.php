@@ -147,7 +147,7 @@ class ProcessArchivedData extends Command
     {
         try {
             $lotId = $car['lot'];
-            $status = $car['status']['name'];
+            $status_id = $car['status']['id'];
             $bid = $car['bid'];
             $finalBidUpdatedAt = $car['final_bid_updated_at'];
 
@@ -155,7 +155,7 @@ class ProcessArchivedData extends Command
 
             if ($archivedRecord) {
                 $archivedRecord->update([
-                    'status' => $status,
+                    'status_id' => $status_id,
                     'bid' => $bid,
                     'final_bid_updated_at' => $finalBidUpdatedAt,
                 ]);

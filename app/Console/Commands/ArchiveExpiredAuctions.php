@@ -38,8 +38,8 @@ class ArchiveExpiredAuctions extends Command
 
             $startTime = microtime(true);
             $startDateTime = Carbon::now();
-            $this->info("Process Archived Data started at: " . $startDateTime);
-            \Log::info("Process Archived Data started at: " . $startDateTime);
+            $this->info("Process Archived Expired Auction Data started at: " . $startDateTime);
+            \Log::info("Process Archived Expired Auction Data started at: " . $startDateTime);
 
             $cronRun = DB::table('cron_run_history')->insertGetId([
                 'cron_name' => 'process_auction_archive',
