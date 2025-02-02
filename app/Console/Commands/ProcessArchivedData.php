@@ -6,7 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use App\Models\{VehicleRecord, VehicleRecordArchived, Status};
+use App\Models\{VehicleRecord, VehicleRecordArchived, Status, SaleAuctionHistory};
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
 use Illuminate\Support\Facades\Log;
@@ -173,6 +173,22 @@ class ProcessArchivedData extends Command
                 ]);
 
                 Log::info("Updated archived record for lot_id: {$lotId}");
+                // Get the latest SaleAuctionHistory for this lot_id
+                $latestSaleHistory = SaleAuctionHistory::where('lot_id', $lotId)
+                    ->orderByDesc('sale_date') // Assuming sale_date is used to determine the latest entry
+                    ->first();
+
+                if ($latestSaleHistory) {
+                    // Update the latest SaleAuctionHistory record
+                    $latestSaleHistory->update([
+                        'status_id' => $status_id,
+                        'bid' => $bid,
+                    ]);
+
+                    Log::info("Updated latest sale history for lot_id: {$lotId}");
+                } else {
+                    Log::warning("No sale history found for lot_id: {$lotId}");
+                }
             } else {
                 Log::warning("Archived record not found for lot_id: {$lotId}");
             }

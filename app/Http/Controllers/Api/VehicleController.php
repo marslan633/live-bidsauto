@@ -190,9 +190,10 @@ class VehicleController extends Controller
                 'condition', 'image', 'country', 'state', 'city', 'location', 'sellingBranch', 'buyNowRelation'
             ]);
 
-            // If querying from archived data, include SaleAuctionHistory
-            if ($data_source === 'archived') {
-                $query->with('saleHistories.domain', 'saleHistories.status', 'saleHistories.seller'); // Add the relationship
+            // If querying from archived data and is_history is true, include SaleAuctionHistory
+            $includeHistory = filter_var($request->input('is_history', false), FILTER_VALIDATE_BOOLEAN);
+            if ($data_source === 'archived' && $includeHistory) {
+                $query->with('saleHistories.domain', 'saleHistories.status', 'saleHistories.seller');
             }
             
             if ($request->type == 'lot_id') {
