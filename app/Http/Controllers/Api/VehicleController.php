@@ -569,4 +569,9 @@ public function filterAttributes(Request $request)
             'data' => $records
         ]);
     }
+    public function testApi() {
+        $expiredRecords = VehicleRecord::where('sale_date', '<', now())->take(10)->get();
+
+        return $expiredRecords;
+    }
 }

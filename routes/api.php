@@ -18,3 +18,4 @@ Route::post('/sendQuote', [VehicleController::class, 'sendQuote']);
 Route::get('cron-job-history', [VehicleController::class, 'cronJobHistory']);
 Route::get('cache-key-history', [VehicleController::class, 'cacheKeyHistory']);
 Route::get('get-max-record', [VehicleController::class, 'getMaxRecord']);
+Route::get('test-api', [VehicleController::class, 'testApi']);
