@@ -33,7 +33,7 @@ class RestoreArchivedAuctions extends Command
                 'updated_at' => now(),
             ]);
 
-            $archivedRecords = VehicleRecordArchived::take(10)->get();
+            $archivedRecords = VehicleRecordArchived::all();
 
             if ($archivedRecords->isEmpty()) {
                 $this->info("No archived auctions found to restore.");
