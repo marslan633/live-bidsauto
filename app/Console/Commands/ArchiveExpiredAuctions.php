@@ -63,7 +63,16 @@ class ArchiveExpiredAuctions extends Command
             }
 
             foreach ($expiredRecords as $record) {
-                VehicleRecordArchived::create($record->toArray());
+                // Check if the record already exists in VehicleRecordArchived
+                $archivedRecord = VehicleRecordArchived::where('vin', $record->vin)->first();
+
+                if ($archivedRecord) {
+                    // If it exists, update the existing record
+                    $archivedRecord->update($record->toArray());
+                } else {
+                    // If it doesn't exist, create a new one
+                    VehicleRecordArchived::create($record->toArray());
+                }
 
                 // Insert record into SaleAuctionHistory
                 SaleAuctionHistory::create([

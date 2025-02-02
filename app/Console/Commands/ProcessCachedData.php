@@ -36,7 +36,7 @@ class ProcessCachedData extends Command
     public function handle()
     {
         // Get all cache keys for API data
-        $cacheKeys = CacheKey::where('status', 'pending')
+        $cacheKeys = CacheKey::where('cache_key', 'like', 'vehicle_data%')->where('status', 'pending')
                         ->orderBy('created_at', 'asc')
                         ->take(50)
                         ->get();
