@@ -43,7 +43,7 @@ class ProcessArchivedData extends Command
             ->latest('start_time')
             ->first();
 
-        $minutes = 45; // Time frame in minutes
+        $minutes = 4320; // Time frame in minutes
 
         if ($lastCron && $lastCron->status === 'failed') {
             $minutes = $lastCron->minutes + 45; // Double the minutes if last run failed
@@ -60,7 +60,7 @@ class ProcessArchivedData extends Command
             'updated_at' => now(),
         ]);
 
-        $perPage = 1000;
+        $perPage = 400;
         $baseUrl = 'http://carstat.dev/api/archived-lots';
         $totalPages = 0;
 
