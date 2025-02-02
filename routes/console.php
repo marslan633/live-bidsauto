@@ -35,8 +35,8 @@ app(Schedule::class)
         // Remove the lock when process:archived-data completes
         Cache::forget('process:archived-data:running');
 
-        // Run process:api-data asynchronously after process:archived-data finishes
-        Artisan::queue('process:api-data');
+        // Run process:api-data immediately after process:archived-data finishes
+        Artisan::call('process:api-data');
     });
 
 app(Schedule::class)->command('auction:archive')->everyThirtyMinutes()->withoutOverlapping();
