@@ -89,6 +89,10 @@ class ProcessCachedData extends Command
                 
                 if (!$data) {
                     $this->warning("No data found in cache for key: {$key}");
+                    \Log::info("No data found in cache for key: {$key}");
+                    
+                    // Remove the cache key from the database
+                    CacheKey::where('cache_key', $key)->delete();
                     continue;
                 }
 

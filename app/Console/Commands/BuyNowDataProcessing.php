@@ -38,6 +38,35 @@ class BuyNowDataProcessing extends Command
         $this->info("Process started at: " . $startDateTime);
         \Log::info("Process started at: " . $startDateTime);
 
+        // Get the last cron job status
+        $lastCron = DB::table('cron_run_history')
+            ->where('cron_name', 'process_buy_now_data')
+            ->where('status', 'success')
+            ->latest('start_time')
+            ->first();
+
+        $minutes = 20;
+
+        if ($lastCron && $lastCron->end_time) {
+            // Convert end_time to Carbon instance
+            $endTime = Carbon::parse($lastCron->end_time);
+            
+            // Get the difference in minutes (ensure it's a non-negative integer)
+            $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
+            $this->info("Time Difference: {$timeDifference}");
+            \Log::info("Time Difference: {$timeDifference}");
+            
+            // Apply the new conditions
+            if ($timeDifference > 20) {
+                $minutes = $timeDifference + 10;
+            } elseif ($timeDifference === 20) {
+                $minutes = $timeDifference + 5;
+            }
+        }
+
+        $this->info("Minutes Parameter After Checking: {$minutes}");
+        \Log::info("Minutes Parameter After Checking: {$minutes}");
+        
         // Create an entry in cron_run_history
         $cronRun = DB::table('cron_run_history')->insertGetId([
             'cron_name' => 'process_buy_now_data',
@@ -47,9 +76,9 @@ class BuyNowDataProcessing extends Command
             'updated_at' => now(),
         ]);
 
-        $minutes = 1000;
-        $perPage = 1000;
-        $baseUrl = 'https://carstat.dev/api/archived-lots';
+        
+        $perPage = 5000;
+        $baseUrl = 'https://carstat.dev/api/fast-prices';
         $apiUrl = "{$baseUrl}?minutes={$minutes}&per_page={$perPage}&page=1";
 
         try {
@@ -65,7 +94,7 @@ class BuyNowDataProcessing extends Command
                     if ($response->successful()) {
                         $data = $response->json()['data'] ?? [];
                         $cacheKey = 'buy_now_data_' . now()->format('Y_m_d_H_i_s');
-                        $expiresAt = now()->addMinutes(240);
+                        $expiresAt = now()->addMinutes(300);
 
                         if (count($data) > 0) {
                             Cache::put($cacheKey, $data, $expiresAt);

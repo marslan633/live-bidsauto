@@ -77,6 +77,10 @@ class BuyNowCacheProcessing extends Command
 
             if (!$data) {
                 $this->info("Cache key '{$key}' has no data or expired.");
+                \Log::info("No data found in cache for key: {$key}");
+                
+                // Remove the cache key from the database
+                CacheKey::where('cache_key', $key)->delete();
                 continue;
             }
 

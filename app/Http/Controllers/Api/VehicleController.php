@@ -569,16 +569,34 @@ public function filterAttributes(Request $request)
             'data' => $records
         ]);
     }
+
+    public function removeStaleCacheKeys()
+    {
+        // Fetch all cache keys with status 'progress'
+        $progressCacheKeys = CacheKey::where('status', 'progress')->get();
+
+        foreach ($progressCacheKeys as $cacheKey) {
+            $key = $cacheKey->cache_key;
+
+            // Check if the key exists in the cache
+            if (!Cache::has($key)) {
+
+                // Delete the key from the database
+                CacheKey::where('cache_key', $key)->delete();
+            }
+        }
+        return sendResponse(true, 200, 'Removing stale cache key successfully!', [], 200);
+    }
+
     public function testApi(Request $request) {
-        
-        // Get the last cron job record
+      // Get the last cron job status
         $lastCron = DB::table('cron_run_history')
-            ->where('cron_name', 'process_vehicle_data')
+            ->where('cron_name', 'process_buy_now_data')
             ->where('status', 'success')
             ->latest('start_time')
             ->first();
 
-        $minutes = 20; // Default minutes value
+        $minutes = 10;
 
         if ($lastCron && $lastCron->end_time) {
             // Convert end_time to Carbon instance
@@ -588,14 +606,81 @@ public function filterAttributes(Request $request)
             $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
             
             // Apply the new conditions
-            if ($timeDifference > 20) {
+            if ($timeDifference > 10) {
                 $minutes = $timeDifference + 10;
-            } elseif ($timeDifference === 20) {
+            } elseif ($timeDifference === 10) {
                 $minutes = $timeDifference + 5;
             }
         }
 
         return $minutes;
+
+
+            // Fetch and update cache keys in a single query
+            $cacheKeys = CacheKey::where('cache_key', 'like', 'buy_now_data%')
+                                ->where('status', 'pending')
+                                ->orderBy('created_at', 'asc')
+                                ->take(50)
+                                ->get();
+
+
+            $cacheKeyIds = $cacheKeys->pluck('id');
+
+
+            // Update status to 'progress' in a single query
+            // CacheKey::whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
+        
+
+        foreach ($cacheKeys as $cacheKey) {
+
+            
+            $key = $cacheKey->cache_key;
+            $data = Cache::get($key);
+
+            
+                // Bulk update vehicles instead of looping individually
+                $lotIds = collect($data)->pluck('lot')->toArray();
+
+
+                // Fetch vehicles in a single query
+                $vehicles = VehicleRecord::whereIn('lot_id', $lotIds)->get()->keyBy('lot_id');
+
+
+                foreach ($data as $car) {
+                    if (isset($vehicles[$car['lot']])) {
+                        $vehicles[$car['lot']]->update(['buy_now' => $car['buy_now']['value']]);
+                    }
+                }
+
+                return 'yes';
+            
+        }
+
+        // Get the last cron job record
+        // $lastCron = DB::table('cron_run_history')
+        //     ->where('cron_name', 'process_vehicle_data')
+        //     ->where('status', 'success')
+        //     ->latest('start_time')
+        //     ->first();
+
+        // $minutes = 20; // Default minutes value
+
+        // if ($lastCron && $lastCron->end_time) {
+        //     // Convert end_time to Carbon instance
+        //     $endTime = Carbon::parse($lastCron->end_time);
+            
+        //     // Get the difference in minutes (ensure it's a non-negative integer)
+        //     $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
+            
+        //     // Apply the new conditions
+        //     if ($timeDifference > 20) {
+        //         $minutes = $timeDifference + 10;
+        //     } elseif ($timeDifference === 20) {
+        //         $minutes = $timeDifference + 5;
+        //     }
+        // }
+
+        // return $minutes;
         // $now = now();
         // $sale_date = "2025-02-05T15:00:00.000000Z";
         

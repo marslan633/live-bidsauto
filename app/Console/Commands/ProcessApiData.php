@@ -140,7 +140,7 @@ class ProcessApiData extends Command
                             
                             // Save all data to cache with a unique cache key
                             $cacheKey = 'vehicle_data_' . now()->format('Y_m_d_H_i_s');
-                            $expiresAt = now()->addMinutes(240); // Store for 4 hour
+                            $expiresAt = now()->addMinutes(300); // Store for 4 hour
                             $this->info("cache key {$cacheKey}.");
                             \Log::info("cache key {$cacheKey}.");
                             
