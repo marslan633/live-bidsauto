@@ -62,6 +62,7 @@ class ProcessApiData extends Command
             // Get the difference in minutes (ensure it's a non-negative integer)
             $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
             $this->info("Time Difference: {$timeDifference}");
+            \Log::info("Time Difference: {$timeDifference}");
             
             // Apply the new conditions
             if ($timeDifference > 20) {
@@ -72,6 +73,7 @@ class ProcessApiData extends Command
         }
 
         $this->info("Minutes Parameter After Checking: {$minutes}");
+        \Log::info("Minutes Parameter After Checking: {$minutes}");
 
         $cronRun = DB::table('cron_run_history')->insertGetId([
             'cron_name' => 'process_vehicle_data',
