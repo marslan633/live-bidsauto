@@ -24,10 +24,10 @@ app(Schedule::class)->command('process:cached-data')->everyTenMinutes()->without
 /**
  * Cron Job - Move expired auctions from VehicleRecord to VehicleRecordArchived table.
 */  
-// app(Schedule::class)->command('auction:archive')->dailyAt('13:00')->withoutOverlapping();
+app(Schedule::class)->command('auction:archive')->dailyAt('06:20')->withoutOverlapping();
 
 
 /**
  * Cron Job - Update the data (bid, final_bid_updated_at, status) of archived vehicle table on the base of third party api.
 */  
-// app(Schedule::class)->command('process:archived-data')->dailyAt('17:00')->withoutOverlapping();
+app(Schedule::class)->command('process:archived-data')->dailyAt('10:00')->withoutOverlapping();
