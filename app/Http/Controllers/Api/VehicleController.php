@@ -569,7 +569,33 @@ public function filterAttributes(Request $request)
             'data' => $records
         ]);
     }
-    public function testApi() {
+    public function testApi(Request $request) {
+        
+        // Get the last cron job record
+        $lastCron = DB::table('cron_run_history')
+            ->where('cron_name', 'process_vehicle_data')
+            ->where('status', 'success')
+            ->latest('start_time')
+            ->first();
+
+        $minutes = 20; // Default minutes value
+
+        if ($lastCron && $lastCron->end_time) {
+            // Convert end_time to Carbon instance
+            $endTime = Carbon::parse($lastCron->end_time);
+            
+            // Get the difference in minutes (ensure it's a non-negative integer)
+            $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
+            
+            // Apply the new conditions
+            if ($timeDifference > 20) {
+                $minutes = $timeDifference + 10;
+            } elseif ($timeDifference === 20) {
+                $minutes = $timeDifference + 5;
+            }
+        }
+
+        return $minutes;
         // $now = now();
         // $sale_date = "2025-02-05T15:00:00.000000Z";
         

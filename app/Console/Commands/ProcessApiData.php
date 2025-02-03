@@ -49,16 +49,29 @@ class ProcessApiData extends Command
         // Get the last cron job status
         $lastCron = DB::table('cron_run_history')
             ->where('cron_name', 'process_vehicle_data')
+            ->where('status', 'success')
             ->latest('start_time')
             ->first();
 
         $minutes = 20; // Default minutes value
     
-        if ($lastCron && $lastCron->status === 'failed') {
-            $minutes = $lastCron->minutes + 20; // Double the minutes if last run failed
-            $this->info("Last cron job failed. Updating minutes to: {$minutes}");
-            \Log::info("Last cron job failed. Updating minutes to: {$minutes}");
+        if ($lastCron && $lastCron->end_time) {
+            // Convert end_time to Carbon instance
+            $endTime = Carbon::parse($lastCron->end_time);
+            
+            // Get the difference in minutes (ensure it's a non-negative integer)
+            $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
+            $this->info("Time Difference: {$timeDifference}");
+            
+            // Apply the new conditions
+            if ($timeDifference > 20) {
+                $minutes = $timeDifference + 10;
+            } elseif ($timeDifference === 20) {
+                $minutes = $timeDifference + 5;
+            }
         }
+
+        $this->info("Minutes Parameter After Checking: {$minutes}");
 
         $cronRun = DB::table('cron_run_history')->insertGetId([
             'cron_name' => 'process_vehicle_data',
