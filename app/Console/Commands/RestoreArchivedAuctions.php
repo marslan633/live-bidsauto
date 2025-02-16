@@ -58,7 +58,7 @@ class RestoreArchivedAuctions extends Command
             }
 
             $count = $archivedRecords->count();
-            
+
             $this->info("Successfully restored {$count} archived auctions and cleaned up SaleAuctionHistory.");
             Log::info("Successfully restored {$count} archived auctions and cleaned up SaleAuctionHistory.");
 

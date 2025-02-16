@@ -4,12 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
-use App\Models\{
-    VehicleRecord, Manufacturer, VehicleModel, Generation, BodyType, Color,
-    Transmission, DriveWheel, Fuel, Condition, Status, VehicleType, Domain,
-    Engine, Seller, SellerType, Title, DetailedTitle, Damage, Image, Country,
-    State, City, Location, SellingBranch, Year, BuyNow, Odometer, CacheKey
-};
+use App\Models\{CacheKey};
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
@@ -43,8 +38,10 @@ class ProcessApiData extends Command
     {
         $startTime = microtime(true);
         $startDateTime = Carbon::now();
-        $this->info("Process started at: " . $startDateTime);
-        \Log::info("Process started at: " . $startDateTime);
+        if(config('app.env') !== 'production'){
+            $this->info("Process started at: " . $startDateTime);
+            \Log::info("Process started at: " . $startDateTime);
+        }
 
         // Get the last cron job status
         $lastCron = DB::table('cron_run_history')
@@ -61,8 +58,10 @@ class ProcessApiData extends Command
 
             // Get the difference in minutes (ensure it's a non-negative integer)
             $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
+        if(config('app.env') !== 'production'){
             $this->info("Time Difference: {$timeDifference}");
             \Log::info("Time Difference: {$timeDifference}");
+        }
 
             // Apply the new conditions
             if ($timeDifference > 20) {
@@ -72,8 +71,10 @@ class ProcessApiData extends Command
             }
         }
 
-        $this->info("Minutes Parameter After Checking: {$minutes}");
-        \Log::info("Minutes Parameter After Checking: {$minutes}");
+        if(config('app.env') !== 'production'){
+            $this->info("Minutes Parameter After Checking: {$minutes}");
+            \Log::info("Minutes Parameter After Checking: {$minutes}");
+        }
 
         $cronRun = DB::table('cron_run_history')->insertGetId([
             'cron_name' => 'process_vehicle_data',
@@ -89,19 +90,23 @@ class ProcessApiData extends Command
         $minutes = 1600;
         $apiUrl = "{$baseUrl}?per_page={$perPage}&minutes={$minutes}&simple_paginate=1&page=1";
         // $apiUrl = "{$baseUrl}?per_page={$perPage}&simple_paginate=1&page=1";
-        \Log::info("API: {$apiUrl}");
+        if(config('app.env') !== 'production'){
+            \Log::info("API: {$apiUrl}");
+        }
 
         try {
             do {
                 // Fetch fresh data from API
                 $response = Http::withHeaders([
-                    'x-api-key' => '3c202267f5e7200b82ca70c4af9e5a89',
+                    'x-api-key' => config('app.car_api_key'),
                 ])
                 ->timeout(120)
                 ->retry(3, 1000)
                 ->get($apiUrl);
 
-                \Log::info("API URL: {$apiUrl}");
+                if(config('app.env') !== 'production'){
+                    \Log::info("API URL: {$apiUrl}");
+                }
 
                 if ($response->successful()) {
                     $data = $response->json()['data'] ?? [];
@@ -117,19 +122,27 @@ class ProcessApiData extends Command
                             ['status' => 'pending', 'expires_at' => $expiresAt]
                         );
 
-                        $this->info("Data saved in cache with key: {$cacheKey}");
-                        \Log::info("Data saved in cache with key: {$cacheKey}");
+                        if(config('app.env') !== 'production'){
+                            $this->info("Data saved in cache with key: {$cacheKey}");
+                            \Log::info("Data saved in cache with key: {$cacheKey}");
+                        }
                     } else {
-                        \Log::info("No data to cache. Skipping cache storage for key: {$cacheKey}");
+                        if(config('app.env') !== 'production'){
+                            \Log::info("No data to cache. Skipping cache storage for key: {$cacheKey}");
+                        }
                     }
                 } else {
-                    $this->error('Failed to fetch API data.');
-                    \Log::info('Failed to fetch API data.');
+                    if(config('app.env') !== 'production'){
+                        $this->error('Failed to fetch API data.');
+                        \Log::info('Failed to fetch API data.');
+                    }
                     break;
                 }
 
-                $this->info('Data processed successfully.');
-                \Log::info('Data processed successfully.');
+                if(config('app.env') !== 'production'){
+                    $this->info('Data processed successfully.');
+                    \Log::info('Data processed successfully.');
+                }
 
                 // Get 'next' page URL
                 $nextUrl = $response->json()['links']['next'] ?? null;
@@ -163,13 +176,17 @@ class ProcessApiData extends Command
                         'updated_at' => now(),
                     ]);
 
-                    $this->info('No more pages to fetch.');
-                    \Log::info('No more pages to fetch.');
+                    if(config('app.env') !== 'production'){
+                        $this->info('No more pages to fetch.');
+                        \Log::info('No more pages to fetch.');
+                    }
                 }
             } while ($nextUrl !== null);
         } catch (\Exception $e) {
-            $this->error("Error: " . $e->getMessage());
-            \Log::error("Error: " . $e->getMessage());
+            if(config('app.env') !== 'production'){
+                $this->error("Error: " . $e->getMessage());
+                \Log::error("Error: " . $e->getMessage());
+            }
 
             DB::table('cron_run_history')->where('id', $cronRun)->update([
                 'end_time' => Carbon::now(),

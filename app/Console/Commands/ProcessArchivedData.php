@@ -4,12 +4,12 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
+use App\Models\{CacheKey};
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use App\Models\{VehicleRecord, VehicleRecordArchived, Status, SaleAuctionHistory};
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
-use Illuminate\Support\Facades\Log;
 
 class ProcessArchivedData extends Command
 {
@@ -25,26 +25,32 @@ class ProcessArchivedData extends Command
      *
      * @var string
      */
-    protected $description = 'Update the data of archived vehicle table on the base of third party api';
+    protected $description = 'Fetch and process data from third-party API and save it into the database';
 
     /**
      * Execute the console command.
+     */
+
+    /**
+     * Below Function Implementation store data into cache.
      */
     public function handle()
     {
         $startTime = microtime(true);
         $startDateTime = Carbon::now();
-        $this->info("Process Archived Data started at: " . $startDateTime);
-        Log::info("Process Archived Data started at: " . $startDateTime);
+        if(config('app.env') !== 'production'){
+            $this->info("Process started at: " . $startDateTime);
+            \Log::info("Process started at: " . $startDateTime);
+        }
 
         // Get the last cron job status
         $lastCron = DB::table('cron_run_history')
-            ->where('cron_name', 'process_archived_data')
+            ->where('cron_name', 'process_archived_vehicle_data')
             ->where('status', 'success')
             ->latest('start_time')
             ->first();
 
-        $minutes = 45; // Time frame in minutes
+        $minutes = 20; // Default minutes value
 
         if ($lastCron && $lastCron->end_time) {
             // Convert end_time to Carbon instance
@@ -52,19 +58,25 @@ class ProcessArchivedData extends Command
 
             // Get the difference in minutes (ensure it's a non-negative integer)
             $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
+        if(config('app.env') !== 'production'){
             $this->info("Time Difference: {$timeDifference}");
             \Log::info("Time Difference: {$timeDifference}");
+        }
 
             // Apply the new conditions
-            if ($timeDifference > 45) {
+            if ($timeDifference > 20) {
                 $minutes = $timeDifference + 10;
-            } elseif ($timeDifference === 45) {
+            } elseif ($timeDifference === 20) {
                 $minutes = $timeDifference + 5;
             }
         }
 
+        if(config('app.env') !== 'production'){
+        $this->info("Minutes Parameter After Checking: {$minutes}");
+        \Log::info("Minutes Parameter After Checking: {$minutes}");
+        }
         $cronRun = DB::table('cron_run_history')->insertGetId([
-            'cron_name' => 'process_archived_data',
+            'cron_name' => 'process_archived_vehicle_data',
             'start_time' => $startDateTime,
             'status' => 'running',
             'minutes' => $minutes,
@@ -72,84 +84,105 @@ class ProcessArchivedData extends Command
             'updated_at' => now(),
         ]);
 
-        $perPage = 400;
+        $perPage = 1000;
         $baseUrl = 'http://carstat.dev/api/archived-lots';
-        $totalPages = 0;
+        $minutes = 1600;
+        $apiUrl = "{$baseUrl}?per_page={$perPage}&minutes={$minutes}&simple_paginate=1&page=1";
+        // $apiUrl = "{$baseUrl}?per_page={$perPage}&simple_paginate=1&page=1";
+        if(config('app.env') !== 'production'){
+        \Log::info("API: {$apiUrl}");
+        }
 
         try {
-            // Fetch total records from the API
-            $response = Http::withHeaders([
-                'x-api-key' => env('CAR_API_KEY'),
-            ])
-            ->timeout(120)
-            ->retry(3, 1000)
-            ->get("{$baseUrl}?minutes={$minutes}&page=1&per_page={$perPage}");
+            do {
+                // Fetch fresh data from API
+                $response = Http::withHeaders([
+                    'x-api-key' => config('app.car_api_key'),
+                ])
+                ->timeout(120)
+                ->retry(3, 1000)
+                ->get($apiUrl);
+                if(config('app.env') !== 'production'){
+                    \Log::info("API URL: {$apiUrl}");
+                }
+                if ($response->successful()) {
+                    $data = $response->json()['data'] ?? [];
+                    $cacheKey = 'vehicle_archived_data_' . now()->format('Y_m_d_H_i_s');
+                    $expiresAt = now()->addMinutes(60 * 24 * 9); // Store for 8 hours
 
-            if ($response->successful()) {
-                $totalRecords = $response->json()['meta']['total'] ?? 0;
+                    if (count($data) > 0) {
+                        Cache::put($cacheKey, $data, $expiresAt);
 
-                DB::table('cron_run_history')
-                    ->where('id', $cronRun)
-                    ->update([
-                        'total_records' => $totalRecords,
-                        'updated_at' => now(),
-                    ]);
+                        // Save cache details to database
+                        CacheKey::updateOrCreate(
+                            ['cache_key' => $cacheKey],
+                            ['status' => 'pending', 'expires_at' => $expiresAt]
+                        );
 
-                $this->info("Fetching total number of records: {$totalRecords}");
-                Log::info("Fetching total number of records: {$totalRecords}");
-
-                if ($totalRecords > 0) {
-                    $totalPages = ceil($totalRecords / $perPage);
-                    $this->info("Total Pages: $totalPages");
-                    Log::info("Total Pages: $totalPages");
-
-                    for ($page = 1; $page <= $totalPages; $page++) {
-                        $apiUrl = "{$baseUrl}?minutes={$minutes}&page={$page}&per_page={$perPage}";
-
-                        $this->info("Fetching page {$page} of {$totalPages}");
-                        Log::info("Fetching page {$page} of {$totalPages}, URL: {$apiUrl}");
-
-                        $pageResponse = Http::withHeaders([
-                            'x-api-key' => env('CAR_API_KEY'),
-                        ])
-                        ->timeout(120)
-                        ->retry(3, 1000)
-                        ->get($apiUrl);
-
-                        if ($pageResponse->successful()) {
-                            $data = $pageResponse->json()['data'] ?? [];
-
-                            foreach ($data as $car) {
-                                $this->updateArchivedRecord($car);
-                            }
-
-                            $this->info("Page {$page} processed successfully.");
-                            Log::info("Page {$page} processed successfully.");
-                        } else {
-                            $this->error("Failed to fetch data for page {$page}.");
-                            Log::error("Failed to fetch data for page {$page}.");
-                            break;
+                        if(config('app.env') !== 'production'){
+                            $this->info("Data saved in cache with key: {$cacheKey}");
+                            \Log::info("Data saved in cache with key: {$cacheKey}");
+                        }
+                    } else {
+                        if(config('app.env') !== 'production'){
+                            \Log::info("No data to cache. Skipping cache storage for key: {$cacheKey}");
                         }
                     }
                 } else {
-                    $this->info("No records to process.");
-                    Log::info("No records to process.");
+                    if(config('app.env') !== 'production'){
+                        $this->error('Failed to fetch API data.');
+                        \Log::info('Failed to fetch API data.');
+                    }
+                    break;
                 }
-            } else {
-                $this->error("Failed to fetch total records.");
-                Log::error("Failed to fetch total records.");
+
+                if(config('app.env') !== 'production'){
+                    $this->info('Data processed successfully.');
+                    \Log::info('Data processed successfully.');
+                }
+                // Get 'next' page URL
+                $nextUrl = $response->json()['links']['next'] ?? null;
+                if ($nextUrl) {
+                    // Check if 'per_page' and 'simple_paginate' exist in the next URL
+                    $queryParams = [];
+
+                    if (!str_contains($nextUrl, 'per_page=')) {
+                        $queryParams[] = "per_page={$perPage}";
+                    }
+
+                    if (!str_contains($nextUrl, 'simple_paginate=')) {
+                        $queryParams[] = "simple_paginate=1";
+                    }
+
+                    if (!str_contains($nextUrl, 'minutes=')) {
+                        $queryParams[] = "minutes={$minutes}";
+                    }
+
+                    if (!empty($queryParams)) {
+                        $separator = str_contains($nextUrl, '?') ? '&' : '?';
+                        $nextUrl .= $separator . implode('&', $queryParams);
+                    }
+
+                    $apiUrl = $nextUrl;
+                } else {
+                    // Update cron_run_history with success status
+                    DB::table('cron_run_history')->where('id', $cronRun)->update([
+                        'end_time' => Carbon::now(),
+                        'status' => 'success',
+                        'updated_at' => now(),
+                    ]);
+
+                    if(config('app.env') !== 'production'){
+                        $this->info('No more pages to fetch.');
+                        \Log::info('No more pages to fetch.');
+                    }
+                }
+            } while ($nextUrl !== null);
+        } catch (\Exception $e) {
+            if(config('app.env') !== 'production'){
+                $this->error("Error: " . $e->getMessage());
+                \Log::error("Error: " . $e->getMessage());
             }
-
-            DB::table('cron_run_history')->where('id', $cronRun)->update([
-                'end_time' => Carbon::now(),
-                'status' => 'success',
-                'updated_at' => now(),
-            ]);
-
-        } catch (Exception $e) {
-            $this->error("Error: " . $e->getMessage());
-            Log::error("Error: " . $e->getMessage());
-
             DB::table('cron_run_history')->where('id', $cronRun)->update([
                 'end_time' => Carbon::now(),
                 'status' => 'failed',
@@ -158,74 +191,10 @@ class ProcessArchivedData extends Command
             ]);
 
             // Send email notification
-            $cronJobName = 'process_archived_data';
+            $cronJobName = 'process_archived_vehicle_data';
             $adminEmails = explode(',', env('ADMIN_EMAIL'));
             Mail::to($adminEmails)->send(new CronJobFailedMail($e->getMessage(), $cronJobName));
         }
+
     }
-
-    /**
-     * Update VehicleRecordArchived based on lot_id from third-party API response
-     */
-    private function updateArchivedRecord($car)
-    {
-        try {
-            $lotId = $car['lot'];
-            $status_id = $car['status']['id'];
-            $bid = $car['bid'];
-            $finalBidUpdatedAt = $car['final_bid_updated_at'];
-
-            $archivedRecord = VehicleRecordArchived::where('lot_id', $lotId)->first();
-
-            if ($archivedRecord) {
-                $archivedRecord->update([
-                    'status_id' => $status_id,
-                    'bid' => $bid,
-                    'final_bid_updated_at' => $finalBidUpdatedAt,
-                ]);
-
-                Log::info("Updated archived record for lot_id: {$lotId}");
-                // Get the latest SaleAuctionHistory for this lot_id
-                $latestSaleHistory = SaleAuctionHistory::where('lot_id', $lotId)
-                    ->orderByDesc('sale_date') // Assuming sale_date is used to determine the latest entry
-                    ->first();
-
-                if ($latestSaleHistory) {
-                    // Update the latest SaleAuctionHistory record
-                    $latestSaleHistory->update([
-                        'status_id' => $status_id,
-                        'bid' => $bid,
-                    ]);
-
-                    Log::info("Updated latest sale history for lot_id: {$lotId}");
-                } else {
-                    Log::warning("No sale history found for lot_id: {$lotId}");
-                }
-            } else {
-                Log::warning("Archived record not found for lot_id: {$lotId}");
-            }
-        } catch (Exception $e) {
-            Log::error("Error updating archived record for lot_id: {$lotId} - " . $e->getMessage());
-        }
-    }
-
-    // private function processCarData($lotId)
-    // {
-    //     // Check if the record exists in VehicleRecord
-    //     $record = VehicleRecord::where('lot_id', $lotId)->first();
-
-    //     if ($record) {
-    //         // Move the record to VehicleRecordArchived
-    //         VehicleRecordArchived::create($record->toArray());
-
-    //         // Delete the record from VehicleRecord
-    //         $record->delete();
-
-    //         $this->info("Archived and deleted record with lot_id: {$lotId}");
-    //         \Log::info("Archived and deleted record with lot_id: {$lotId}");
-    //     } else {
-    //         $this->info("No record found with lot_id: {$lotId}");
-    //         \Log::info("No record found with lot_id: {$lotId}");
-    //     }
-    // }
 }

@@ -16,6 +16,7 @@ return [
     'name' => env('APP_NAME', 'Laravel'),
 
     'car_api_key' => env('CAR_API_KEY', ''),
+    'app_kvm4' => env('APP_KVM4', false),
 
     /*
     |--------------------------------------------------------------------------
