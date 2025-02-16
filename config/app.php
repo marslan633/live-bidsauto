@@ -15,6 +15,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'car_api_key' => env('CAR_API_KEY', ''),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment
