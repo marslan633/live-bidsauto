@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
 
-class ProcessApiData extends Command
+class ProcessApiDataOld extends Command
 {
     /**
      * The name and signature of the console command.

@@ -49,12 +49,12 @@ class ProcessArchivedData extends Command
         if ($lastCron && $lastCron->end_time) {
             // Convert end_time to Carbon instance
             $endTime = Carbon::parse($lastCron->end_time);
-            
+
             // Get the difference in minutes (ensure it's a non-negative integer)
             $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
             $this->info("Time Difference: {$timeDifference}");
             \Log::info("Time Difference: {$timeDifference}");
-            
+
             // Apply the new conditions
             if ($timeDifference > 45) {
                 $minutes = $timeDifference + 10;
