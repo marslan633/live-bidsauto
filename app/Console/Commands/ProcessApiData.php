@@ -54,16 +54,16 @@ class ProcessApiData extends Command
             ->first();
 
         $minutes = 20; // Default minutes value
-    
+
         if ($lastCron && $lastCron->end_time) {
             // Convert end_time to Carbon instance
             $endTime = Carbon::parse($lastCron->end_time);
-            
+
             // Get the difference in minutes (ensure it's a non-negative integer)
             $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
             $this->info("Time Difference: {$timeDifference}");
             \Log::info("Time Difference: {$timeDifference}");
-            
+
             // Apply the new conditions
             if ($timeDifference > 20) {
                 $minutes = $timeDifference + 10;
@@ -84,126 +84,89 @@ class ProcessApiData extends Command
             'updated_at' => now(),
         ]);
 
-        // $minutes = 20; // Time frame in minutes
-        $perPage = 1000; // Records per page
+        $perPage = 1000;
         $baseUrl = 'http://carstat.dev/api/cars';
-        $totalPages = 0;
+        $minutes = 1600;
+        $apiUrl = "{$baseUrl}?per_page={$perPage}&minutes={$minutes}&simple_paginate=1&page=1";
+        // $apiUrl = "{$baseUrl}?per_page={$perPage}&simple_paginate=1&page=1";
+        \Log::info("API: {$apiUrl}");
 
         try {
-            // Fetch total records from the API
-            $response = Http::withHeaders([
-                'x-api-key' => env('CAR_API_KEY'),
-            ])
-            ->timeout(120)
-            ->retry(3, 1000)
-            ->get("{$baseUrl}?minutes={$minutes}&per_page={$perPage}");
+            do {
+                // Fetch fresh data from API
+                $response = Http::withHeaders([
+                    'x-api-key' => '3c202267f5e7200b82ca70c4af9e5a89',
+                ])
+                ->timeout(120)
+                ->retry(3, 1000)
+                ->get($apiUrl);
 
-            if ($response->successful()) {
-                $totalRecords = $response->json()['meta']['total'] ?? 0;
+                \Log::info("API URL: {$apiUrl}");
 
-                // Update the cron_run_history table with the total records
-                DB::table('cron_run_history')
-                    ->where('id', $cronRun)
-                    ->update([
-                        'total_records' => $totalRecords,
-                        'updated_at' => now(),
-                    ]);
-                    
-                $this->info("Fetching total number of record: {$totalRecords}");
-                \Log::info("Fetching total number of record: {$totalRecords}");
+                if ($response->successful()) {
+                    $data = $response->json()['data'] ?? [];
+                    $cacheKey = 'vehicle_data_' . now()->format('Y_m_d_H_i_s');
+                    $expiresAt = now()->addMinutes(60 * 24 * 9); // Store for 8 hours
 
-                if ($totalRecords > 0) {
-                    $totalPages = ceil($totalRecords / $perPage);
-                    $this->info("Total Pages: $totalPages");
-                    \Log::info("Total Pages: $totalPages");
+                    if (count($data) > 0) {
+                        Cache::put($cacheKey, $data, $expiresAt);
 
-                    $allData = []; // Array to accumulate all data
+                        // Save cache details to database
+                        CacheKey::updateOrCreate(
+                            ['cache_key' => $cacheKey],
+                            ['status' => 'pending', 'expires_at' => $expiresAt]
+                        );
 
-                    for ($page = 1; $page <= $totalPages; $page++) {
-                        $apiUrl = "{$baseUrl}?minutes={$minutes}&page={$page}&per_page={$perPage}";
+                        $this->info("Data saved in cache with key: {$cacheKey}");
+                        \Log::info("Data saved in cache with key: {$cacheKey}");
+                    } else {
+                        \Log::info("No data to cache. Skipping cache storage for key: {$cacheKey}");
+                    }
+                } else {
+                    $this->error('Failed to fetch API data.');
+                    \Log::info('Failed to fetch API data.');
+                    break;
+                }
 
-                        $this->info("Fetching page {$page} of {$totalPages}");
-                        \Log::info("Fetching page {$page} of {$totalPages}, URL: {$apiUrl}");
+                $this->info('Data processed successfully.');
+                \Log::info('Data processed successfully.');
 
-                        $pageResponse = Http::withHeaders([ 
-                            'x-api-key' => env('CAR_API_KEY'),
-                        ])
-                        ->timeout(120)
-                        ->retry(3, 1000)
-                        ->get($apiUrl);
+                // Get 'next' page URL
+                $nextUrl = $response->json()['links']['next'] ?? null;
+                if ($nextUrl) {
+                    // Check if 'per_page' and 'simple_paginate' exist in the next URL
+                    $queryParams = [];
 
-                        if ($pageResponse->successful()) {
-                            $data = $pageResponse->json()['data'] ?? [];
-                            
-                            // Append data to allData array
-                            // $allData = array_merge($allData, $data);
-                            
-                            // Save all data to cache with a unique cache key
-                            $cacheKey = 'vehicle_data_' . now()->format('Y_m_d_H_i_s');
-                            $expiresAt = now()->addMinutes(300); // Store for 4 hour
-                            $this->info("cache key {$cacheKey}.");
-                            \Log::info("cache key {$cacheKey}.");
-                            
-                            if (count($data) > 0) {     
-                                Cache::put($cacheKey, $data, $expiresAt); 
-
-                                // Save cache details to database
-                                CacheKey::updateOrCreate(
-                                    ['cache_key' => $cacheKey],
-                                    [
-                                        'status' => 'pending',
-                                        'expires_at' => $expiresAt,
-                                    ]
-                                );
-
-                                $this->info("Data saved in cache with key: {$cacheKey}");
-                                \Log::info("Data saved in cache with key: {$cacheKey}");
-                            } else {
-                                \Log::info("No data to cache. Skipping cache storage for key: {$cacheKey}");
-                            }
-
-                            $this->info("Page {$page} processed successfully.");
-                            \Log::info("Page {$page} processed successfully.");
-                        } else {
-                            $this->error("Failed to fetch data for page {$page}.");
-                            \Log::error("Failed to fetch data for page {$page}.");
-                            break;
-                        }
+                    if (!str_contains($nextUrl, 'per_page=')) {
+                        $queryParams[] = "per_page={$perPage}";
                     }
 
-                    
+                    if (!str_contains($nextUrl, 'simple_paginate=')) {
+                        $queryParams[] = "simple_paginate=1";
+                    }
+
+                    if (!str_contains($nextUrl, 'minutes=')) {
+                        $queryParams[] = "minutes={$minutes}";
+                    }
+
+                    if (!empty($queryParams)) {
+                        $separator = str_contains($nextUrl, '?') ? '&' : '?';
+                        $nextUrl .= $separator . implode('&', $queryParams);
+                    }
+
+                    $apiUrl = $nextUrl;
                 } else {
-                    $this->info("No records to process.");
-                    \Log::info("No records to process.");
+                    // Update cron_run_history with success status
+                    DB::table('cron_run_history')->where('id', $cronRun)->update([
+                        'end_time' => Carbon::now(),
+                        'status' => 'success',
+                        'updated_at' => now(),
+                    ]);
+
+                    $this->info('No more pages to fetch.');
+                    \Log::info('No more pages to fetch.');
                 }
-            } else {
-                $this->error("Failed to fetch total records.");
-                \Log::error("Failed to fetch total records.");
-            }
-
-            DB::table('cron_run_history')->where('id', $cronRun)->update([
-                'end_time' => Carbon::now(),
-                'status' => 'success',
-                'updated_at' => now(),
-            ]);
-
-
-            // Log the ending time of the process
-            $endTime = microtime(true);
-            $endDateTime = Carbon::now();
-            $this->info("Process ended at: " . $endDateTime);
-            \Log::info("Process ended at: " . $endDateTime);
-
-            // Calculate the total execution time
-            $executionTime = $endTime - $startTime; // In seconds, including fractions
-            $formattedTime = round($executionTime, 2); // Round to 2 decimal places
-            $this->info("Total execution time: {$formattedTime} seconds");
-            \Log::info("Total execution time: {$formattedTime} seconds");
-
-
-            $this->info('Data processing completed.');
-            \Log::info('Data processing completed.');
-
+            } while ($nextUrl !== null);
         } catch (\Exception $e) {
             $this->error("Error: " . $e->getMessage());
             \Log::error("Error: " . $e->getMessage());
@@ -220,5 +183,6 @@ class ProcessApiData extends Command
             $adminEmails = explode(',', env('ADMIN_EMAIL'));
             Mail::to($adminEmails)->send(new CronJobFailedMail($e->getMessage(), $cronJobName));
         }
+
     }
 }
