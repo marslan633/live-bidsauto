@@ -13,12 +13,12 @@ use Illuminate\Support\Facades\Cache;
 /**
  * Cron Job - Process Vehicle Data from third Party API and Populate it into Cache.
 */
-app(Schedule::class)->command('process:api-data')->everyTwoMinutes()->withoutOverlapping();
+app(Schedule::class)->command('process:api-data')->everyFifteenMinutes()->withoutOverlapping();
 
 /**s
  * Cron Job - Process Vehicle Data from cache and populate it into Vehicle table.
 */
-app(Schedule::class)->command('process:cached-data')->everyFiveMinutes()->withoutOverlapping();
+app(Schedule::class)->command('process:cached-data')->everyTenMinutes()->withoutOverlapping();
 
 
 /**
