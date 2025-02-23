@@ -19,7 +19,7 @@ class ProcessApiData extends Command
      *
      * @var string
      */
-    protected $signature = 'process:api-data';
+    protected $signature = 'publish:api-data';
 
     /**
      * The console command description.
