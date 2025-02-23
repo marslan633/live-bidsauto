@@ -15,7 +15,7 @@ use App\Models\{
     State, City, Location, SellingBranch, Year, BuyNow, Odometer
 };
 
-class ProcessNatsData extends Command
+class ProcessCachedData extends Command
 {
     /**
      * The name and signature of the console command.
