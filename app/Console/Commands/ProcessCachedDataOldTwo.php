@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
 
-class ProcessCachedDataOld2 extends Command
+class ProcessCachedDataOldTwo extends Command
 {
     /**
      * The name and signature of the console command.
