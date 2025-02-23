@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
+use Goodway\LaravelNats\Facades\Nats;
 
 class ProcessApiData extends Command
 {
@@ -38,7 +39,7 @@ class ProcessApiData extends Command
     {
         $startTime = microtime(true);
         $startDateTime = Carbon::now();
-        if(config('app.env') !== 'production'){
+        if (config('app.env') !== 'production') {
             $this->info("Process started at: " . $startDateTime);
             \Log::info("Process started at: " . $startDateTime);
         }
@@ -58,10 +59,10 @@ class ProcessApiData extends Command
 
             // Get the difference in minutes (ensure it's a non-negative integer)
             $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
-        if(config('app.env') !== 'production'){
-            $this->info("Time Difference: {$timeDifference}");
-            \Log::info("Time Difference: {$timeDifference}");
-        }
+            if (config('app.env') !== 'production') {
+                $this->info("Time Difference: {$timeDifference}");
+                \Log::info("Time Difference: {$timeDifference}");
+            }
 
             // Apply the new conditions
             if ($timeDifference > 20) {
@@ -71,7 +72,7 @@ class ProcessApiData extends Command
             }
         }
 
-        if(config('app.env') !== 'production'){
+        if (config('app.env') !== 'production') {
             $this->info("Minutes Parameter After Checking: {$minutes}");
             \Log::info("Minutes Parameter After Checking: {$minutes}");
         }
@@ -90,7 +91,7 @@ class ProcessApiData extends Command
         $minutes = 1600;
         $apiUrl = "{$baseUrl}?per_page={$perPage}&minutes={$minutes}&simple_paginate=1&page=1";
         // $apiUrl = "{$baseUrl}?per_page={$perPage}&simple_paginate=1&page=1";
-        if(config('app.env') !== 'production'){
+        if (config('app.env') !== 'production') {
             \Log::info("API: {$apiUrl}");
         }
 
@@ -100,46 +101,48 @@ class ProcessApiData extends Command
                 $response = Http::withHeaders([
                     'x-api-key' => config('app.car_api_key'),
                 ])
-                ->timeout(120)
-                ->retry(3, 1000)
-                ->get($apiUrl);
+                    ->timeout(120)
+                    ->retry(3, 1000)
+                    ->get($apiUrl);
 
-                if(config('app.env') !== 'production'){
+                if (config('app.env') !== 'production') {
                     \Log::info("API URL: {$apiUrl}");
                 }
 
                 if ($response->successful()) {
-                    $data = $response->json()['data'] ?? [];
+                    $data = $response->json()['data'] ?? null;
                     $cacheKey = 'vehicle_data_' . now()->format('Y_m_d_H_i_s');
-                    $expiresAt = now()->addMinutes(60 * 24 * 9); // Store for 8 hours
+                    // $expiresAt = now()->addMinutes(60 * 24 * 9); // Store for 8 hours
 
-                    if (count($data) > 0) {
-                        Cache::put($cacheKey, $data, $expiresAt);
+
+                    if (!empty($data)) {
+                        Nats::publish('auction.data', $data);
+                        // Cache::put($cacheKey, $data, $expiresAt);
 
                         // Save cache details to database
-                        CacheKey::updateOrCreate(
-                            ['cache_key' => $cacheKey],
-                            ['status' => 'pending', 'expires_at' => $expiresAt]
-                        );
+                        // CacheKey::updateOrCreate(
+                        //     ['cache_key' => $cacheKey],
+                        //     ['status' => 'pending', 'expires_at' => $expiresAt]
+                        // );
 
-                        if(config('app.env') !== 'production'){
+                        if (config('app.env') !== 'production') {
                             $this->info("Data saved in cache with key: {$cacheKey}");
                             \Log::info("Data saved in cache with key: {$cacheKey}");
                         }
                     } else {
-                        if(config('app.env') !== 'production'){
+                        if (config('app.env') !== 'production') {
                             \Log::info("No data to cache. Skipping cache storage for key: {$cacheKey}");
                         }
                     }
                 } else {
-                    if(config('app.env') !== 'production'){
+                    if (config('app.env') !== 'production') {
                         $this->error('Failed to fetch API data.');
                         \Log::info('Failed to fetch API data.');
                     }
                     break;
                 }
 
-                if(config('app.env') !== 'production'){
+                if (config('app.env') !== 'production') {
                     $this->info('Data processed successfully.');
                     \Log::info('Data processed successfully.');
                 }
@@ -176,14 +179,14 @@ class ProcessApiData extends Command
                         'updated_at' => now(),
                     ]);
 
-                    if(config('app.env') !== 'production'){
+                    if (config('app.env') !== 'production') {
                         $this->info('No more pages to fetch.');
                         \Log::info('No more pages to fetch.');
                     }
                 }
             } while ($nextUrl !== null);
         } catch (\Exception $e) {
-            if(config('app.env') !== 'production'){
+            if (config('app.env') !== 'production') {
                 $this->error("Error: " . $e->getMessage());
                 \Log::error("Error: " . $e->getMessage());
             }
@@ -200,6 +203,5 @@ class ProcessApiData extends Command
             $adminEmails = explode(',', env('ADMIN_EMAIL'));
             Mail::to($adminEmails)->send(new CronJobFailedMail($e->getMessage(), $cronJobName));
         }
-
     }
 }
