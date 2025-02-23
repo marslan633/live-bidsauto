@@ -88,8 +88,12 @@ class ProcessApiData extends Command
 
         $perPage = 1000;
         $baseUrl = 'http://carstat.dev/api/cars';
-        $minutes = 1600;
-        $apiUrl = "{$baseUrl}?per_page={$perPage}&minutes={$minutes}&simple_paginate=1&page=1";
+        if (config('app.is_full_fetch') === true) {
+            $apiUrl = "{$baseUrl}?per_page={$perPage}&simple_paginate=1&page=1";
+        } else {
+            $minutes = 1600;
+            $apiUrl = "{$baseUrl}?per_page={$perPage}&minutes={$minutes}&simple_paginate=1&page=1";
+        }
         // $apiUrl = "{$baseUrl}?per_page={$perPage}&simple_paginate=1&page=1";
         if (config('app.env') !== 'production') {
             \Log::info("API: {$apiUrl}");
