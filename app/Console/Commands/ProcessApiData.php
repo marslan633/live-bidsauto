@@ -183,7 +183,7 @@ class ProcessApiData extends Command
             // Send email notification
             $cronJobName = 'process_vehicle_data';
             $adminEmails = explode(',', env('ADMIN_EMAIL'));
-            Mail::to($adminEmails)->send(new CronJobFailedMail($e->getMessage(), $cronJobName));
+            // Mail::to($adminEmails)->send(new CronJobFailedMail($e->getMessage(), $cronJobName));
         }
     }
 }
