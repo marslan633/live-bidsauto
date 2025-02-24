@@ -82,7 +82,7 @@ class ProcessApiData extends Command
         if (config('app.is_full_fetch') === true) {
             $apiUrl = "{$baseUrl}?per_page={$perPage}&simple_paginate=1&page=1";
         } else {
-            $minutes = 1600;
+            $minutes = 60;
             $apiUrl = "{$baseUrl}?per_page={$perPage}&minutes={$minutes}&simple_paginate=1&page=1";
         }
         if (config('app.env') !== 'production') {
