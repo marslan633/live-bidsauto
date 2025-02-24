@@ -23,7 +23,7 @@ class ProcessApiDataOne extends Command
      *
      * @var string
      */
-    protected $signature = 'process:api-data-old';
+    protected $signature = 'process:api-data-one';
 
     /**
      * The console command description.
