@@ -23,32 +23,16 @@ return [
                 'inbox_prefix' => env('NATS_INBOX_PREFIX', '_INBOX'), // Sets default prefix for automatically created inboxes
                 'ping_interval' => intval(env('NATS_PING_INTERVAL', 2)), // Number of seconds between client-sent pings
             ],
-            /*
-            |--------------------------------------------------------------------------
-            | Many configurations example
-            |--------------------------------------------------------------------------
-            */
-
-//            'additional_configuration' => [
-//                'host' => env('NATS_S2_HOST', 'localhost'),
-//                'port' => intval(env('NATS_S2_PORT', 4222)),
-//                'user' => env('NATS_S2_USER'),
-//                ...
-//            ],
-//            'queue_consumer' => [
-//                'host' => env('NATS_CON_HOST', 'localhost'),
-//                'port' => intval(env('NATS_CON_PORT', 4222)),
-//                'user' => env('NATS_CON_USER'),
-//                ...
-//            ],
-//            'queue_publisher' => [
-//                'host' => env('NATS_PUB_HOST', 'localhost'),
-//                'port' => intval(env('NATS_PUB_PORT', 4222)),
-//                'user' => env('NATS_PUB_USER'),
-//                ...
-//            ],
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | JetStream Configuration
+    |--------------------------------------------------------------------------
+    */
+    'jetstream' => [
+        'stream' => env('NATS_STREAM', 'auction_stream'), // Ensure auction_stream is used
+    ],
 
 ];
