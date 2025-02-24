@@ -1,25 +1,54 @@
 <?php
 
 return [
-    'url'     => env('NATS_URL', 'nats://kvm4.2-ip:4222'),
-    'cluster' => env('NATS_CLUSTER', 'vehicle_cluster'),
-    'stream'  => [
-        'name'     => env('NATS_STREAM', 'vehicle_stream'),
-        'subjects' => ['vehicle.data'],
-        'storage'  => env('NATS_STORAGE', 'file'),
-        'retention' => 'limits',
-        'limits'    => [
-            'max_msgs'   => env('NATS_MAX_MESSAGES', 1000000),
-            'max_age'    => env('NATS_MAX_AGE', '48h'),
-            'max_memory' => env('NATS_MAX_MEMORY', '2GB'),
-            'max_file'   => env('NATS_MAX_FILE', '5GB'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Nats client configurations
+    |--------------------------------------------------------------------------
+    */
+    'client' => [
+        'configurations' => [
+            'default' => [
+                'host' => env('NATS_HOST', 'localhost'),
+                'port' => intval(env('NATS_PORT', 4222)),
+                'user' => env('NATS_USER'),
+                'password' => env('NATS_PASSWORD'),
+                'token' => env('NATS_TOKEN'), // Sets an authorization token for a connection
+                'nkey' => env('NATS_NKEY'), // new, highly secure public-key signature system based on Ed25519
+                'jwt' => env('NATS_JWT'), // Token for JWT Authentication
+                'reconnect' => env('NATS_RECONNECT', true),
+                'connection_timeout' => floatval(env('NATS_CONNECTION_TIMEOUT', 1)), // Number of seconds the client will wait for a connection to be established
+                'verbose_mode' => env('NATS_VERBOSE_MODE', false), // Turns on +OK protocol acknowledgements
+                'inbox_prefix' => env('NATS_INBOX_PREFIX', '_INBOX'), // Sets default prefix for automatically created inboxes
+                'ping_interval' => intval(env('NATS_PING_INTERVAL', 2)), // Number of seconds between client-sent pings
+            ],
+            /*
+            |--------------------------------------------------------------------------
+            | Many configurations example
+            |--------------------------------------------------------------------------
+            */
+
+//            'additional_configuration' => [
+//                'host' => env('NATS_S2_HOST', 'localhost'),
+//                'port' => intval(env('NATS_S2_PORT', 4222)),
+//                'user' => env('NATS_S2_USER'),
+//                ...
+//            ],
+//            'queue_consumer' => [
+//                'host' => env('NATS_CON_HOST', 'localhost'),
+//                'port' => intval(env('NATS_CON_PORT', 4222)),
+//                'user' => env('NATS_CON_USER'),
+//                ...
+//            ],
+//            'queue_publisher' => [
+//                'host' => env('NATS_PUB_HOST', 'localhost'),
+//                'port' => intval(env('NATS_PUB_PORT', 4222)),
+//                'user' => env('NATS_PUB_USER'),
+//                ...
+//            ],
         ],
     ],
-    'consumer' => [
-        'name'            => env('NATS_CONSUMER', 'vehicle_worker'),
-        'queue'           => 'vehicle-queue',
-        'deliver_policy'  => 'all',
-        'ack_policy'      => 'explicit',
-        'max_ack_pending' => 500,
-    ],
+
+
 ];

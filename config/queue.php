@@ -43,6 +43,24 @@ return [
             'after_commit' => false,
         ],
 
+        'nats' => [
+            'driver' => 'nats',
+            'consumer_client' => 'default', // client configuration name from nats.php config file to listen queue
+            'publisher_client' => 'default', // client configuration name from nats.php config file to publish queue
+            'jetstream' => env('NATS_JETSTREAM', 'jetstream'),
+            'jetstream_retention_policy' => env('NATS_JETSTREAM_RETENTION_POLICY', 'workqueue'),
+            'consumer' => env('NATS_CONSUMER_GROUP', 'consumer'),
+            'consumer_iterations' => intval(env('NATS_CONSUMER_ITERATIONS', 3)),
+            'queue_consumer_create' => (bool)env('NATS_QUEUE_CONSUMER_CREATE', false),
+            'queue_consumer_prefix' => env('NATS_QUEUE_CONSUMER_PREFIX', 'con'),
+            'queue_separated_clients' => env('NATS_QUEUE_SEPARATE_IDENTICAL_CLIENTS', true), // separate Nats clients with the identical configuration
+            //            'queue_handler' => 'someClass',
+            'fire_events' => (bool)env('NATS_QUEUE_MESSAGE_EVENTS', true),
+            'default_batch_size' => intval(env('NATS_DEFAULT_BATCH_SIZE', 10)),
+            'verbose_mode' => (bool)env('NATS_QUEUE_VERBOSE_MODE', true),
+            'check_jetstream_publish' => (bool)env('NATS_QUEUE_CHECK_JETSTREAM_PUBLISH', true)
+        ],
+
         'beanstalkd' => [
             'driver' => 'beanstalkd',
             'host' => env('BEANSTALKD_QUEUE_HOST', 'localhost'),

@@ -4,15 +4,15 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
-use App\Models\CacheKey;
+use App\Models\{CacheKey};
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
-use App\Jobs\ProcessApiJob; // Import your job
+use Goodway\LaravelNats\Facades\Nats;
 
-class ProcessApiData extends Command
+class ProcessApiDataTwo extends Command
 {
     /**
      * The name and signature of the console command.
@@ -30,6 +30,10 @@ class ProcessApiData extends Command
 
     /**
      * Execute the console command.
+     */
+
+    /**
+     * Below Function Implementation store data into cache.
      */
     public function handle()
     {
@@ -50,12 +54,17 @@ class ProcessApiData extends Command
         $minutes = 20; // Default minutes value
 
         if ($lastCron && $lastCron->end_time) {
+            // Convert end_time to Carbon instance
             $endTime = Carbon::parse($lastCron->end_time);
+
+            // Get the difference in minutes (ensure it's a non-negative integer)
             $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
             if (config('app.env') !== 'production') {
                 $this->info("Time Difference: {$timeDifference}");
                 \Log::info("Time Difference: {$timeDifference}");
             }
+
+            // Apply the new conditions
             if ($timeDifference > 20) {
                 $minutes = $timeDifference + 10;
             } elseif ($timeDifference === 20) {
@@ -69,10 +78,10 @@ class ProcessApiData extends Command
         }
 
         $cronRun = DB::table('cron_run_history')->insertGetId([
-            'cron_name'  => 'process_vehicle_data',
+            'cron_name' => 'process_vehicle_data',
             'start_time' => $startDateTime,
-            'status'     => 'running',
-            'minutes'    => $minutes,
+            'status' => 'running',
+            'minutes' => $minutes,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -85,6 +94,7 @@ class ProcessApiData extends Command
             $minutes = 1600;
             $apiUrl = "{$baseUrl}?per_page={$perPage}&minutes={$minutes}&simple_paginate=1&page=1";
         }
+        // $apiUrl = "{$baseUrl}?per_page={$perPage}&simple_paginate=1&page=1";
         if (config('app.env') !== 'production') {
             \Log::info("API: {$apiUrl}");
         }
@@ -95,9 +105,9 @@ class ProcessApiData extends Command
                 $response = Http::withHeaders([
                     'x-api-key' => config('app.car_api_key'),
                 ])
-                ->timeout(120)
-                ->retry(3, 1000)
-                ->get($apiUrl);
+                    ->timeout(120)
+                    ->retry(3, 1000)
+                    ->get($apiUrl);
 
                 if (config('app.env') !== 'production') {
                     \Log::info("API URL: {$apiUrl}");
@@ -106,20 +116,26 @@ class ProcessApiData extends Command
                 if ($response->successful()) {
                     $data = $response->json()['data'] ?? null;
                     $cacheKey = 'vehicle_data_' . now()->format('Y_m_d_H_i_s');
+                    // $expiresAt = now()->addMinutes(60 * 24 * 9); // Store for 8 hours
+
 
                     if (!empty($data)) {
-                        // Dispatch your ProcessApiJob with the data payload.
-                        dispatch((new ProcessApiJob($data))
-                            ->onConnection('nats')
-                            ->onQueue('process-api-queue'));
+                        Nats::publish('auction.data', $data);
+                        // Cache::put($cacheKey, $data, $expiresAt);
+
+                        // Save cache details to database
+                        // CacheKey::updateOrCreate(
+                        //     ['cache_key' => $cacheKey],
+                        //     ['status' => 'pending', 'expires_at' => $expiresAt]
+                        // );
 
                         if (config('app.env') !== 'production') {
-                            $this->info("ProcessApiJob dispatched with data for key: {$cacheKey}");
-                            \Log::info("ProcessApiJob dispatched with data for key: {$cacheKey}");
+                            $this->info("Data saved in cache with key: {$cacheKey}");
+                            \Log::info("Data saved in cache with key: {$cacheKey}");
                         }
                     } else {
                         if (config('app.env') !== 'production') {
-                            \Log::info("No data to dispatch. Skipping for key: {$cacheKey}");
+                            \Log::info("No data to cache. Skipping cache storage for key: {$cacheKey}");
                         }
                     }
                 } else {
@@ -138,26 +154,32 @@ class ProcessApiData extends Command
                 // Get 'next' page URL
                 $nextUrl = $response->json()['links']['next'] ?? null;
                 if ($nextUrl) {
+                    // Check if 'per_page' and 'simple_paginate' exist in the next URL
                     $queryParams = [];
+
                     if (!str_contains($nextUrl, 'per_page=')) {
                         $queryParams[] = "per_page={$perPage}";
                     }
+
                     if (!str_contains($nextUrl, 'simple_paginate=')) {
                         $queryParams[] = "simple_paginate=1";
                     }
+
                     if (!str_contains($nextUrl, 'minutes=')) {
                         $queryParams[] = "minutes={$minutes}";
                     }
+
                     if (!empty($queryParams)) {
                         $separator = str_contains($nextUrl, '?') ? '&' : '?';
                         $nextUrl .= $separator . implode('&', $queryParams);
                     }
+
                     $apiUrl = $nextUrl;
                 } else {
                     // Update cron_run_history with success status
                     DB::table('cron_run_history')->where('id', $cronRun)->update([
-                        'end_time'   => Carbon::now(),
-                        'status'     => 'success',
+                        'end_time' => Carbon::now(),
+                        'status' => 'success',
                         'updated_at' => now(),
                     ]);
 
@@ -174,10 +196,10 @@ class ProcessApiData extends Command
             }
 
             DB::table('cron_run_history')->where('id', $cronRun)->update([
-                'end_time'      => Carbon::now(),
-                'status'        => 'failed',
+                'end_time' => Carbon::now(),
+                'status' => 'failed',
                 'error_message' => $e->getMessage(),
-                'updated_at'    => now(),
+                'updated_at' => now(),
             ]);
 
             // Send email notification
@@ -185,5 +207,6 @@ class ProcessApiData extends Command
             $adminEmails = explode(',', env('ADMIN_EMAIL'));
             Mail::to($adminEmails)->send(new CronJobFailedMail($e->getMessage(), $cronJobName));
         }
+
     }
 }
