@@ -9,7 +9,6 @@ class ProcessApiJob extends NatsMessageJob
 {
     public $queue = 'process-api-queue';
     // Optionally, set a custom subject for your message.
-    protected $subject = 'proceess.api-data';
 
     // You can use a property to store dynamic content.
     protected $data;
