@@ -14,7 +14,7 @@ class ProcessApiJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $queue = 'process-api-queue';
+    public $queue = 'process-cachedata-queue';
 
     protected $data;
 

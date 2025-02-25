@@ -12,14 +12,14 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
 use App\Jobs\ProcessApiJob; // Import your job
 
-class ProcessApiData extends Command
+class ProcessApiDataTwo extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'publish:api-data';
+    protected $signature = 'publish:api-data-two';
 
     /**
      * The console command description.
