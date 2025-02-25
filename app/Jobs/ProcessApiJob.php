@@ -2,14 +2,20 @@
 
 namespace App\Jobs;
 
-use Goodway\LaravelNats\NatsMessageJob;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
-class ProcessApiJob extends NatsMessageJob
+class ProcessApiJob implements ShouldQueue
 {
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
     public $queue = 'process-api-queue';
 
-    // Property to store dynamic content.
     protected $data;
 
     /**
@@ -23,14 +29,12 @@ class ProcessApiJob extends NatsMessageJob
     }
 
     /**
-     * The body method returns the data that will be serialized
-     * and sent as the message.
-     *
-     * @return string
+     * Handle the job.
      */
-    public function body(): string
+    public function handle()
     {
-        return json_encode([
+        // Process the job here
+        \Log::info("Processing API Job with data: ", [
             'data'         => $this->data ?? Str::random(32),
             'group_random' => random_int(1, 3),
         ]);
