@@ -77,7 +77,7 @@ class ProcessCachedData extends Command
             // Send email notification
             $cronJobName = 'process_cached_data';
             $adminEmails = explode(',', env('ADMIN_EMAIL'));
-            Mail::to($adminEmails)->send(new CronJobFailedMail($e->getMessage(), $cronJobName));
+            // Mail::to($adminEmails)->send(new CronJobFailedMail($e->getMessage(), $cronJobName));
             return; // Exit to prevent further processing
         }
 
