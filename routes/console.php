@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Cache;
 if(config('app.app_kvm4') === true){
     app(Schedule::class)->command('process:api-data')->everyFifteenMinutes()->withoutOverlapping();
     app(Schedule::class)->command('process:cached-data')->everyTenMinutes()->withoutOverlapping();
-    app(Schedule::class)->command('process:cached-archived-data')->everyThirtyMinutes()->withoutOverlapping();
+    // app(Schedule::class)->command('process:cached-archived-data')->everyThirtyMinutes()->withoutOverlapping();
 }else{
 
 /**
