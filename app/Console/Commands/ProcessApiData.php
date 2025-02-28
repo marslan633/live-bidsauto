@@ -72,15 +72,6 @@ class ProcessApiData extends Command
         }
 
         $streamName = 'stream:vehicle_data';
-        $groupName = 'vehicle_data_group';
-
-        // **Ensure Consumer Group Exists**
-        try {
-            Redis::xgroup('CREATE', $streamName, $groupName, '0', true);
-            $this->info("✅ Consumer Group '$groupName' created.");
-        } catch (\Exception $e) {
-            $this->info("ℹ️ Consumer Group '$groupName' already exists.");
-        }
 
         try {
             do {
