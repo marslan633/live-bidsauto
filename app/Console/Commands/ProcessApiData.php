@@ -4,221 +4,142 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
-use App\Models\{
-    VehicleRecord, Manufacturer, VehicleModel, Generation, BodyType, Color,
-    Transmission, DriveWheel, Fuel, Condition, Status, VehicleType, Domain,
-    Engine, Seller, SellerType, Title, DetailedTitle, Damage, Image, Country,
-    State, City, Location, SellingBranch, Year, BuyNow, Odometer, CacheKey
-};
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\CronJobFailedMail;
+use Illuminate\Support\Facades\Redis;
+use Carbon\Carbon;
 
 class ProcessApiData extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'process:api-data';
+    protected $description = 'Fetch data from API and push it to Redis Stream';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Fetch and process data from third-party API and save it into the database';
-
-    /**
-     * Execute the console command.
-     */
-
-    /**
-     * Below Function Implementation store data into cache.
-     */
     public function handle()
     {
         $startTime = microtime(true);
         $startDateTime = Carbon::now();
-        $this->info("Process started at: " . $startDateTime);
-        // \Log::info("Process started at: " . $startDateTime);
-
-        // Get the last cron job status
-        $lastCron = DB::table('cron_run_history')
-            ->where('cron_name', 'process_vehicle_data')
-            ->where('status', 'success')
-            ->latest('start_time')
-            ->first();
-
-        $minutes = 20; // Default minutes value
-
-        if ($lastCron && $lastCron->end_time) {
-            // Convert end_time to Carbon instance
-            $endTime = Carbon::parse($lastCron->end_time);
-
-            // Get the difference in minutes (ensure it's a non-negative integer)
-            $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
-            $this->info("Time Difference: {$timeDifference}");
-            // \Log::info("Time Difference: {$timeDifference}");
-
-            // Apply the new conditions
-            if ($timeDifference > 20) {
-                $minutes = $timeDifference + 10;
-            } elseif ($timeDifference === 20) {
-                $minutes = $timeDifference + 5;
-            }
+        if (!Redis::ping()) {
+            \Log::error("Redis is NOT connected!");
         }
 
-        $this->info("Minutes Parameter After Checking: {$minutes}");
-        // \Log::info("Minutes Parameter After Checking: {$minutes}");
+        if (config('app.env') !== 'production') {
+            $this->info("Process started at: " . $startDateTime);
+            \Log::info("Process started at: " . $startDateTime);
+        }
 
+        // Store cron job status
         $cronRun = DB::table('cron_run_history')->insertGetId([
-            'cron_name' => 'process_vehicle_data',
+            'cron_name'  => 'process_vehicle_data',
             'start_time' => $startDateTime,
-            'status' => 'running',
-            'minutes' => $minutes,
+            'status'     => 'running',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        // $minutes = 20; // Time frame in minutes
-        $perPage = 1000; // Records per page
+        $perPage = 1000;
         $baseUrl = 'http://carstat.dev/api/cars';
-        $totalPages = 0;
+        $minutes =  60;
+        if(config('app.is_full_fetch') === true){
+            $apiUrl = "{$baseUrl}?per_page={$perPage}&simple_paginate=1&page=1";
+        }else{
+            $apiUrl = "{$baseUrl}?per_page={$perPage}&minutes={$minutes}&simple_paginate=1&page=1";
+        }
 
         try {
-            // Fetch total records from the API
-            $response = Http::withHeaders([
-                'x-api-key' => env('CAR_API_KEY'),
-            ])
-            ->timeout(120)
-            ->retry(3, 1000)
-            ->get("{$baseUrl}?minutes={$minutes}&per_page={$perPage}");
+            do {
+                // Fetch fresh data from API
+                $response = Http::withHeaders([
+                    'x-api-key' => config('app.car_api_key'),
+                ])
+                ->timeout(120)
+                ->retry(3, 1000)
+                ->get($apiUrl);
 
-            if ($response->successful()) {
-                $totalRecords = $response->json()['meta']['total'] ?? 0;
+                if ($response->successful()) {
+                    $data = $response->json()['data'] ?? null;
 
-                // Update the cron_run_history table with the total records
-                DB::table('cron_run_history')
-                    ->where('id', $cronRun)
-                    ->update([
-                        'total_records' => $totalRecords,
-                        'updated_at' => now(),
-                    ]);
+                    if (!empty($data)) {
+                        foreach ($data as $item) {
+                            $id = $item['id'];
 
-                $this->info("Fetching total number of record: {$totalRecords}");
-                // \Log::info("Fetching total number of record: {$totalRecords}");
+                            $this->info("starting Checking Key.");
+                            // **Avoid duplicate processing**
+                            foreach ($data as $item) {
+                                $id = $item['id'];
+                                $this->info("Checking Key for ID: {$id}");
 
-                if ($totalRecords > 0) {
-                    $totalPages = ceil($totalRecords / $perPage);
-                    $this->info("Total Pages: $totalPages");
-                    // \Log::info("Total Pages: $totalPages");
+                                // Debug Redis connection
+                                if (!Redis::ping()) {
+                                    $this->error("Redis is NOT connected!");
+                                    break;
+                                }
 
-                    $allData = []; // Array to accumulate all data
+                                // **Check if key exists in Redis**
+                                if (!Redis::exists("processed_vehicle:{$id}")) {
+                                    $this->info("Key does not exist. Storing data for ID: {$id}");
 
-                    for ($page = 1; $page <= $totalPages; $page++) {
-                        $apiUrl = "{$baseUrl}?minutes={$minutes}&page={$page}&per_page={$perPage}";
+                                    // **Try writing to Redis Stream**
+                                    $result = Redis::xAdd('stream:vehicle_data', '*', [
+                                        'id'   => $id,
+                                        'data' => json_encode($item)
+                                    ]);
 
-                        $this->info("Fetching page {$page} of {$totalPages}");
-                        // \Log::info("Fetching page {$page} of {$totalPages}, URL: {$apiUrl}");
+                                    if ($result) {
+                                        $this->info("✅ Successfully pushed to Redis Stream: {$id}");
+                                    } else {
+                                        $this->error("❌ Failed to push to Redis Stream: {$id}");
+                                    }
 
-                        $pageResponse = Http::withHeaders([
-                            'x-api-key' => env('CAR_API_KEY'),
-                        ])
-                        ->timeout(120)
-                        ->retry(3, 1000)
-                        ->get($apiUrl);
-
-                        if ($pageResponse->successful()) {
-                            $data = $pageResponse->json()['data'] ?? [];
-
-                            // Append data to allData array
-                            // $allData = array_merge($allData, $data);
-
-                            // Save all data to cache with a unique cache key
-                            $cacheKey = 'vehicle_data_' . now()->format('Y_m_d_H_i_s');
-                            $expiresAt = now()->addMinutes(300); // Store for 4 hour
-                            $this->info("cache key {$cacheKey}.");
-                            // \Log::info("cache key {$cacheKey}.");
-
-                            if (count($data) > 0) {
-                                Cache::put($cacheKey, $data, $expiresAt);
-
-                                // Save cache details to database
-                                CacheKey::updateOrCreate(
-                                    ['cache_key' => $cacheKey],
-                                    [
-                                        'status' => 'pending',
-                                        'expires_at' => $expiresAt,
-                                    ]
-                                );
-
-                                $this->info("Data saved in cache with key: {$cacheKey}");
-                                // \Log::info("Data saved in cache with key: {$cacheKey}");
-                            } else {
-                                // \Log::info("No data to cache. Skipping cache storage for key: {$cacheKey}");
+                                    // Prevent duplication
+                                    Redis::setex("processed_vehicle:{$id}", 86400, 1);
+                                } else {
+                                    $this->info("Key already exists. Skipping ID: {$id}");
+                                }
                             }
 
-                            $this->info("Page {$page} processed successfully.");
-                            // \Log::info("Page {$page} processed successfully.");
-                        } else {
-                            $this->error("Failed to fetch data for page {$page}.");
-                            // \Log::error("Failed to fetch data for page {$page}.");
-                            break;
+                        }
+                        if (config('app.env') !== 'production') {
+                            $this->info("Data pushed to Redis Stream.");
+                            \Log::info("Data pushed to Redis Stream.");
+                        }
+
+                    } else {
+                        if (config('app.env') !== 'production') {
+                            $this->info("No new data.");
+                            \Log::info("No new data.");
                         }
                     }
-
-
                 } else {
-                    $this->info("No records to process.");
-                    // \Log::info("No records to process.");
+                    if (config('app.env') !== 'production') {
+                        $this->error('Failed to fetch API data.');
+                        \Log::error('Failed to fetch API data.');
+                    }
+                    break;
                 }
-            } else {
-                $this->error("Failed to fetch total records.");
-                // \Log::error("Failed to fetch total records.");
+
+                // Get 'next' page URL
+                $nextUrl = $response->json()['links']['next'] ?? null;
+                $apiUrl = $nextUrl ?: null;
+
+            } while ($nextUrl !== null);
+
+            // Mark cron as success
+            DB::table('cron_run_history')->where('id', $cronRun)->update([
+                'end_time'   => Carbon::now(),
+                'status'     => 'success',
+                'updated_at' => now(),
+            ]);
+        } catch (\Exception $e) {
+            if (config('app.env') !== 'production') {
+                $this->error("Error: " . $e->getMessage());
+                \Log::error("Error: " . $e->getMessage());
             }
 
             DB::table('cron_run_history')->where('id', $cronRun)->update([
-                'end_time' => Carbon::now(),
-                'status' => 'success',
-                'updated_at' => now(),
-            ]);
-
-
-            // Log the ending time of the process
-            $endTime = microtime(true);
-            $endDateTime = Carbon::now();
-            $this->info("Process ended at: " . $endDateTime);
-            // \Log::info("Process ended at: " . $endDateTime);
-
-            // Calculate the total execution time
-            $executionTime = $endTime - $startTime; // In seconds, including fractions
-            $formattedTime = round($executionTime, 2); // Round to 2 decimal places
-            $this->info("Total execution time: {$formattedTime} seconds");
-            // \Log::info("Total execution time: {$formattedTime} seconds");
-
-
-            $this->info('Data processing completed.');
-            // \Log::info('Data processing completed.');
-
-        } catch (\Exception $e) {
-            $this->error("Error: " . $e->getMessage());
-            // \Log::error("Error: " . $e->getMessage());
-
-            DB::table('cron_run_history')->where('id', $cronRun)->update([
-                'end_time' => Carbon::now(),
-                'status' => 'failed',
+                'end_time'      => Carbon::now(),
+                'status'        => 'failed',
                 'error_message' => $e->getMessage(),
-                'updated_at' => now(),
+                'updated_at'    => now(),
             ]);
-
-            // Send email notification
-            $cronJobName = 'process_vehicle_data';
-            $adminEmails = explode(',', env('ADMIN_EMAIL'));
-            // Mail::to($adminEmails)->send(new CronJobFailedMail($e->getMessage(), $cronJobName));
         }
     }
 }
