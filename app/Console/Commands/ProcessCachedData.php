@@ -111,6 +111,8 @@ class ProcessCachedData extends Command
             'status' => 'success',
             'updated_at' => now(),
         ]);
+
+        return 0;
     }
 
     private function convertAndStoreDataToRedis(array $car)
