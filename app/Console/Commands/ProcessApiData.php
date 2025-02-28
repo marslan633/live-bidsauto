@@ -100,7 +100,7 @@ class ProcessApiData extends Command
 
                         // **Push Data to Redis Stream (Ensures Continuous Writing)**
                         $result = Redis::xAdd($streamName, '*', [
-                            'id'    => $id,
+                            'id'    => (string) $id,
                             'data'  => json_encode($item),
                         ]);
 
