@@ -44,7 +44,18 @@ class ProcessCachedData extends Command
 
         $startDateTime = Carbon::now();
         $this->info("Process started at: " . $startDateTime);
-        \Log::info("Process started at: " . $startDateTime);
+        // \Log::info("Process started at: " . $startDateTime);
+
+        // Read Data From Stream with consumer group
+            $streamName = 'laravel_database_stream:vehicle_data';
+            $groupName = 'vehicle_data_group';
+            $consumerName = 'worker_' . uniqid();
+
+            $this->info("🔍 Checking stream: $streamName in group: $groupName...");
+
+                // Read up to 10 messages from the consumer group
+                $messages = Redis::xreadgroup($groupName, $consumerName, [$streamName => '>'], 10);
+                $this->info("Working ");
 
          $cronRun = DB::table('cron_run_history')->insertGetId([
                 'cron_name' => 'process_cached_data',
@@ -57,16 +68,7 @@ class ProcessCachedData extends Command
         try {
 
 
-            // Read Data From Stream with consumer group
-            $streamName = 'laravel_database_stream:vehicle_data';
-            $groupName = 'vehicle_data_group';
-            $consumerName = 'worker_' . uniqid();
 
-            $this->info("🔍 Checking stream: $streamName in group: $groupName...");
-
-                // Read up to 10 messages from the consumer group
-                $messages = Redis::xreadgroup($groupName, $consumerName, [$streamName => '>'], 10);
-                $this->info("Working ");
 
                 if (!empty($messages[$streamName])) {
                     foreach ($messages[$streamName] as $id => $record) {
