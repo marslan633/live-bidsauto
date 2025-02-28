@@ -30,7 +30,7 @@ class ProcessApiData extends Command
             ->latest('start_time')
             ->first();
 
-        $minutes = 30; // Default minutes value
+        $minutes = 10; // Default minutes value
 
         if ($lastCron && $lastCron->end_time) {
             $endTime = Carbon::parse($lastCron->end_time);
