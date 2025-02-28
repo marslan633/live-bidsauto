@@ -64,9 +64,9 @@ class ProcessCachedData extends Command
 
             $this->info("🔍 Checking stream: $streamName in group: $groupName...");
 
-            while (true) {
                 // Read up to 10 messages from the consumer group
                 $messages = Redis::xreadgroup($groupName, $consumerName, [$streamName => '>'], 10);
+                $this->info("Working ");
 
                 if (!empty($messages[$streamName])) {
                     foreach ($messages[$streamName] as $id => $record) {
@@ -87,7 +87,6 @@ class ProcessCachedData extends Command
                     $this->info("⏳ No new messages. Sleeping...");
                     sleep(5); // Wait before checking again
                 }
-            }
 
 
         } catch (\Exception $e) {
