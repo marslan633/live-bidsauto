@@ -71,7 +71,7 @@ class ProcessApiData extends Command
             $apiUrl = "{$baseUrl}?per_page={$perPage}&minutes={$minutes}&simple_paginate=1&page=1";
         }
 
-        $streamName = 'laravel_database_stream:vehicle_data';
+        $streamName = 'stream:vehicle_data';
 
         try {
             do {

@@ -57,7 +57,7 @@ class ProcessCachedData extends Command
         try {
 
             // Read Data From Stream with consumer group
-            $streamName = 'laravel_database_stream:vehicle_data';
+            $streamName = 'stream:vehicle_data';
             $groupName = 'vehicle_data_group';
             $consumerName = 'worker_' . uniqid();
 
