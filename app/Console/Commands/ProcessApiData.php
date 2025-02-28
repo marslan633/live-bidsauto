@@ -103,7 +103,7 @@ class ProcessApiData extends Command
                             'id'    => $id,
                             'data'  => json_encode($item),
                             // 'hash'  => $hash
-                        ],'MAXLEN', '~', 50000);
+                        ],['MAXLEN', '~', 50000]);
 
                         if ($result) {
                             $this->info("✅ Successfully pushed ID: {$id} to Redis Stream.");
