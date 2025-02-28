@@ -102,7 +102,7 @@ class ProcessApiData extends Command
                         $result = Redis::xAdd($streamName, '*', [
                             'id'    => $id,
                             'data'  => json_encode($item),
-                        ], 'MAXLEN', '~', 50000);
+                        ]);
 
 
                         if ($result) {
