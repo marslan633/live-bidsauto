@@ -30,7 +30,7 @@ class ProcessApiData extends Command
             ->latest('start_time')
             ->first();
 
-        $minutes = 60; // Default minutes value
+        $minutes = 30; // Default minutes value
 
         if ($lastCron && $lastCron->end_time) {
             $endTime = Carbon::parse($lastCron->end_time);
@@ -103,7 +103,7 @@ class ProcessApiData extends Command
                             'id'    => $id,
                             'data'  => json_encode($item),
                             // 'hash'  => $hash
-                        ]);
+                        ],'MAXLEN', '~', 50000);
 
                         if ($result) {
                             $this->info("✅ Successfully pushed ID: {$id} to Redis Stream.");
