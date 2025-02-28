@@ -91,7 +91,7 @@ class ProcessCachedData extends Command
 
 
         } catch (\Exception $e) {
-            $this->error("Error fetching cache keys or updating status: " . $e->getMessage());
+            $this->info("Error fetching cache keys or updating status: " . $e->getMessage());
             DB::table('cron_run_history')->where('id', $cronRun)->update([
                 'end_time' => Carbon::now(),
                 'status' => 'failed',
@@ -100,8 +100,8 @@ class ProcessCachedData extends Command
             ]);
 
             // Send email notification
-            $cronJobName = 'process_cached_data';
-            $adminEmails = explode(',', env('ADMIN_EMAIL'));
+            // $cronJobName = 'process_cached_data';
+            // $adminEmails = explode(',', env('ADMIN_EMAIL'));
             // Mail::to($adminEmails)->send(new CronJobFailedMail($e->getMessage(), $cronJobName));
             return; // Exit to prevent further processing
         }
