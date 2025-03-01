@@ -102,7 +102,6 @@ public function handle()
 
             // Store in remote Redis (use 'redis_cache' instead of default Redis)
             Cache::store('redis_cache')->put($cacheKey, json_encode($processDataForCache), $expiresAt);
-            \Log::info('Redis Cache ', [$cacheKey => json_encode($processDataForCache)]);
             $this->info("Data Process For Removed Redis:");
 
             // Save cache details to the database

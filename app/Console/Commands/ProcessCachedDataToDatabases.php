@@ -79,9 +79,8 @@ class ProcessCachedDataToDatabases extends Command
         foreach ($cacheKeys as $cacheKey) {
             try {
                 $key = $cacheKey->cache_key;
-                $data = json_decode(Cache::store('redis')->get($key));
-                \Log::info('Data With Decode', ['data' => json_decode(Cache::store('redis')->get($key))]);
-                \Log::info('Data Without Decode', ['data' => Cache::store('redis')->get($key)]);
+                $data = Cache::store('redis')->get($key);
+                $data = json_encode($data, true);
                 if (!$data) {
                     $this->info("No data found for key: {$key}");
                     RemoteCacheKey::where('cache_key', $key)->delete();
