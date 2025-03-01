@@ -80,7 +80,7 @@ public function handle()
     foreach ($cacheKeys as $cacheKey) {
         try {
             $key = $cacheKey->cache_key;
-            $data = Cache::get($key);
+            $data = Cache::store('redis')->get($key);
 
             if (!$data) {
                 $this->info("No data found for key: {$key}");
@@ -114,7 +114,7 @@ public function handle()
 
             // Remove cache key from DB and Redis
             CacheKey::where('cache_key', $key)->delete();
-            Cache::forget($key);
+            Cache::store('redis')->forget($key);
 
         } catch (\Exception $e) {
             \Log::error("Error processing key {$key}: " . $e->getMessage());
