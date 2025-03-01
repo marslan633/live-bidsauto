@@ -79,7 +79,7 @@ class ProcessCachedDataToDatabases extends Command
         foreach ($cacheKeys as $cacheKey) {
             try {
                 $key = $cacheKey->cache_key;
-                $data = Cache::store('redis_cache')->get($key);
+                $data = Cache::store('redis')->get($key);
 
                 if (!$data) {
                     $this->info("No data found for key: {$key}");
@@ -102,7 +102,7 @@ class ProcessCachedDataToDatabases extends Command
 
                 // Remove cache key from DB and Redis
                 RemoteCacheKey::where('cache_key', $key)->delete();
-                Cache::store('redis_cache')->forget($key);
+                Cache::store('redis')->forget($key);
 
             } catch (\Exception $e) {
                 \Log::error("Error processing key {$key}: " . $e->getMessage());
