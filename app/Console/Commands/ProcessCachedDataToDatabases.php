@@ -8,7 +8,7 @@ use App\Models\{
     VehicleRecord, Manufacturer, VehicleModel, Generation, BodyType, Color,
     Transmission, DriveWheel, Fuel, Condition, Status, VehicleType, Domain,
     Engine, Seller, SellerType, Title, DetailedTitle, Damage, Image, Country,
-    State, City, Location, SellingBranch, Year, BuyNow, Odometer, CacheKey,
+    State, City, Location, SellingBranch, Year, BuyNow, Odometer, RemoteCacheKey,
 };
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
@@ -50,11 +50,11 @@ class ProcessCachedDataToDatabases extends Command
             ]);
 
             // Lock the cache keys for update
-            $cacheKeys = CacheKey::where('cache_key', 'like', 'vehicle_data%')
+            $cacheKeys = RemoteCacheKey::where('cache_key', 'like', 'vehicle_data%')
             ->where('status', 'pending')
             ->orderBy('created_at', 'asc')
             ->lockForUpdate()
-            ->take(10)
+            // ->take(10)
             ->get();
 
             if ($cacheKeys->isEmpty()) {
@@ -65,7 +65,7 @@ class ProcessCachedDataToDatabases extends Command
 
             $cacheKeyIds = $cacheKeys->pluck('id')->toArray();
               // Update status in bulk
-            CacheKey::whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
+            RemoteCacheKey::whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
             DB::commit();
         }catch(\Exception $e){
             DB::rollBack();
@@ -83,7 +83,7 @@ class ProcessCachedDataToDatabases extends Command
 
                 if (!$data) {
                     $this->info("No data found for key: {$key}");
-                    CacheKey::where('cache_key', $key)->delete();
+                    RemoteCacheKey::where('cache_key', $key)->delete();
                     continue;
                 }
                 foreach ($data as $car) {
@@ -101,7 +101,7 @@ class ProcessCachedDataToDatabases extends Command
                 }
 
                 // Remove cache key from DB and Redis
-                CacheKey::where('cache_key', $key)->delete();
+                RemoteCacheKey::where('cache_key', $key)->delete();
                 Cache::forget($key);
 
             } catch (\Exception $e) {
