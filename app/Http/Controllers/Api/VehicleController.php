@@ -29,14 +29,14 @@ class VehicleController extends Controller
             // Determine the model based on the 'type' parameter
             $data_source = $request->input('data_source', 'active'); // Default to 'active'
             $model = $data_source === 'archived' ? VehicleRecordArchived::class : VehicleRecord::class;
-        
+
             $query = $model::with([
-                'manufacturer', 'vehicleModel', 'generation', 'bodyType', 'color', 'engine', 
-                'transmission', 'driveWheel', 'vehicleType', 'fuel', 'status', 'seller', 
-                'sellerType', 'titleRelation', 'detailedTitle', 'damageMain', 'damageSecond', 
+                'manufacturer', 'vehicleModel', 'generation', 'bodyType', 'color', 'engine',
+                'transmission', 'driveWheel', 'vehicleType', 'fuel', 'status', 'seller',
+                'sellerType', 'titleRelation', 'detailedTitle', 'damageMain', 'damageSecond',
                 'condition', 'image', 'country', 'state', 'city', 'location', 'sellingBranch', 'buyNowRelation'
             ]);
-            
+
             $query->whereNotNull('sale_date');
             // ->where('is_new', false);
 
@@ -75,7 +75,7 @@ class VehicleController extends Controller
 
             // Handle the 'buy_now'
             if ($request->has('buy_now')) {
-                if ($request->buy_now == true) {  
+                if ($request->buy_now == true) {
                     $buy_now_id = BuyNow::where('name', 'buyNowWithPrice')->pluck('id');
                     $query->where('buy_now_id', $buy_now_id);
                 } elseif ($request->buy_now == false) {
@@ -96,11 +96,11 @@ class VehicleController extends Controller
                 // Remove commas and cast to integers
                 $odometerMin = (int) str_replace(',', '', $request->input('odometer_min'));
                 $odometerMax = (int) str_replace(',', '', $request->input('odometer_max'));
-                
+
                 // Perform query filtering
                 $query->whereBetween('odometer_mi', [$odometerMin, $odometerMax]);
             }
- 
+
             // Handling 'auction_date'
             if ($request->has('auction_date')) {
                 $auctionDateInput = $request->input('auction_date');
@@ -155,7 +155,7 @@ class VehicleController extends Controller
                     $query->whereIn($dbColumn, $request->input($requestKey));
                 }
             }
-        
+
             // Pagination
             $page = $request->input('page', 1);
             $size = $request->input('size', 10);
@@ -176,7 +176,7 @@ class VehicleController extends Controller
 
     /**
     * Search vehicle information records throught lot_id or vin.
-    */    
+    */
     public function searchVehicle(Request $request, $id) {
         try {
             // Determine the model based on the 'type' parameter
@@ -184,9 +184,9 @@ class VehicleController extends Controller
             $model = $data_source === 'archived' ? VehicleRecordArchived::class : VehicleRecord::class;
 
             $query = $model::with([
-                'manufacturer', 'vehicleModel', 'generation', 'bodyType', 'color', 'engine', 
-                'transmission', 'driveWheel', 'vehicleType', 'fuel', 'status', 'seller', 
-                'sellerType', 'titleRelation', 'detailedTitle', 'damageMain', 'damageSecond', 
+                'manufacturer', 'vehicleModel', 'generation', 'bodyType', 'color', 'engine',
+                'transmission', 'driveWheel', 'vehicleType', 'fuel', 'status', 'seller',
+                'sellerType', 'titleRelation', 'detailedTitle', 'damageMain', 'damageSecond',
                 'condition', 'image', 'country', 'state', 'city', 'location', 'sellingBranch', 'buyNowRelation'
             ]);
 
@@ -195,7 +195,7 @@ class VehicleController extends Controller
             if ($data_source === 'archived' && $includeHistory) {
                 $query->with('saleHistories.domain', 'saleHistories.status', 'saleHistories.seller');
             }
-            
+
             if ($request->type == 'lot_id') {
                 $query->where('lot_id', $id);
             } elseif ($request->type == 'vin') {
@@ -218,7 +218,7 @@ class VehicleController extends Controller
 
     /**
     * Filter Attributes and Manage Counts API.
-    */ 
+    */
 public function filterAttributes(Request $request)
 {
     try {
@@ -348,7 +348,7 @@ public function filterAttributes(Request $request)
                         // Skip applying whereIn if it matches the current_hit_attribute
                         continue;
                     }
-    
+
                     if ($request->has($filterKey) && is_array($request->input($filterKey))) {
                         // Use the correct column from the filters array for dynamic filtering
                         $existingResults->whereIn($filterDetails['column'], $request->input($filterKey));
@@ -504,9 +504,9 @@ public function filterAttributes(Request $request)
                 "contact_platform" => $request->contact_platform,
                 "url" => $request->url
             ];
-    
+
             Mail::to($request->receiver_email)->send(new SendQuoteMail($details));
-            
+
             return sendResponse(true, 200, 'Quote Sent Successfully!', [], 200);
         } catch (\Exception $ex) {
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
@@ -522,7 +522,7 @@ public function filterAttributes(Request $request)
             // Pagination
             $page = $request->input('page', 1);
             $size = $request->input('size', 10);
-            
+
             // Fetch the latest record(s) from the cron_run_history table
             $history = DB::table('cron_run_history')->orderBy('id', 'desc')
                     ->skip(($page - 1) * $size)->take($size)->get();
@@ -601,10 +601,10 @@ public function filterAttributes(Request $request)
         if ($lastCron && $lastCron->end_time) {
             // Convert end_time to Carbon instance
             $endTime = Carbon::parse($lastCron->end_time);
-            
+
             // Get the difference in minutes (ensure it's a non-negative integer)
             $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
-            
+
             // Apply the new conditions
             if ($timeDifference > 10) {
                 $minutes = $timeDifference + 10;
@@ -629,15 +629,15 @@ public function filterAttributes(Request $request)
 
             // Update status to 'progress' in a single query
             // CacheKey::whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
-        
+
 
         foreach ($cacheKeys as $cacheKey) {
 
-            
+
             $key = $cacheKey->cache_key;
             $data = Cache::get($key);
 
-            
+
                 // Bulk update vehicles instead of looping individually
                 $lotIds = collect($data)->pluck('lot')->toArray();
 
@@ -653,7 +653,7 @@ public function filterAttributes(Request $request)
                 }
 
                 return 'yes';
-            
+
         }
 
         // Get the last cron job record
@@ -668,10 +668,10 @@ public function filterAttributes(Request $request)
         // if ($lastCron && $lastCron->end_time) {
         //     // Convert end_time to Carbon instance
         //     $endTime = Carbon::parse($lastCron->end_time);
-            
+
         //     // Get the difference in minutes (ensure it's a non-negative integer)
         //     $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
-            
+
         //     // Apply the new conditions
         //     if ($timeDifference > 20) {
         //         $minutes = $timeDifference + 10;
@@ -683,7 +683,7 @@ public function filterAttributes(Request $request)
         // return $minutes;
         // $now = now();
         // $sale_date = "2025-02-05T15:00:00.000000Z";
-        
+
         // if($now < $sale_date) {
         //     return "now < sale_date".now();
         // } else if($now > $sale_date) {

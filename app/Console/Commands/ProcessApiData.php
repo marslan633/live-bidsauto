@@ -108,7 +108,7 @@ class ProcessApiData extends Command
                     // \Log::info("cache key {$cacheKey}.");
 
                     if (count($data) > 0) {
-                    Cache::put($cacheKey, $data, $expiresAt);
+                    Cache::store('redis')->put($cacheKey, $data, $expiresAt);
 
                     // Save cache details to database
                     CacheKey::updateOrCreate(
