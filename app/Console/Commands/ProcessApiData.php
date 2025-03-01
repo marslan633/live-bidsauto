@@ -26,10 +26,10 @@ class ProcessApiData extends Command
         $startTime = microtime(true);
         $startDateTime = Carbon::now();
 
-        if (!Redis::ping()) {
-            $this->error("❌ Redis is NOT connected!");
-            return;
-        }
+        // if (!Redis::ping()) {
+        //     $this->error("❌ Redis is NOT connected!");
+        //     return;
+        // }
 
         // **Get Last Successful Cron Job Status**
         $lastCron = DB::table('cron_run_history')
