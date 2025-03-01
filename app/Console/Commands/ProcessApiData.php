@@ -100,7 +100,7 @@ class ProcessApiData extends Command
                 $data = $response->json()['data'] ?? null;
 
                 if (!empty($data)) {
-                    foreach ($data as $item) {
+
                         // Save all data to cache with a unique cache key
                     $cacheKey = 'vehicle_data_' . now()->format('Y_m_d_H_i_s');
                     $expiresAt = now()->addMinutes(300); // Store for 4 hour
@@ -120,9 +120,8 @@ class ProcessApiData extends Command
 
                    $this->info("Data saved in cache with key: {$cacheKey}");
                                 // \Log::info("Data saved in cache with key: {$cacheKey}");
-                 } else {
-                    // \Log::info("No data to cache. Skipping cache storage for key: {$cacheKey}");
-                }
+                    } else {
+                        $this->info("No data to cache. Skipping cache storage for key: {$cacheKey}");
                     }
 
                     if (config('app.env') !== 'production') {
