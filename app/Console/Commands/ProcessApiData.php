@@ -70,7 +70,7 @@ class ProcessApiData extends Command
             'updated_at' => now(),
         ]);
 
-        $perPage = 20;
+        $perPage = 1000;
         $baseUrl = 'http://carstat.dev/api/cars';
 
         if (config('app.is_full_fetch') === true) {
