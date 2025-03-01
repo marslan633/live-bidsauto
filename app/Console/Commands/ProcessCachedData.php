@@ -315,6 +315,7 @@ private function handleCronError($cronRun, $errorMessage)
 
 
         $convertedData['lots'] = $car['lots'];
+        $convertedData['lot'] = $car['lots'][0];
         $lot = $convertedData['lots'][0];
 
         $processLotData = $this->processLotData($lot);
