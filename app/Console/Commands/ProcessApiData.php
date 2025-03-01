@@ -138,6 +138,7 @@ class ProcessApiData extends Command
 
                 // **Get 'next' page URL**
                 $nextUrl = $response->json()['links']['next'] ?? null;
+                $this->info("Next URL.", $nextUrl);
                 $apiUrl = $nextUrl ?: null;
 
             } while ($nextUrl !== null);
