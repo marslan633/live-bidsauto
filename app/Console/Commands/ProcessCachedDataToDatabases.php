@@ -75,18 +75,19 @@ class ProcessCachedDataToDatabases extends Command
 
          // **Batch processing setup**
         $batchData = [];
-        $batchSize = 1000; // Process in chunks of 1000
+        $batchSize = 1; // Process in chunks of 1000
         foreach ($cacheKeys as $cacheKey) {
             try {
                 $key = $cacheKey->cache_key;
                 $data = Cache::store('redis')->get($key);
-                $data = json_encode($data, true);
+                \Log::info('Without Decode', ['data' => $data]);
+                \Log::info('With Decode', ['data' => json_decode($data)]);
                 if (!$data) {
                     $this->info("No data found for key: {$key}");
                     RemoteCacheKey::where('cache_key', $key)->delete();
                     continue;
                 }
-                foreach ((array)$data as $car) {
+                foreach ($data as $car) {
                     // **Process Data but Store in Batch**
                     $batchData[] = $this->prepareCarData($car);
 
