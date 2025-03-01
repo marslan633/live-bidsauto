@@ -21,7 +21,7 @@ class ProcessCachedDataToDatabases extends Command
      *
      * @var string
      */
-    protected $signature = 'app:process-cached-data-to-databases';
+    protected $signature = 'process:process-cached-data-to-databases';
 
     /**
      * The console command description.
