@@ -8,7 +8,8 @@ use App\Models\{
     VehicleRecord, Manufacturer, VehicleModel, Generation, BodyType, Color,
     Transmission, DriveWheel, Fuel, Condition, Status, VehicleType, Domain,
     Engine, Seller, SellerType, Title, DetailedTitle, Damage, Image, Country,
-    State, City, Location, SellingBranch, Year, BuyNow, Odometer, CacheKey
+    State, City, Location, SellingBranch, Year, BuyNow, Odometer, CacheKey,
+    RemoteCacheKey
 };
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -89,19 +90,24 @@ public function handle()
 
             foreach ($data as $car) {
                 $processedData = $this->convertAndStoreDataToRedis($car);
+
+                // Generate a unique cache key
                 $cacheKey = 'vehicle_data_' . now()->format('Y_m_d_H_i_s');
                 $expiresAt = now()->addMinutes(300);
-                Cache::put($cacheKey, json_encode($processedData), $expiresAt);
 
-                    // Save cache details to database
-                CacheKey::updateOrCreate(
+                // Store in remote Redis (use 'redis_cache' instead of default Redis)
+                Cache::store('redis_cache')->put($cacheKey, json_encode($processedData), $expiresAt);
+
+                // Save cache details to the database
+                RemoteCacheKey::updateOrCreate(
                     ['cache_key' => $cacheKey],
                     [
-                    'status' => 'pending',
-                    'expires_at' => $expiresAt,
+                        'status' => 'pending',
+                        'expires_at' => $expiresAt,
                     ]
                 );
-                $this->info("Data processed: " . json_encode($processedData));
+
+                $this->info("Data processed and stored in remote Redis: " . json_encode($processedData));
             }
 
             // Remove cache key from DB and Redis
