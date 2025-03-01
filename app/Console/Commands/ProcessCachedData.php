@@ -100,7 +100,7 @@ class ProcessCachedData extends Command
                 // Process each car data
                 foreach ($data as $car) {
                    $processLotDataLatest = $this->convertAndStoreDataToRedis($car);
-                   $this->info("Data processed successfully.",$processLotDataLatest);
+                   $this->info("Data processed successfully.".$processLotDataLatest);
                 }
 
                 // Log success and remove cache
