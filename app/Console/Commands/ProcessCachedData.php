@@ -117,7 +117,8 @@ public function handle()
 
         } catch (\Exception $e) {
             \Log::error("Error processing key {$key}: " . $e->getMessage());
-            $cacheKey->update(['status' => 'pending']); // Revert status
+            $this->info("Data Process Error For Removed Redis:");
+            // $cacheKey->update(['status' => 'pending']); // Revert status
         }
     }
 
