@@ -501,7 +501,8 @@ private function handleCronError($cronRun, $errorMessage)
             ];
             // Handle City
             if (!empty($location['city'])) {
-                $lotConvertedData['city'] = ['city_api_id' => $location['city']['id'],
+                $lotConvertedData['city'] = [
+                    'city_api_id' => $location['city']['id'],
                     'name' => $location['city']['name']
                 ];
                 // Handle Location
