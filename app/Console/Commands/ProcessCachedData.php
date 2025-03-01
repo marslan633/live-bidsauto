@@ -87,29 +87,30 @@ public function handle()
                 CacheKey::where('cache_key', $key)->delete();
                 continue;
             }
-
+            $processDataForCache = [];
             foreach ($data as $car) {
                 $processedData = $this->convertAndStoreDataToRedis($car);
+                array_push($processDataForCache, $processedData);
                 $this->info("Start Processing Cached Data For Remove Redis");
-
-                // Generate a unique cache key
-                $cacheKey = 'vehicle_data_' . now()->format('Y_m_d_H_i_s');
-                $expiresAt = now()->addMinutes(300);
-
-                // Store in remote Redis (use 'redis_cache' instead of default Redis)
-                Cache::store('redis_cache')->put($cacheKey, json_encode($processedData), $expiresAt);
-
-                // Save cache details to the database
-                RemoteCacheKey::updateOrCreate(
-                    ['cache_key' => $cacheKey],
-                    [
-                        'status' => 'pending',
-                        'expires_at' => $expiresAt,
-                    ]
-                );
 
                 $this->info("Data Process For Removed Redis:");
             }
+
+            // Generate a unique cache key
+            $cacheKey = 'vehicle_data_' . now()->format('Y_m_d_H_i_s');
+            $expiresAt = now()->addMinutes(300);
+
+            // Store in remote Redis (use 'redis_cache' instead of default Redis)
+            Cache::store('redis_cache')->put($cacheKey, json_encode($processDataForCache), $expiresAt);
+
+            // Save cache details to the database
+            RemoteCacheKey::updateOrCreate(
+                ['cache_key' => $cacheKey],
+                [
+                    'status' => 'pending',
+                    'expires_at' => $expiresAt,
+                ]
+            );
 
             // Remove cache key from DB and Redis
             CacheKey::where('cache_key', $key)->delete();
