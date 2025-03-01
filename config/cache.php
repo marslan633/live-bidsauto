@@ -77,6 +77,11 @@ return [
             'lock_connection' => env('REDIS_CACHE_LOCK_CONNECTION', 'default'),
         ],
 
+        'redis_cache' => [
+            'driver' => 'redis',
+            'connection' => 'cache', // This should match the connection in config/database.php
+        ],
+
         'dynamodb' => [
             'driver' => 'dynamodb',
             'key' => env('AWS_ACCESS_KEY_ID'),

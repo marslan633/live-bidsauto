@@ -89,6 +89,18 @@ public function handle()
 
             foreach ($data as $car) {
                 $processedData = $this->convertAndStoreDataToRedis($car);
+                $cacheKey = 'vehicle_data_' . now()->format('Y_m_d_H_i_s');
+                $expiresAt = now()->addMinutes(300);
+                Cache::put($cacheKey, json_encode($processedData), $expiresAt);
+
+                    // Save cache details to database
+                CacheKey::updateOrCreate(
+                    ['cache_key' => $cacheKey],
+                    [
+                    'status' => 'pending',
+                    'expires_at' => $expiresAt,
+                    ]
+                );
                 $this->info("Data processed: " . json_encode($processedData));
             }
 
