@@ -46,7 +46,7 @@ class ProcessApiData extends Command
 
             if (config('app.env') !== 'production') {
                 $this->info("⏳ Time Difference: {$timeDifference}");
-                \Log::info("⏳ Time Difference: {$timeDifference}");
+                // \Log::info("⏳ Time Difference: {$timeDifference}");
             }
 
             if ($timeDifference > 20) {
@@ -58,7 +58,7 @@ class ProcessApiData extends Command
 
         if (config('app.env') !== 'production') {
             $this->info("🚀 Process started at: " . $startDateTime);
-            \Log::info("🚀 Process started at: " . $startDateTime);
+            // \Log::info("🚀 Process started at: " . $startDateTime);
         }
 
         // **Store Cron Job Status**
@@ -93,7 +93,7 @@ class ProcessApiData extends Command
 
                 if (!$response->successful()) {
                     $this->error('❌ Failed to fetch API data.');
-                    \Log::error('❌ Failed to fetch API data.');
+                    // \Log::error('❌ Failed to fetch API data.');
                     break;
                 }
 
@@ -126,12 +126,12 @@ class ProcessApiData extends Command
 
                     if (config('app.env') !== 'production') {
                         $this->info("🎉 Data pushed to Redis Stream.");
-                        \Log::info("🎉 Data pushed to Redis Stream.");
+                        // \Log::info("🎉 Data pushed to Redis Stream.");
                     }
                 } else {
                     if (config('app.env') !== 'production') {
                         $this->info("⚠️ No new data available.");
-                        \Log::info("⚠️ No new data available.");
+                        // \Log::info("⚠️ No new data available.");
                     }
                 }
 
@@ -151,7 +151,7 @@ class ProcessApiData extends Command
 
         } catch (\Exception $e) {
             $this->error("❌ Error: " . $e->getMessage());
-            \Log::error("❌ Error: " . $e->getMessage());
+            // \Log::error("❌ Error: " . $e->getMessage());
 
             DB::table('cron_run_history')->where('id', $cronRun)->update([
                 'end_time'      => Carbon::now(),
