@@ -91,10 +91,10 @@ public function handle()
             foreach ($data as $car) {
                 $processedData = $this->convertAndStoreDataToRedis($car);
                 array_push($processDataForCache, $processedData);
-                $this->info("Start Processing Cached Data For Remove Redis");
 
-                $this->info("Data Process For Removed Redis:");
             }
+
+            $this->info("Start Processing Cached Data For Remove Redis");
 
             // Generate a unique cache key
             $cacheKey = 'vehicle_data_' . now()->format('Y_m_d_H_i_s');
@@ -102,6 +102,7 @@ public function handle()
 
             // Store in remote Redis (use 'redis_cache' instead of default Redis)
             Cache::store('redis_cache')->put($cacheKey, json_encode($processDataForCache), $expiresAt);
+            $this->info("Data Process For Removed Redis:");
 
             // Save cache details to the database
             RemoteCacheKey::updateOrCreate(
