@@ -51,7 +51,7 @@ class ProcessCachedDataToDatabases extends Command
 
             // Lock the cache keys for update
             $cacheKeys = RemoteCacheKey::where('cache_key', 'like', 'vehicle_data%')
-            ->where('status', 'pending')
+            ->where('status', 'progress')
             ->orderBy('created_at', 'asc')
             ->lockForUpdate()
             // ->take(10)
