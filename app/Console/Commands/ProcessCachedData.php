@@ -35,102 +35,97 @@ class ProcessCachedData extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
-    {
-        $startDateTime = Carbon::now();
-        $this->info("Process started at: " . $startDateTime);
-        \Log::info("Process started at: " . $startDateTime);
+public function handle()
+{
+    $startDateTime = Carbon::now();
+    $this->info("Process started at: " . $startDateTime);
+    \Log::info("Process started at: " . $startDateTime);
 
-        try {
-            $cronRun = DB::table('cron_run_history')->insertGetId([
-                'cron_name' => 'process_cached_data',
-                'start_time' => $startDateTime,
-                'status' => 'running',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            // Get all cache keys for API data
-            $cacheKeys = CacheKey::where('cache_key', 'like', 'vehicle_data%')
-                ->where('status', 'pending')
-                ->orderBy('created_at', 'asc')
-                 ->lockForUpdate() // This prevents other workers from reading these rows
-                ->take(10)
-                ->get();
-
-            // Extract IDs of the fetched records
-            $cacheKeyIds = $cacheKeys->pluck('id');
-
-            if ($cacheKeyIds->isNotEmpty()) {
-                // Update the status of the fetched records to 'progress'
-                CacheKey::whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
-            }
-        } catch (\Exception $e) {
-            $this->error("Error fetching cache keys or updating status: " . $e->getMessage());
-            DB::table('cron_run_history')->where('id', $cronRun)->update([
-                'end_time' => Carbon::now(),
-                'status' => 'failed',
-                'error_message' => $e->getMessage(),
-                'updated_at' => now(),
-            ]);
-
-            // Send email notification
-            $cronJobName = 'process_cached_data';
-            $adminEmails = explode(',', env('ADMIN_EMAIL'));
-            // Mail::to($adminEmails)->send(new CronJobFailedMail($e->getMessage(), $cronJobName));
-            return; // Exit to prevent further processing
-        }
-
-        foreach ($cacheKeys as $cacheKey) {
-            $key = $cacheKey->cache_key;
-
-            try {
-                // Retrieve data from cache
-                $data = Cache::get($key);
-
-                if (!$data) {
-                    $this->warning("No data found in cache for key: {$key}");
-                    \Log::info("No data found in cache for key: {$key}");
-
-                    // Remove the cache key from the database
-                    CacheKey::where('cache_key', $key)->delete();
-                    continue;
-                }
-
-                // Process each car data
-                foreach ($data as $car) {
-                   $processLotDataLatest = $this->convertAndStoreDataToRedis($car);
-                   $this->info("Data processed successfully.".$processLotDataLatest);
-                }
-
-                // Log success and remove cache
-                $this->info("Data for cache key '{$key}' processed successfully.");
-
-                // Delete the cache key from the table
-                CacheKey::where('cache_key', $key)->delete();
-
-                // Remove processed data from cache
-                Cache::forget($key);
-            } catch (\Exception $e) {
-                // Log any errors encountered during processing
-                $this->error("Error processing data for cache key {$key}: " . $e->getMessage());
-
-                try {
-                    // Optionally revert the status to 'pending' on failure
-                    $cacheKey->update(['status' => 'pending']);
-                } catch (\Exception $updateError) {
-                    $this->error("Failed to revert status for cache key {$key}: " . $updateError->getMessage());
-                }
-            }
-        }
-
-        // Mark cron as successful
-        DB::table('cron_run_history')->where('id', $cronRun)->update([
-            'end_time' => Carbon::now(),
-            'status' => 'success',
+    DB::beginTransaction();
+    try {
+        $cronRun = DB::table('cron_run_history')->insertGetId([
+            'cron_name' => 'process_cached_data',
+            'start_time' => $startDateTime,
+            'status' => 'running',
+            'created_at' => now(),
             'updated_at' => now(),
         ]);
+
+        // Lock the cache keys for update
+        $cacheKeys = CacheKey::where('cache_key', 'like', 'vehicle_data%')
+            ->where('status', 'pending')
+            ->orderBy('created_at', 'asc')
+            ->lockForUpdate()
+            ->take(10)
+            ->get();
+
+        if ($cacheKeys->isEmpty()) {
+            $this->info("No pending cache keys found.");
+            DB::commit();
+            return;
+        }
+
+        $cacheKeyIds = $cacheKeys->pluck('id')->toArray();
+
+        // Update status in bulk
+        CacheKey::whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
+        DB::commit();
+    } catch (\Exception $e) {
+        DB::rollBack();
+        $this->handleCronError($cronRun, "Error fetching cache keys: " . $e->getMessage());
+        return;
     }
+
+    foreach ($cacheKeys as $cacheKey) {
+        try {
+            $key = $cacheKey->cache_key;
+            $data = Cache::get($key);
+
+            if (!$data) {
+                $this->info("No data found for key: {$key}");
+                CacheKey::where('cache_key', $key)->delete();
+                continue;
+            }
+
+            foreach ($data as $car) {
+                $processedData = $this->convertAndStoreDataToRedis($car);
+                $this->info("Data processed: " . json_encode($processedData));
+            }
+
+            // Remove cache key from DB and Redis
+            CacheKey::where('cache_key', $key)->delete();
+            Cache::forget($key);
+
+        } catch (\Exception $e) {
+            \Log::error("Error processing key {$key}: " . $e->getMessage());
+            $cacheKey->update(['status' => 'pending']); // Revert status
+        }
+    }
+
+    DB::table('cron_run_history')->where('id', $cronRun)->update([
+        'end_time' => Carbon::now(),
+        'status' => 'success',
+        'updated_at' => now(),
+    ]);
+}
+
+/**
+ * Handle cron job failure and send email notification.
+ */
+private function handleCronError($cronRun, $errorMessage)
+{
+    \Log::error($errorMessage);
+    DB::table('cron_run_history')->where('id', $cronRun)->update([
+        'end_time' => Carbon::now(),
+        'status' => 'failed',
+        'error_message' => $errorMessage,
+        'updated_at' => now(),
+    ]);
+
+    $adminEmails = explode(',', env('ADMIN_EMAIL'));
+    Mail::to($adminEmails)->send(new CronJobFailedMail($errorMessage, 'process_cached_data'));
+}
+
 
     private function convertAndStoreDataToRedis(array $car)
     {
