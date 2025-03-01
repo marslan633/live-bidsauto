@@ -494,7 +494,6 @@ private function handleCronError($cronRun, $errorMessage)
             // Handle State
             $lotConvertedData['state'] = [
                 'state_api_id' => $location['state']['id'],
-                    'country_id' => $country?->id,
                     'code' => $location['state']['code'],
                     'name' => $location['state']['name']
             ];
