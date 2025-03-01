@@ -23,7 +23,7 @@ class ProcessCachedDataOldTwo extends Command
      *
      * @var string
      */
-    protected $signature = 'process:cached-data';
+    protected $signature = 'process:cached-data-old-two';
 
     /**
      * The console command description.
