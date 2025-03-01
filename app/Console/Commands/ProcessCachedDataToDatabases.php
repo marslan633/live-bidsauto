@@ -79,7 +79,7 @@ class ProcessCachedDataToDatabases extends Command
         foreach ($cacheKeys as $cacheKey) {
             try {
                 $key = $cacheKey->cache_key;
-                $data = Cache::store('redis')->get($key);
+                $data = json_decode(Cache::store('redis')->get($key));
 
                 if (!$data) {
                     $this->info("No data found for key: {$key}");
