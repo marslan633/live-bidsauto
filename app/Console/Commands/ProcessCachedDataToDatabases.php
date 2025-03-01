@@ -86,7 +86,7 @@ class ProcessCachedDataToDatabases extends Command
                     RemoteCacheKey::where('cache_key', $key)->delete();
                     continue;
                 }
-                foreach ($data as $car) {
+                foreach ((array)$data as $car) {
                     // **Process Data but Store in Batch**
                     $batchData[] = $this->prepareCarData($car);
 
