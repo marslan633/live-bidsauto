@@ -15,7 +15,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
-use Illuminate\Support\Facades\Redis;
 
 class ProcessCachedData extends Command
 {
@@ -38,15 +37,12 @@ class ProcessCachedData extends Command
      */
     public function handle()
     {
-        // Read Data From Stream with consumer group
-        // Convert data to json format similar to database and Store in KVM4.3's Redis
-        // Acknowledge From Stream Consumer Group
-
         $startDateTime = Carbon::now();
         $this->info("Process started at: " . $startDateTime);
         \Log::info("Process started at: " . $startDateTime);
 
-         $cronRun = DB::table('cron_run_history')->insertGetId([
+        try {
+            $cronRun = DB::table('cron_run_history')->insertGetId([
                 'cron_name' => 'process_cached_data',
                 'start_time' => $startDateTime,
                 'status' => 'running',
@@ -54,56 +50,23 @@ class ProcessCachedData extends Command
                 'updated_at' => now(),
             ]);
 
-        try {
+            // Get all cache keys for API data
+            $cacheKeys = CacheKey::where('cache_key', 'like', 'vehicle_data%')
+                ->where('status', 'pending')
+                ->orderBy('created_at', 'asc')
+                 ->lockForUpdate() // This prevents other workers from reading these rows
+                ->take(10)
+                ->get();
 
-            // Read Data From Stream with consumer group
-            $streamName = 'stream:vehicle_data';
-            $groupName = 'vehicle_data_group';
-            $consumerName = 'worker_' . uniqid();
+            // Extract IDs of the fetched records
+            $cacheKeyIds = $cacheKeys->pluck('id');
 
-            // Check if consumer group exists
-            $groups = Redis::xInfo('GROUPS', $streamName);
-
-            $groupExists = collect($groups)->contains(fn($group) => $group['name'] === $groupName);
-
-            if (!$groupExists) {
-                // Create the consumer group if it does not exist
-                Redis::xGroup('CREATE', $streamName, $groupName, '0', true);
-                $this->info("✅ Consumer group created: $groupName");
-            } else {
-                $this->info("ℹ️ Consumer group already exists: $groupName");
+            if ($cacheKeyIds->isNotEmpty()) {
+                // Update the status of the fetched records to 'progress'
+                CacheKey::whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
             }
-
-
-            $this->info("🔍 Checking stream: $streamName in group: $groupName...");
-
-                // Read up to 10 messages from the consumer group
-                $messages = Redis::xreadgroup($groupName, $consumerName, [$streamName => '>'], 10);
-                $this->info("Working ");
-
-                if (!empty($messages[$streamName])) {
-                    foreach ($messages[$streamName] as $id => $record) {
-                        $data = json_decode($record['data'], true);
-                        // Convert data to json format similar to database and Store in KVM4.3's Redis
-                        $convertedData = $this->convertAndStoreDataToRedis($data);
-                        $this->info("📥 Processing message ID: {$id}");
-                        $this->info("Converted Data: " . json_encode($convertedData, JSON_PRETTY_PRINT));
-
-                        // Simulating processing
-                        sleep(1);
-
-                        // Acknowledge message to mark it as processed
-                        Redis::xack($streamName, $groupName, [$id]);
-                        $this->info("✅ Acknowledged message ID: {$id}");
-                    }
-                } else {
-                    $this->info("⏳ No new messages. Sleeping...");
-                    sleep(5); // Wait before checking again
-                }
-
-
         } catch (\Exception $e) {
-            $this->info("Error fetching cache keys or updating status: " . $e->getMessage());
+            $this->error("Error fetching cache keys or updating status: " . $e->getMessage());
             DB::table('cron_run_history')->where('id', $cronRun)->update([
                 'end_time' => Carbon::now(),
                 'status' => 'failed',
@@ -112,10 +75,53 @@ class ProcessCachedData extends Command
             ]);
 
             // Send email notification
-            // $cronJobName = 'process_cached_data';
-            // $adminEmails = explode(',', env('ADMIN_EMAIL'));
+            $cronJobName = 'process_cached_data';
+            $adminEmails = explode(',', env('ADMIN_EMAIL'));
             // Mail::to($adminEmails)->send(new CronJobFailedMail($e->getMessage(), $cronJobName));
             return; // Exit to prevent further processing
+        }
+
+        foreach ($cacheKeys as $cacheKey) {
+            $key = $cacheKey->cache_key;
+
+            try {
+                // Retrieve data from cache
+                $data = Cache::get($key);
+
+                if (!$data) {
+                    $this->warning("No data found in cache for key: {$key}");
+                    \Log::info("No data found in cache for key: {$key}");
+
+                    // Remove the cache key from the database
+                    CacheKey::where('cache_key', $key)->delete();
+                    continue;
+                }
+
+                // Process each car data
+                foreach ($data as $car) {
+                   $processLotDataLatest = $this->convertAndStoreDataToRedis($car);
+                   $this->info("Data processed successfully.",$processLotDataLatest);
+                }
+
+                // Log success and remove cache
+                $this->info("Data for cache key '{$key}' processed successfully.");
+
+                // Delete the cache key from the table
+                CacheKey::where('cache_key', $key)->delete();
+
+                // Remove processed data from cache
+                Cache::forget($key);
+            } catch (\Exception $e) {
+                // Log any errors encountered during processing
+                $this->error("Error processing data for cache key {$key}: " . $e->getMessage());
+
+                try {
+                    // Optionally revert the status to 'pending' on failure
+                    $cacheKey->update(['status' => 'pending']);
+                } catch (\Exception $updateError) {
+                    $this->error("Failed to revert status for cache key {$key}: " . $updateError->getMessage());
+                }
+            }
         }
 
         // Mark cron as successful
@@ -124,8 +130,6 @@ class ProcessCachedData extends Command
             'status' => 'success',
             'updated_at' => now(),
         ]);
-
-        return 0;
     }
 
     private function convertAndStoreDataToRedis(array $car)
@@ -546,5 +550,4 @@ class ProcessCachedData extends Command
         return $lotConvertedData;
 
     }
-
 }

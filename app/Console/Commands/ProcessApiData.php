@@ -4,14 +4,22 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
+use App\Models\{
+    VehicleRecord, Manufacturer, VehicleModel, Generation, BodyType, Color,
+    Transmission, DriveWheel, Fuel, Condition, Status, VehicleType, Domain,
+    Engine, Seller, SellerType, Title, DetailedTitle, Damage, Image, Country,
+    State, City, Location, SellingBranch, Year, BuyNow, Odometer, CacheKey
+};
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\CronJobFailedMail;
 
 class ProcessApiData extends Command
 {
     protected $signature = 'process:api-data';
-    protected $description = 'Fetch data from API and push it to Redis Stream for Consumer Group';
+    protected $description = 'Fetch data from API and push it to Redis';
 
     public function handle()
     {
@@ -93,23 +101,28 @@ class ProcessApiData extends Command
 
                 if (!empty($data)) {
                     foreach ($data as $item) {
-                        $id = $item['id'];
-                        // $hash = md5(json_encode($item));
+                        // Save all data to cache with a unique cache key
+                    $cacheKey = 'vehicle_data_' . now()->format('Y_m_d_H_i_s');
+                    $expiresAt = now()->addMinutes(300); // Store for 4 hour
+                    $this->info("cache key {$cacheKey}.");
+                    // \Log::info("cache key {$cacheKey}.");
 
-                        $this->info("🔍 Checking ID: {$id} in Redis Stream...");
+                    if (count($data) > 0) {
+                    Cache::put($cacheKey, $data, $expiresAt);
 
-                        // **Push Data to Redis Stream (Ensures Continuous Writing)**
-                        $result = Redis::xAdd($streamName, '*', [
-                            'id'    => (string) $id,
-                            'data'  => json_encode($item),
-                        ],1000,true);
+                    // Save cache details to database
+                    CacheKey::updateOrCreate(
+                   ['cache_key' => $cacheKey],
+                   [
+                    'status' => 'pending',
+                    'expires_at' => $expiresAt,
+                    ]);
 
-
-                        if ($result) {
-                            $this->info("✅ Successfully pushed ID: {$id} to Redis Stream.");
-                        } else {
-                            $this->error("❌ Failed to push ID: {$id} to Redis Stream.");
-                        }
+                   $this->info("Data saved in cache with key: {$cacheKey}");
+                                // \Log::info("Data saved in cache with key: {$cacheKey}");
+                 } else {
+                    // \Log::info("No data to cache. Skipping cache storage for key: {$cacheKey}");
+                }
                     }
 
                     if (config('app.env') !== 'production') {
