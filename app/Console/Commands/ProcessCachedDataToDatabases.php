@@ -160,15 +160,15 @@ class ProcessCachedDataToDatabases extends Command
                 ['name' => $car['vehicle_record']['domain']['name']]
             )->id
             : null,
-            'selling_branch' => isset($car['vehicle_record']['selling_branch']) ? SellingBranch::firstOrCreate(
-                ['selling_branch_api_id' => $car['vehicle_record']['selling_branch']['selling_branch_api_id']],
-                [
-                    'name' => $car['vehicle_record']['selling_branch']['name'],
-                    'link' => $car['vehicle_record']['selling_branch']['link'],
-                    'number' => $car['vehicle_record']['selling_branch']['number'],
-                    'domain_id' => $car['vehicle_record']['selling_branch']['domain_id'],
-                ]
-            ) : null,
+            // 'selling_branch' => $car['vehicle_record']['selling_branch'] ? SellingBranch::firstOrCreate(
+            //     ['selling_branch_api_id' => $car['vehicle_record']['selling_branch']['selling_branch_api_id']],
+            //     [
+            //         'name' => $car['vehicle_record']['selling_branch']['name'],
+            //         'link' => $car['vehicle_record']['selling_branch']['link'],
+            //         'number' => $car['vehicle_record']['selling_branch']['number'],
+            //         'domain_id' => $car['vehicle_record']['selling_branch']['domain_id'],
+            //     ]
+            // ) : null,
             'external_id' => $car['vehicle_record']['external_id'] ?? null,
             'odometer_km' => $car['vehicle_record']['odometer_km'] ?? null,
             'odometer_mi' => $car['vehicle_record']['odometer_mi'] ?? null,
