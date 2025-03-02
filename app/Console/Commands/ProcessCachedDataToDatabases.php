@@ -149,7 +149,7 @@ class ProcessCachedDataToDatabases extends Command
             'year_id' => $year,
             'title' => $car['vehicle_record']['title'] ?? null,
             'vin' => $car['vehicle_record']['vin'] ?? null,
-            'cylinders' => $car['vehicle_record']['cylinders'],
+            'cylinders' => $car['vehicle_record']['cylinders'] ?? null,
             // Lot Data Processing
             'salvage_id' => $car['vehicle_record']['salvage_id'] ?? null,
             'lot_id' => $car['vehicle_record']['lot_id'] ?? null,
