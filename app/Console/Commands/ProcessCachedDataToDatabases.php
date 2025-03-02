@@ -127,12 +127,11 @@ class ProcessCachedDataToDatabases extends Command
 
     private function prepareCarData(array $car)
     {
-        \Log::info('VehicleData', ['data' => json_encode($car['vehicle_record'])]);
         $year = null;
         if (!empty($car['year'])) {
             $year = Year::firstOrCreate(['name' => $car['year']])->id;
         }
-
+        $car['vehicle_record'] = array($car['vehicle_record']);
         $model_id = VehicleModel::firstOrCreate(['vehicle_model_api_id' => $car['model']['vehicle_model_api_id']], ['name' => $car['model']['name']])->id;
         return [
             'manufacturer_id' => Manufacturer::firstOrCreate(['manufacturer_api_id' => $car['manufacturer']['manufacturer_api_id']], ['name' => $car['manufacturer']['name']])->id,
