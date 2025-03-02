@@ -247,7 +247,7 @@ class ProcessCachedDataToDatabases extends Command
                             )->id : null,
                             'name' => $car['vehicle_record']['city']['name']
                         ]
-                    ) : null,
+                    )->id : null,
                     'name' => trim($car['vehicle_record']['locationRecord']['name']) ?: 'Unnamed Location',
                     'latitude' => $car['vehicle_record']['locationRecord']['latitude'] ?? null,
                     'longitude' => $car['vehicle_record']['locationRecord']['longitude'] ?? null,
