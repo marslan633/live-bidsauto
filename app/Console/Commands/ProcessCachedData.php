@@ -320,7 +320,7 @@ private function handleCronError($cronRun, $errorMessage)
 
         $processLotData = $this->processLotData($lot);
         $convertedData['vehicle_record'] = array_merge($convertedData['vehicle_record'], $processLotData);
-
+        \Log::info('Converted Data', ['vechicle_record' => json_encode($convertedData)]);
         return $convertedData;
     }
 
