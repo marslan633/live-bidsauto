@@ -133,7 +133,6 @@ class ProcessCachedDataToDatabases extends Command
         }
         $car['vehicle_record'] = (array) $car['vehicle_record'];
         $model_id = VehicleModel::firstOrCreate(['vehicle_model_api_id' => $car['model']['vehicle_model_api_id']], ['name' => $car['model']['name']])->id;
-        \Log::info('Selling Branch', ['data' => json_encode($car['vehicle_record']['selling_branch'])]);
         return [
             'manufacturer_id' => Manufacturer::firstOrCreate(['manufacturer_api_id' => $car['manufacturer']['manufacturer_api_id']], ['name' => $car['manufacturer']['name']])->id,
             'vehicle_model_id' =>  $model_id,
