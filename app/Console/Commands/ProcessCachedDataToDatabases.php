@@ -133,6 +133,27 @@ class ProcessCachedDataToDatabases extends Command
         }
         $car['vehicle_record'] = (array) $car['vehicle_record'];
         $model_id = VehicleModel::firstOrCreate(['vehicle_model_api_id' => $car['model']['vehicle_model_api_id']], ['name' => $car['model']['name']])->id;
+
+        $imageRecord = $car['vehicle_record']['imageRecord'] ?? [];
+        if (!isset($imageRecord['image_api_id'])) {
+            $imageId = null;
+        } else {
+            $imageId = Image::updateOrCreate(
+                ['image_api_id' => $imageRecord['image_api_id']],
+                [
+                    'small' => json_encode($imageRecord['small'] ?? []),
+                    'normal' => json_encode($imageRecord['normal'] ?? []),
+                    'big' => json_encode($imageRecord['big'] ?? []),
+                    'downloaded' => json_encode($imageRecord['downloaded'] ?? []),
+                    'exterior' => json_encode($imageRecord['exterior'] ?? []),
+                    'interior' => json_encode($imageRecord['interior'] ?? []),
+                    'video' => $imageRecord['video'] ?? null,
+                    'video_youtube_id' => $imageRecord['video_youtube_id'] ?? null,
+                    'external_panorama_url' => $imageRecord['external_panorama_url'] ?? null,
+                ]
+            )->id;
+        }
+
         return [
             'manufacturer_id' => Manufacturer::firstOrCreate(['manufacturer_api_id' => $car['manufacturer']['manufacturer_api_id']], ['name' => $car['manufacturer']['name']])->id,
             'vehicle_model_id' =>  $model_id,
@@ -207,8 +228,8 @@ class ProcessCachedDataToDatabases extends Command
                 ['name' => $car['vehicle_record']['status']['name']]
             )->id,
             'title_id' => Title::firstOrCreate(
-                ['title_api_id' => $car['vehicle_record']['title']['title_api_id']],
-                ['name' => $car['vehicle_record']['title']['name']]
+                ['title_api_id' => $car['vehicle_record']['title_title']['title_api_id']],
+                ['name' => $car['vehicle_record']['title_title']['name']]
             )->id,
             'detailed_title_id' => DetailedTitle::firstOrCreate(
                 ['detailed_title_api_id' => $car['vehicle_record']['detailed_title']['detailed_title_api_id']],
@@ -256,21 +277,7 @@ class ProcessCachedDataToDatabases extends Command
                     'raw' => $car['vehicle_record']['locationRecord']['raw'] ?? '{}'
                 ]
             )->id : null,
-            'image_id' => !empty($car['vehicle_record']['imageRecord']) ? Image::updateOrCreate(
-                ['image_api_id' => $car['vehicle_record']['imageRecord']['image_api_id']],
-                [
-                    'small' => json_encode($car['vehicle_record']['imageRecord']['small'] ?? []),
-                    'normal' => json_encode($car['vehicle_record']['imageRecord']['normal'] ?? []),
-                    'big' => json_encode($car['vehicle_record']['imageRecord']['big'] ?? []),
-                    'downloaded' => json_encode($car['vehicle_record']['imageRecord']['downloaded'] ?? []),
-                    'exterior' => json_encode($car['vehicle_record']['imageRecord']['exterior'] ?? []),
-                    'interior' => json_encode($car['vehicle_record']['imageRecord']['interior'] ?? []),
-                    'video' => $car['vehicle_record']['imageRecord']['video'] ?? null,
-                    'video_youtube_id' => $car['vehicle_record']['imageRecord']['video_youtube_id'] ?? null,
-                    'external_panorama_url' => $car['vehicle_record']['imageRecord']['external_panorama_url'] ?? null,
-                ]
-            )->id : null,
-
+            'image_id' => $imageId,
 
         ];
 

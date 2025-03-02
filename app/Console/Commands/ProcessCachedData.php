@@ -430,7 +430,7 @@ private function handleCronError($cronRun, $errorMessage)
             ];
 
         // Process Title
-        $lotConvertedData['title'] = isset($lot['title']) && is_array($lot['title'])
+        $lotConvertedData['title_title'] = isset($lot['title']) && is_array($lot['title'])
         ?
             [
                 'title_api_id' => $lot['title']['id'],
