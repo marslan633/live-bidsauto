@@ -160,7 +160,7 @@ class ProcessCachedDataToDatabases extends Command
                 ['name' => $car['vehicle_record']['domain']['name']]
             )->id
             : null,
-            'selling_branch' => $car['vehicle_record']['selling_branch'] ? SellingBranch::firstOrCreate(
+            'selling_branch' => isset($car['vehicle_record']['selling_branch']) ? SellingBranch::firstOrCreate(
                 ['selling_branch_api_id' => $car['vehicle_record']['selling_branch']['selling_branch_api_id']],
                 [
                     'name' => $car['vehicle_record']['selling_branch']['name'],
