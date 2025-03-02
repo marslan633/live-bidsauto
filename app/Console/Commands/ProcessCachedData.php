@@ -353,7 +353,7 @@ private function handleCronError($cronRun, $errorMessage)
 
 
         // Process Selling Branch
-        $lotConveredData['sellingBranch'] = isset($lot['selling_branch']) && is_array($lot['selling_branch'])
+        $lotConveredData['selling_branch'] = isset($lot['selling_branch']) && is_array($lot['selling_branch'])
         ?
             [
                 'selling_branch_api_id' => $lot['selling_branch']['id'],
@@ -392,7 +392,7 @@ private function handleCronError($cronRun, $errorMessage)
             ];
 
         // Process Seller Type
-        $lotConvertedData['sellerType'] = isset($lot['seller_type']) && is_array($lot['seller_type'])
+        $lotConvertedData['seller_type'] = isset($lot['seller_type']) && is_array($lot['seller_type'])
         ?
             [
                 'seller_type_api_id' => $lot['seller_type']['id'],
@@ -446,7 +446,7 @@ private function handleCronError($cronRun, $errorMessage)
             ];
 
         // Process Detailed Title
-        $lotConvertedData['detailedTitle'] = isset($lot['detailed_title']) && is_array($lot['detailed_title'])
+        $lotConvertedData['detailed_title'] = isset($lot['detailed_title']) && is_array($lot['detailed_title'])
         ?
             [
                 'detailed_title_api_id' => $lot['detailed_title']['id'],
