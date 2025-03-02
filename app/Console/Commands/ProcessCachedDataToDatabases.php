@@ -151,123 +151,123 @@ class ProcessCachedDataToDatabases extends Command
             'vin' => $car['vehicle_record']['vin'] ?? null,
             'cylinders' => $car['vehicle_record']['cylinders'],
             // Lot Data Processing
-            'salvage_id' => $car['lot']['salvage_id'] ?? null,
-            'lot_id' => $car['lot']['lot_id'] ?? null,
-            'domain_id' =>  isset($car['lot']['domain'])
+            'salvage_id' => $car['vehicle_record']['salvage_id'] ?? null,
+            'lot_id' => $car['vehicle_record']['lot_id'] ?? null,
+            'domain_id' =>  isset($car['vehicle_record']['domain'])
             ? Domain::firstOrCreate(
-                ['domain_api_id' => $car['lot']['domain']['domain_api_id']],
-                ['name' => $car['lot']['domain']['name']]
+                ['domain_api_id' => $car['vehicle_record']['domain']['domain_api_id']],
+                ['name' => $car['vehicle_record']['domain']['name']]
             )->id
             : null,
-            'selling_branch' => $car['lot']['selling_branch'] ? SellingBranch::firstOrCreate(
-                ['selling_branch_api_id' => $car['lot']['selling_branch']['selling_branch_api_id']],
+            'selling_branch' => $car['vehicle_record']['selling_branch'] ? SellingBranch::firstOrCreate(
+                ['selling_branch_api_id' => $car['vehicle_record']['selling_branch']['selling_branch_api_id']],
                 [
-                    'name' => $car['lot']['selling_branch']['name'],
-                    'link' => $car['lot']['selling_branch']['link'],
-                    'number' => $car['lot']['selling_branch']['number'],
-                    'domain_id' => $car['lot']['selling_branch']['domain_id'],
+                    'name' => $car['vehicle_record']['selling_branch']['name'],
+                    'link' => $car['vehicle_record']['selling_branch']['link'],
+                    'number' => $car['vehicle_record']['selling_branch']['number'],
+                    'domain_id' => $car['vehicle_record']['selling_branch']['domain_id'],
                 ]
             ) : null,
-            'external_id' => $car['lot']['external_id'] ?? null,
-            'odometer_km' => $car['lot']['odometer_km'] ?? null,
-            'odometer_mi' => $car['lot']['odometer_mi'] ?? null,
-            'odometer_status' => $car['lot']['odometer_status'] ?? null,
-            'estimate_repair_price' => $car['lot']['estimate_repair_price'] ?? null,
-            'pre_accident_price' => $car['lot']['pre_accident_price'] ?? null,
-            'clean_wholesale_price' => $car['lot']['clean_wholesale_price'] ?? null,
-            'actual_cash_value' => $car['lot']['actual_cash_value'] ?? null,
-            'sale_date' => $car['lot']['sale_date'] ?? null,
-            'sale_date_updated_at' => $car['lot']['sale_date_updated_at'] ?? null,
-            'bid' => $car['lot']['bid'] ?? null,
-            'bid_updated_at' => $car['lot']['bid_updated_at'] ?? null,
-            'buy_now' => $car['lot']['buy_now'] ?? null,
-            'buy_now_updated_at' => $car['lot']['buy_now_updated_at'] ?? null,
-            'final_bid' => $car['lot']['final_bid'] ?? null,
-            'final_bid_updated_at' => $car['lot']['final_bid_updated_at'] ?? null,
-            'keys_available' => $car['lot']['keys_available'] ?? null,
-            'airbags' => $car['lot']['airbags'] ?? null,
-            'grade_iaai' => $car['lot']['grade_iaai'] ?? null,
+            'external_id' => $car['vehicle_record']['external_id'] ?? null,
+            'odometer_km' => $car['vehicle_record']['odometer_km'] ?? null,
+            'odometer_mi' => $car['vehicle_record']['odometer_mi'] ?? null,
+            'odometer_status' => $car['vehicle_record']['odometer_status'] ?? null,
+            'estimate_repair_price' => $car['vehicle_record']['estimate_repair_price'] ?? null,
+            'pre_accident_price' => $car['vehicle_record']['pre_accident_price'] ?? null,
+            'clean_wholesale_price' => $car['vehicle_record']['clean_wholesale_price'] ?? null,
+            'actual_cash_value' => $car['vehicle_record']['actual_cash_value'] ?? null,
+            'sale_date' => $car['vehicle_record']['sale_date'] ?? null,
+            'sale_date_updated_at' => $car['vehicle_record']['sale_date_updated_at'] ?? null,
+            'bid' => $car['vehicle_record']['bid'] ?? null,
+            'bid_updated_at' => $car['vehicle_record']['bid_updated_at'] ?? null,
+            'buy_now' => $car['vehicle_record']['buy_now'] ?? null,
+            'buy_now_updated_at' => $car['vehicle_record']['buy_now_updated_at'] ?? null,
+            'final_bid' => $car['vehicle_record']['final_bid'] ?? null,
+            'final_bid_updated_at' => $car['vehicle_record']['final_bid_updated_at'] ?? null,
+            'keys_available' => $car['vehicle_record']['keys_available'] ?? null,
+            'airbags' => $car['vehicle_record']['airbags'] ?? null,
+            'grade_iaai' => $car['vehicle_record']['grade_iaai'] ?? null,
             'odometer_id' => Odometer::firstOrCreate(
-                ['name' => $car['lot']['odometer']['name']]
+                ['name' => $car['vehicle_record']['odometer']['name']]
             )->id,
             'seller_id' => Seller::firstOrCreate(
-                ['seller_api_id' => $car['lot']['seller']['seller_api_id']],
-                ['name' => $car['lot']['seller']['name']]
+                ['seller_api_id' => $car['vehicle_record']['seller']['seller_api_id']],
+                ['name' => $car['vehicle_record']['seller']['name']]
             )->id,
             'seller_type_id' => SellerType::firstOrCreate(
-                ['seller_type_api_id' => $car['lot']['seller_type']['seller_type_api_id']],
-                ['name' => $car['lot']['seller_type']['name']]
+                ['seller_type_api_id' => $car['vehicle_record']['seller_type']['seller_type_api_id']],
+                ['name' => $car['vehicle_record']['seller_type']['name']]
             )->id,
             'condition_id' => Condition::firstOrCreate(
-                ['condition_api_id' => $car['lot']['condition']['condition_api_id']],
-                ['name' => $car['lot']['condition']['name']]
+                ['condition_api_id' => $car['vehicle_record']['condition']['condition_api_id']],
+                ['name' => $car['vehicle_record']['condition']['name']]
             )->id,
             'status_id' =>  Status::firstOrCreate(
-                ['status_api_id' => $car['lot']['status']['status_api_id']],
-                ['name' => $car['lot']['status']['name']]
+                ['status_api_id' => $car['vehicle_record']['status']['status_api_id']],
+                ['name' => $car['vehicle_record']['status']['name']]
             )->id,
             'title_id' => Title::firstOrCreate(
-                ['title_api_id' => $car['lot']['title']['title_api_id']],
-                ['name' => $car['lot']['title']['name']]
+                ['title_api_id' => $car['vehicle_record']['title']['title_api_id']],
+                ['name' => $car['vehicle_record']['title']['name']]
             )->id,
             'detailed_title_id' => DetailedTitle::firstOrCreate(
-                ['detailed_title_api_id' => $car['lot']['detailedTitle']['id']],
-                ['name' => $car['lot']['detailedTitle']['name']]
+                ['detailed_title_api_id' => $car['vehicle_record']['detailedTitle']['id']],
+                ['name' => $car['vehicle_record']['detailedTitle']['name']]
             )->id,
-            'damage_id' => $car['lot']['damageMain'] ? Damage::firstOrCreate(
-                ['damage_api_id' => $car['lot']['damageMain']['damage_api_id']],
-                ['name' => $car['lot']['damageMain']['name']]
+            'damage_id' => $car['vehicle_record']['damageMain'] ? Damage::firstOrCreate(
+                ['damage_api_id' => $car['vehicle_record']['damageMain']['damage_api_id']],
+                ['name' => $car['vehicle_record']['damageMain']['name']]
             )->id : null,
-            'damage_main' => $car['lot']['damageMain'] ? Damage::firstOrCreate(
-                ['damage_api_id' => $car['lot']['damageMain']['damage_api_id']],
-                ['name' => $car['lot']['damageMain']['name']]
+            'damage_main' => $car['vehicle_record']['damageMain'] ? Damage::firstOrCreate(
+                ['damage_api_id' => $car['vehicle_record']['damageMain']['damage_api_id']],
+                ['name' => $car['vehicle_record']['damageMain']['name']]
             )->id : null,
-            'damage_second' => $car['lot']['damageSecond'] ? Damage::firstOrCreate(
-                ['damage_api_id' => $car['lot']['damageSecond']['damage_api_id']],
-                ['name' => $car['lot']['damageSecond']['name']]
+            'damage_second' => $car['vehicle_record']['damageSecond'] ? Damage::firstOrCreate(
+                ['damage_api_id' => $car['vehicle_record']['damageSecond']['damage_api_id']],
+                ['name' => $car['vehicle_record']['damageSecond']['name']]
             )->id : null,
-            'buy_now_id' => BuyNow::where('name', $car['lot']['buy_now'])->value('id'),
-            'details' => $car['lot']['details'] ?? null,
-            'location_id' => !empty($car['lot']['locationRecord']) && !empty($car['lot']['locationRecord']['location_api_id']) ? Location::firstOrCreate(
-                ['location_api_id' => $car['lot']['locationRecord']['location_api_id']],
+            'buy_now_id' => BuyNow::where('name', $car['vehicle_record']['buy_now'])->value('id'),
+            'details' => $car['vehicle_record']['details'] ?? null,
+            'location_id' => !empty($car['vehicle_record']['locationRecord']) && !empty($car['vehicle_record']['locationRecord']['location_api_id']) ? Location::firstOrCreate(
+                ['location_api_id' => $car['vehicle_record']['locationRecord']['location_api_id']],
                 [
-                    'city_id' => !empty($car['lot']['city']) ? City::firstOrCreate(
-                        ['city_api_id' => $car['lot']['city']['city_api_id']],
+                    'city_id' => !empty($car['vehicle_record']['city']) ? City::firstOrCreate(
+                        ['city_api_id' => $car['vehicle_record']['city']['city_api_id']],
                         [
-                            'state_id' => !empty($car['lot']['state']) ? State::firstOrCreate(
-                                ['state_api_id' => $car['lot']['state']['state_api_id']],
+                            'state_id' => !empty($car['vehicle_record']['state']) ? State::firstOrCreate(
+                                ['state_api_id' => $car['vehicle_record']['state']['state_api_id']],
                                 [
-                                    'country_id' => $car['lot']['country'] ? Country::firstOrCreate(
-                                        ['iso' => $car['lot']['country']['iso']],
-                                        ['name' => $car['lot']['country']['name']]
+                                    'country_id' => $car['vehicle_record']['country'] ? Country::firstOrCreate(
+                                        ['iso' => $car['vehicle_record']['country']['iso']],
+                                        ['name' => $car['vehicle_record']['country']['name']]
                                     )->id : null,
-                                    'code' => $car['lot']['state']['code'],
-                                    'name' => $car['lot']['state']['name']
+                                    'code' => $car['vehicle_record']['state']['code'],
+                                    'name' => $car['vehicle_record']['state']['name']
                                 ]
                             )->id : null,
-                            'name' => $car['lot']['city']['name']
+                            'name' => $car['vehicle_record']['city']['name']
                         ]
                     ) : null,
-                    'name' => trim($car['lot']['locationRecord']['name']) ?: 'Unnamed Location',
-                    'latitude' => $car['lot']['locationRecord']['latitude'] ?? null,
-                    'longitude' => $car['lot']['locationRecord']['longitude'] ?? null,
-                    'postal_code' => trim($car['lot']['locationRecord']['postal_code']) ?: null,
-                    'is_offsite' => $car['lot']['locationRecord']['is_offsite'] ?? false,
-                    'raw' => $car['lot']['locationRecord']['raw'] ?? '{}'
+                    'name' => trim($car['vehicle_record']['locationRecord']['name']) ?: 'Unnamed Location',
+                    'latitude' => $car['vehicle_record']['locationRecord']['latitude'] ?? null,
+                    'longitude' => $car['vehicle_record']['locationRecord']['longitude'] ?? null,
+                    'postal_code' => trim($car['vehicle_record']['locationRecord']['postal_code']) ?: null,
+                    'is_offsite' => $car['vehicle_record']['locationRecord']['is_offsite'] ?? false,
+                    'raw' => $car['vehicle_record']['locationRecord']['raw'] ?? '{}'
                 ]
             )->id : null,
-            'image_id' => !empty($car['lot']['imageRecord']) ? Image::updateOrCreate(
-                ['image_api_id' => $car['lot']['imageRecord']['image_api_id']],
+            'image_id' => !empty($car['vehicle_record']['imageRecord']) ? Image::updateOrCreate(
+                ['image_api_id' => $car['vehicle_record']['imageRecord']['image_api_id']],
                 [
-                    'small' => json_encode($car['lot']['imageRecord']['small'] ?? []),
-                    'normal' => json_encode($car['lot']['imageRecord']['normal'] ?? []),
-                    'big' => json_encode($car['lot']['imageRecord']['big'] ?? []),
-                    'downloaded' => json_encode($car['lot']['imageRecord']['downloaded'] ?? []),
-                    'exterior' => json_encode($car['lot']['imageRecord']['exterior'] ?? []),
-                    'interior' => json_encode($car['lot']['imageRecord']['interior'] ?? []),
-                    'video' => $car['lot']['imageRecord']['video'] ?? null,
-                    'video_youtube_id' => $car['lot']['imageRecord']['video_youtube_id'] ?? null,
-                    'external_panorama_url' => $car['lot']['imageRecord']['external_panorama_url'] ?? null,
+                    'small' => json_encode($car['vehicle_record']['imageRecord']['small'] ?? []),
+                    'normal' => json_encode($car['vehicle_record']['imageRecord']['normal'] ?? []),
+                    'big' => json_encode($car['vehicle_record']['imageRecord']['big'] ?? []),
+                    'downloaded' => json_encode($car['vehicle_record']['imageRecord']['downloaded'] ?? []),
+                    'exterior' => json_encode($car['vehicle_record']['imageRecord']['exterior'] ?? []),
+                    'interior' => json_encode($car['vehicle_record']['imageRecord']['interior'] ?? []),
+                    'video' => $car['vehicle_record']['imageRecord']['video'] ?? null,
+                    'video_youtube_id' => $car['vehicle_record']['imageRecord']['video_youtube_id'] ?? null,
+                    'external_panorama_url' => $car['vehicle_record']['imageRecord']['external_panorama_url'] ?? null,
                 ]
             )->id : null,
 
