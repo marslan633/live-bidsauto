@@ -89,12 +89,10 @@ public function handle()
             }
             $processDataForCache = [];
             foreach ($data as $car) {
-                $processedData = $this->convertAndStoreDataToRedis($car);
-                array_push($processDataForCache, $processedData);
-
+                $processDataForCache[] = $this->convertAndStoreDataToRedis($car);
             }
 
-            $this->info("Start Processing Cached Data For Remove Redis");
+            $this->info("Start Processing Cached Data For Remote Redis");
 
             // Generate a unique cache key
             $cacheKey = 'vehicle_data_' . now()->format('Y_m_d_H_i_s');
@@ -320,7 +318,6 @@ private function handleCronError($cronRun, $errorMessage)
 
         $processLotData = $this->processLotData($lot);
         $convertedData['vehicle_record'] = array_merge($convertedData['vehicle_record'], $processLotData);
-        \Log::info('Converted Data', ['vechicle_record' => json_encode($convertedData)]);
         return $convertedData;
     }
 
