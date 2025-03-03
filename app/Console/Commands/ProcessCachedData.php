@@ -58,7 +58,7 @@ public function handle()
             ->where('status', 'pending')
             ->orderBy('created_at', 'asc')
             ->lockForUpdate()
-            ->take(10)
+            // ->take(10)
             ->get();
 
         if ($cacheKeys->isEmpty()) {
