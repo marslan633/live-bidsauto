@@ -29,8 +29,12 @@ class ProcessCachedDataJob implements ShouldQueue
     public function handle(): void
     {
         try {
+            $IS_KVM_TWO = config('app.is_kvm_two');
             $key = $this->cacheKey->cache_key;
-            $data = Cache::store('redis')->get($key);
+            // IF KVM_TWO than Read it from Remote Redis
+            // IF KVM_ONE than Read it from Default Redis
+            $data = Cache::store($IS_KVM_TWO ? 'redis_cache' : 'redis')->get($key);
+
 
             if (!$data) {
                 CacheKey::where('cache_key', $key)->delete();
@@ -45,7 +49,9 @@ class ProcessCachedDataJob implements ShouldQueue
             // Store processed data in Redis
             $cacheKey = 'vehicle_data_' . now()->format('Y_m_d_H_i_s');
             $expiresAt = now()->addMinutes(300);
-            Cache::store('redis_cache')->put($cacheKey, json_encode($processDataForCache), $expiresAt);
+            // IF KVM_TWO THAN READ IT FROM DEFAULT
+            // IF KVM_ONE THAN READ IT FROM REMIVE
+            Cache::store($IS_KVM_TWO ? 'redis' :'redis_cache')->put($cacheKey, json_encode($processDataForCache), $expiresAt);
 
             // Save cache details to the database
             RemoteCacheKey::updateOrCreate(
@@ -55,7 +61,9 @@ class ProcessCachedDataJob implements ShouldQueue
 
             // Remove cache key from DB and Redis
             CacheKey::where('cache_key', $key)->delete();
-            Cache::store('redis')->forget($key);
+            // IF KVM_TWO THAN REMOVE IT FROM REMOTE
+            // IF KVM_ONE THAN REMOVE IT FROM DEFAULT
+            Cache::store($IS_KVM_TWO ? 'redis_cache' :'redis')->forget($key);
         } catch (\Exception $e) {
             Log::error("Error processing key {$this->cacheKey->cache_key}: " . $e->getMessage());
         }
