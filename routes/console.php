@@ -12,49 +12,52 @@ use Illuminate\Support\Facades\Cache;
 
 
 if(config('app.app_kvm4') === true){
-    app(Schedule::class)->command('process:api-data')->everyFifteenMinutes()->withoutOverlapping();
+
+    /**
+    * Cron Job - Process Vehicle Data from third Party API and Populate it into Cache.
+    */
+    app(Schedule::class)->command('process:api-data')->dailyAt('20:50')->withoutOverlapping();
+
+    /**
+     * Cron Job - Process Vehicle Data from kvm4.1 redis cache and populate it into kvm4.2 redis cache.
+    */
     app(Schedule::class)->command('process:cached-data')->everyTenMinutes()->withoutOverlapping();
     // app(Schedule::class)->command('process:cached-archived-data')->everyThirtyMinutes()->withoutOverlapping();
 }else{
 
-/**
- * Cron Job - Process Vehicle Data from third Party API and Populate it into Cache.
-*/
 
-app(Schedule::class)->command('process:api-data')->everyFifteenMinutes()->withoutOverlapping();
-
-/**
- * Cron Job - Process Vehicle Data from cache and populate it into Vehicle table.
-*/
-app(Schedule::class)->command('process:cached-data')->everyTenMinutes()->withoutOverlapping();
+    /**
+     * Cron Job - Process Vehicle Data from kvm4.2 redis cache and populate it into kvm4.3 Mysql.
+    */
+    app(Schedule::class)->command('process:process-cached-data-to-databases')->everyTenMinutes()->withoutOverlapping();
 
 
-/**
- * Cron Job - Move expired auctions from VehicleRecord to VehicleRecordArchived table.
-*/
-app(Schedule::class)->command('auction:archive')->everyTenMinutes()->withoutOverlapping();
+    /**
+     * Cron Job - Move expired auctions from VehicleRecord to VehicleRecordArchived table.
+    */
+    // app(Schedule::class)->command('auction:archive')->everyTenMinutes()->withoutOverlapping();
 
 
-/**
- * Cron Job - Update the data (bid, final_bid_updated_at, status) of archived vehicle table on the base of third party api.
-*/
-app(Schedule::class)->command('process:archived-data')->everyThirtyMinutes()->withoutOverlapping();
+    /**
+     * Cron Job - Update the data (bid, final_bid_updated_at, status) of archived vehicle table on the base of third party api.
+    */
+    // app(Schedule::class)->command('process:archived-data')->everyThirtyMinutes()->withoutOverlapping();
 
 
-/**
- * Cron Job - Update the data (bid, final_bid_updated_at, status) of archived vehicle table on the base of third party api.
-*/
-app(Schedule::class)->command('process:cached-archived-data')->everyThirtyMinutes()->withoutOverlapping();
+    /**
+     * Cron Job - Update the data (bid, final_bid_updated_at, status) of archived vehicle table on the base of third party api.
+    */
+    // app(Schedule::class)->command('process:cached-archived-data')->everyThirtyMinutes()->withoutOverlapping();
 
 
-/**
- * Cron Job - Process Buy Now Data from third Party API and Populate it into Cache.
-*/
-// app(Schedule::class)->command('cron:process-buy-now')->everyFifteenMinutes()->withoutOverlapping();
+    /**
+     * Cron Job - Process Buy Now Data from third Party API and Populate it into Cache.
+    */
+    // app(Schedule::class)->command('cron:process-buy-now')->everyFifteenMinutes()->withoutOverlapping();
 
 
-/**
- * Cron Job - Process Buy Now Data from cache and update values it into vehicle records table.
-*/
-// app(Schedule::class)->command('cron:cache-process-buy-now')->everyTenMinutes()->withoutOverlapping();
+    /**
+     * Cron Job - Process Buy Now Data from cache and update values it into vehicle records table.
+    */
+    // app(Schedule::class)->command('cron:cache-process-buy-now')->everyTenMinutes()->withoutOverlapping();
 }
