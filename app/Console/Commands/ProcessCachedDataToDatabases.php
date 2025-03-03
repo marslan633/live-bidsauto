@@ -76,7 +76,7 @@ class ProcessCachedDataToDatabases extends Command
 
          // **Batch processing setup**
         $batchData = [];
-        $batchSize = 1; // Process in chunks of 1000
+        $batchSize = 1000; // Process in chunks of 1000
         foreach ($cacheKeys as $cacheKey) {
             try {
                 $key = $cacheKey->cache_key;
@@ -142,12 +142,12 @@ class ProcessCachedDataToDatabases extends Command
             $imageId = Image::updateOrCreate(
                 ['image_api_id' => $imageRecord['image_api_id']],
                 [
-                    'small' => json_encode($imageRecord['small'] ?? []),
-                    'normal' => json_encode($imageRecord['normal'] ?? []),
-                    'big' => json_encode($imageRecord['big'] ?? []),
-                    'downloaded' => json_encode($imageRecord['downloaded'] ?? []),
-                    'exterior' => json_encode($imageRecord['exterior'] ?? []),
-                    'interior' => json_encode($imageRecord['interior'] ?? []),
+                    'small' => $imageRecord['small'] ?? [],
+                    'normal' => $imageRecord['normal'] ?? [],
+                    'big' => $imageRecord['big'] ?? [],
+                    'downloaded' => $imageRecord['downloaded'] ?? [],
+                    'exterior' => $imageRecord['exterior'] ?? [],
+                    'interior' => $imageRecord['interior'] ?? [],
                     'video' => $imageRecord['video'] ?? null,
                     'video_youtube_id' => $imageRecord['video_youtube_id'] ?? null,
                     'external_panorama_url' => $imageRecord['external_panorama_url'] ?? null,

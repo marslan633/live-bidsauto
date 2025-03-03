@@ -62,8 +62,9 @@ public function handle()
         $cacheKeys = $CacheModel::where('cache_key', 'like', 'vehicle_data%')
             ->where('status', 'pending')
             ->orderBy('created_at', 'asc')
-            // ->lockForUpdate()
-            // ->take(10)
+            ->lockForUpdate()
+            ->skipLocked()
+            ->take(10)
             ->get();
 
         if ($cacheKeys->isEmpty()) {
