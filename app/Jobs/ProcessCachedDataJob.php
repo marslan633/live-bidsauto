@@ -18,7 +18,7 @@ class ProcessCachedDataJob implements ShouldQueue
 
     public $cacheKey;
 
-    public function __construct(CacheKey $cacheKey)
+    public function __construct(CacheKey|RemoteCacheKey $cacheKey)
     {
         $this->cacheKey = $cacheKey;
     }
