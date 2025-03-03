@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
+
 class ProcessCachedDataToDatabases extends Command
 {
     /**
@@ -188,7 +189,7 @@ class ProcessCachedDataToDatabases extends Command
             //         'number' => $car['vehicle_record']['selling_branch']['number'],
             //         'domain_id' => $car['vehicle_record']['selling_branch']['domain_id'],
             //     ]
-            // ) : null,
+            // )->id : null,
             'external_id' => $car['vehicle_record']['external_id'] ?? null,
             'odometer_km' => $car['vehicle_record']['odometer_km'] ?? null,
             'odometer_mi' => $car['vehicle_record']['odometer_mi'] ?? null,
