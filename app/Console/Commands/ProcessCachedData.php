@@ -58,7 +58,7 @@ public function handle()
             ->where('status', 'pending')
             ->orderBy('created_at', 'asc')
             ->lockForUpdate()
-            // ->take(10)
+            ->take(10)
             ->get();
 
         if ($cacheKeys->isEmpty()) {
@@ -79,7 +79,7 @@ public function handle()
     }
 
     foreach ($cacheKeys as $cacheKey) {
-        ProcessCachedDataJob::dispatch($cacheKey);
+        ProcessCachedDataJob::dispatch($cacheKey)->delay(now()->addSeconds(rand(1, 5)));
     }
 
     DB::table('cron_run_history')->where('id', $cronRun)->update([
