@@ -98,7 +98,7 @@ function convertAndStoreDataToRedis(array $car)
 
 
         // Process Engine
-        $convertedData['engine'] = isset($car['engine']) && is_array($car['engine'])
+        $convertedData['engine'] = !empty($car['engine']) && !empty((array) $car['engine'])
         ?
             [
                 'engine_api_id' => $car['engine']['id'],
@@ -111,7 +111,7 @@ function convertAndStoreDataToRedis(array $car)
             ];
 
         // Process Transmission
-        $convertedData['transmission'] = isset($car['transmission']) && is_array($car['transmission'])
+        $convertedData['transmission'] = !empty($car['transmission']) && !empty((array) $car['transmission'])
         ?
             [
                 'transmission_api_id' => $car['transmission']['id'],
@@ -124,7 +124,7 @@ function convertAndStoreDataToRedis(array $car)
             ];
 
         // Process Drive Wheel
-        $convertedData['drive_wheel'] = isset($car['drive_wheel']) && is_array($car['drive_wheel'])
+        $convertedData['drive_wheel'] = !empty($car['drive_wheel']) && !empty((array) $car['drive_wheel'])
         ?
             [
                 'drive_wheel_api_id' => $car['drive_wheel']['id'],
@@ -137,7 +137,7 @@ function convertAndStoreDataToRedis(array $car)
             ];
 
         // Process Vehicle Type
-        $convertedData['vehicle_type'] = isset($car['vehicle_type']) && is_array($car['vehicle_type'])
+        $convertedData['vehicle_type'] = !empty($car['vehicle_type']) && !empty((array) $car['vehicle_type'])
         ?
             [
                 'vehicle_type_api_id' => $car['vehicle_type']['id'],
@@ -152,7 +152,7 @@ function convertAndStoreDataToRedis(array $car)
 
 
         // Process Fuel
-        $convertedData['fuel'] = isset($car['fuel']) && is_array($car['fuel'])
+        $convertedData['fuel'] = !empty($car['fuel']) && !empty((array) $car['fuel'])
         ?
             [
                 'fuel_api_id' => $car['fuel']['id'],
@@ -186,7 +186,7 @@ function convertAndStoreDataToRedis(array $car)
     }
 
 
-    function processLotData($lot)
+function processLotData($lot)
     {
         $unknownApiId = 0;
         $unknownName = 'unknown';
@@ -203,7 +203,7 @@ function convertAndStoreDataToRedis(array $car)
             $lotConveredData['buy_now']  = 'buyNowWithPrice';
         }
 
-        $lotConveredData['domain'] = isset($lot['domain']) && is_array($lot['domain'])
+        $lotConveredData['domain'] = !empty($lot['domain']) && !empty((array) $lot['domain'])
         ?
             [
                 'domain_api_id' => $lot['domain']['id'],
@@ -214,7 +214,7 @@ function convertAndStoreDataToRedis(array $car)
 
 
         // Process Selling Branch
-        $lotConveredData['selling_branch'] = isset($lot['selling_branch']) && is_array($lot['selling_branch'])
+        $lotConveredData['selling_branch'] = !empty($lot['selling_branch']) && !empty((array) $lot['selling_branch'])
         ?
             [
                 'selling_branch_api_id' => $lot['selling_branch']['id'],
@@ -240,7 +240,7 @@ function convertAndStoreDataToRedis(array $car)
 
 
         // Process Seller
-        $lotConvertedData['seller'] = isset($lot['seller']) && is_array($lot['seller'])
+        $lotConvertedData['seller'] = !empty($lot['seller']) && !empty((array) $lot['seller'])
         ?
             [
                 'seller_api_id' => $lot['seller']['id'],
@@ -253,7 +253,7 @@ function convertAndStoreDataToRedis(array $car)
             ];
 
         // Process Seller Type
-        $lotConvertedData['seller_type'] = isset($lot['seller_type']) && is_array($lot['seller_type'])
+        $lotConvertedData['seller_type'] = !empty($lot['seller_type']) && !empty((array) $lot['seller_type'])
         ?
             [
                 'seller_type_api_id' => $lot['seller_type']['id'],
@@ -268,7 +268,7 @@ function convertAndStoreDataToRedis(array $car)
         $unknownConditionApiId = 100;
 
         // Process Condition
-        $lotConvertedData['condition'] = isset($lot['condition']) && is_array($lot['condition'])
+        $lotConvertedData['condition'] = !empty($lot['condition']) && !empty((array) $lot['condition'])
         ?
             [
                 'condition_api_id' => $lot['condition']['id'],
@@ -281,7 +281,7 @@ function convertAndStoreDataToRedis(array $car)
             ];
 
         // Process Status
-        $lotConvertedData['status'] = isset($lot['status']) && is_array($lot['status'])
+        $lotConvertedData['status'] = !empty($lot['status']) && !empty((array) $lot['status'])
         ?
             [
                 'status_api_id' => $lot['status']['id'],
@@ -294,7 +294,7 @@ function convertAndStoreDataToRedis(array $car)
             ];
 
         // Process Title
-        $lotConvertedData['title_title'] = isset($lot['title']) && is_array($lot['title'])
+        $lotConvertedData['title'] = !empty($lot['title']) && !empty((array) $lot['title'])
         ?
             [
                 'title_api_id' => $lot['title']['id'],
@@ -307,7 +307,7 @@ function convertAndStoreDataToRedis(array $car)
             ];
 
         // Process Detailed Title
-        $lotConvertedData['detailed_title'] = isset($lot['detailed_title']) && is_array($lot['detailed_title'])
+        $lotConvertedData['detailed_title'] = !empty($lot['detailed_title']) && !empty((array) $lot['detailed_title'])
         ?
             [
                 'detailed_title_api_id' => $lot['detailed_title']['id'],
@@ -320,7 +320,7 @@ function convertAndStoreDataToRedis(array $car)
             ];
 
         // Process Damage
-        $lotConvertedData['damageMain'] = isset($lot['damage']['main']) && is_array($lot['damage']['main'])
+        $lotConvertedData['damageMain'] = isset($lot['damage']['main']) && !empty($lot['damage']['main'])
         ?
             [
                 'damage_api_id' => $lot['damage']['main']['id'],
@@ -329,7 +329,7 @@ function convertAndStoreDataToRedis(array $car)
         :
             null;
 
-        $lotConvertedData['damageSecond'] = isset($lot['damage']['second']) && is_array($lot['damage']['second'])
+        $lotConvertedData['damageSecond'] = isset($lot['damage']['second']) && !empty($lot['damage']['second'])
         ?
             [
                 'damage_api_id' => $lot['damage']['second']['id'],
