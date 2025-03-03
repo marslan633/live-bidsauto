@@ -30,6 +30,8 @@ class ProcessCachedDataJob implements ShouldQueue
     {
         try {
             $IS_KVM_TWO = config('app.is_kvm_two');
+            $CacheModel = $IS_KVM_TWO ? RemoteCacheKey::class : CacheKey::class;
+
             $key = $this->cacheKey->cache_key;
             // IF KVM_TWO than Read it from Remote Redis
             // IF KVM_ONE than Read it from Default Redis
@@ -37,7 +39,7 @@ class ProcessCachedDataJob implements ShouldQueue
 
 
             if (!$data) {
-                CacheKey::where('cache_key', $key)->delete();
+                $CacheModel::where('cache_key', $key)->delete();
                 return;
             }
 
@@ -54,13 +56,17 @@ class ProcessCachedDataJob implements ShouldQueue
             Cache::store($IS_KVM_TWO ? 'redis' :'redis_cache')->put($cacheKey, json_encode($processDataForCache), $expiresAt);
 
             // Save cache details to the database
-            RemoteCacheKey::updateOrCreate(
+            // IF KVM_TWO THAN USE DEFAULT DATABASE CONNECTION
+            // IF KVM_ONE THAN USE REMOTE DATABASE CONNECTION
+            $RemoteCacheModel = $IS_KVM_TWO  ? CacheKey::class : RemoteCacheKey::class;
+
+            $RemoteCacheModel::updateOrCreate(
                 ['cache_key' => $cacheKey],
                 ['status' => 'pending', 'expires_at' => $expiresAt]
             );
 
             // Remove cache key from DB and Redis
-            CacheKey::where('cache_key', $key)->delete();
+            $CacheModel::where('cache_key', $key)->delete();
             // IF KVM_TWO THAN REMOVE IT FROM REMOTE
             // IF KVM_ONE THAN REMOVE IT FROM DEFAULT
             Cache::store($IS_KVM_TWO ? 'redis_cache' :'redis')->forget($key);

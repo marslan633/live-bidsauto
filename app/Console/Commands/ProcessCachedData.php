@@ -54,11 +54,15 @@ public function handle()
         ]);
 
         // Lock the cache keys for update
-        $cacheKeys = CacheKey::where('cache_key', 'like', 'vehicle_data%')
+        // IF KVM_TWO THAN USE REMOTE DATABSE CONNECTION
+        // IF KVM_ONE THAN USE DEFAULT DATABASE CONNECTION
+        $IS_KVM_TWO = config('app.is_kvm_two');
+        $CacheModel = $IS_KVM_TWO ? RemoteCacheKey::class : CacheKey::class;
+        $cacheKeys = $CacheModel::where('cache_key', 'like', 'vehicle_data%')
             ->where('status', 'pending')
             ->orderBy('created_at', 'asc')
-            ->lockForUpdate()
-            ->take(10)
+            // ->lockForUpdate()
+            // ->take(10)
             ->get();
 
         if ($cacheKeys->isEmpty()) {
@@ -70,7 +74,7 @@ public function handle()
         $cacheKeyIds = $cacheKeys->pluck('id')->toArray();
 
         // Update status in bulk
-        CacheKey::whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
+        $CacheModel::whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
         DB::commit();
     } catch (\Exception $e) {
         DB::rollBack();
@@ -79,7 +83,8 @@ public function handle()
     }
 
     foreach ($cacheKeys as $cacheKey) {
-        ProcessCachedDataJob::dispatch($cacheKey)->delay(now()->addSeconds(rand(1, 5)));
+        ProcessCachedDataJob::dispatch($cacheKey);
+        // ->delay(now()->addSeconds(rand(1, 5)));
     }
 
     DB::table('cron_run_history')->where('id', $cronRun)->update([
