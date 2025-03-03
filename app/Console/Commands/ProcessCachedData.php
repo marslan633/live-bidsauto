@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Jobs\ProcessCachedDataJob;
+use App\Jobs\ProcessCachedDataJobKVMTWO;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use App\Models\{
@@ -83,7 +84,11 @@ public function handle()
     }
 
     foreach ($cacheKeys as $cacheKey) {
-        ProcessCachedDataJob::dispatch($cacheKey);
+        if($IS_KVM_TWO){
+             ProcessCachedDataJobKVMTWO::dispatch($cacheKey);
+        }else{
+            ProcessCachedDataJob::dispatch($cacheKey);
+        }
         // ->delay(now()->addSeconds(rand(1, 5)));
     }
 

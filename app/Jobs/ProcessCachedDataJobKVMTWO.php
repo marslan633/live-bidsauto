@@ -12,13 +12,13 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
-class ProcessCachedDataJob implements ShouldQueue
+class ProcessCachedDataJobKVMTWO implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $cacheKey;
 
-    public function __construct(CacheKey $cacheKey)
+    public function __construct(RemoteCacheKey $cacheKey)
     {
         $this->cacheKey = $cacheKey;
     }
