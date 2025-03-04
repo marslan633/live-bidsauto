@@ -170,27 +170,27 @@ class ProcessCachedDataToDatabases extends Command
             'api_id' => $car['vehicle_record']['api_id'] ?? null,
             'year' => $car['vehicle_record']['year'] ?? null,
             'year_id' => $year,
-            // 'title' => $car['vehicle_record']['title'] ?? null,
+            'title' => $car['vehicle_record']['title'] ?? null,
             'vin' => $car['vehicle_record']['vin'] ?? null,
             'cylinders' => $car['vehicle_record']['cylinders'] ?? null,
             // Lot Data Processing
             'salvage_id' => $car['vehicle_record']['salvage_id'] ?? null,
             'lot_id' => $car['vehicle_record']['lot_id'] ?? null,
-            // 'domain_id' =>  isset($car['vehicle_record']['domain'])
-            // ? Domain::firstOrCreate(
-            //     ['domain_api_id' => $car['vehicle_record']['domain']['domain_api_id']],
-            //     ['name' => $car['vehicle_record']['domain']['name']]
-            // )->id
-            // : null,
-            // 'selling_branch' => isset($car['vehicle_record']['selling_branch']) ? SellingBranch::firstOrCreate(
-            //     ['selling_branch_api_id' => $car['vehicle_record']['selling_branch']['selling_branch_api_id']],
-            //     [
-            //         'name' => $car['vehicle_record']['selling_branch']['name'],
-            //         'link' => $car['vehicle_record']['selling_branch']['link'],
-            //         'number' => $car['vehicle_record']['selling_branch']['number'],
-            //         'domain_id' => $car['vehicle_record']['selling_branch']['domain_id'],
-            //     ]
-            // )->id : null,
+            'domain_id' =>  isset($car['vehicle_record']['domain'])
+            ? Domain::firstOrCreate(
+                ['domain_api_id' => $car['vehicle_record']['domain']['domain_api_id']],
+                ['name' => $car['vehicle_record']['domain']['name']]
+            )->id
+            : null,
+            'selling_branch' => isset($car['vehicle_record']['selling_branch']) ? SellingBranch::firstOrCreate(
+                ['selling_branch_api_id' => $car['vehicle_record']['selling_branch']['selling_branch_api_id']],
+                [
+                    'name' => $car['vehicle_record']['selling_branch']['name'],
+                    'link' => $car['vehicle_record']['selling_branch']['link'],
+                    'number' => $car['vehicle_record']['selling_branch']['number'],
+                    'domain_id' => $car['vehicle_record']['selling_branch']['domain_id'],
+                ]
+            )->id : null,
             'external_id' => $car['vehicle_record']['external_id'] ?? null,
             'odometer_km' => $car['vehicle_record']['odometer_km'] ?? null,
             'odometer_mi' => $car['vehicle_record']['odometer_mi'] ?? null,
@@ -229,10 +229,10 @@ class ProcessCachedDataToDatabases extends Command
                 ['status_api_id' => $car['vehicle_record']['status']['status_api_id']],
                 ['name' => $car['vehicle_record']['status']['name']]
             )->id,
-            // 'title_id' => Title::firstOrCreate(
-            //     ['title_api_id' => $car['vehicle_record']['title']['title_api_id']],
-            //     ['name' => $car['vehicle_record']['title']['name']]
-            // )->id,
+            'title_id' => Title::firstOrCreate(
+                ['title_api_id' => $car['vehicle_record']['primary_title']['title_api_id']],
+                ['name' => $car['vehicle_record']['primary_title']['name']]
+            )->id,
             'detailed_title_id' => DetailedTitle::firstOrCreate(
                 ['detailed_title_api_id' => $car['vehicle_record']['detailed_title']['detailed_title_api_id']],
                 ['name' => $car['vehicle_record']['detailed_title']['name']]

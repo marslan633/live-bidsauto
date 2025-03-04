@@ -316,7 +316,7 @@ function processLotData($lot)
             ];
 
         // Process Title
-        $lotConvertedData['title'] = !empty($lot['title']) && !empty((array) $lot['title'])
+        $lotConvertedData['primary_title'] = !empty($lot['title']) && !empty((array) $lot['title'])
         ?
             [
                 'title_api_id' => $lot['title']['id'],
