@@ -176,19 +176,19 @@ class ProcessCachedDataToDatabases extends Command
             // Lot Data Processing
             'salvage_id' => $car['vehicle_record']['salvage_id'] ?? null,
             'lot_id' => $car['vehicle_record']['lot_id'] ?? null,
-            'domain_id' =>  isset($car['vehicle_record']['domain'])
+            'domain_id' =>  isset($car['domain'])
             ? Domain::firstOrCreate(
-                ['domain_api_id' => $car['vehicle_record']['domain']['domain_api_id']],
-                ['name' => $car['vehicle_record']['domain']['name']]
+                ['domain_api_id' => $car['domain']['domain_api_id']],
+                ['name' => $car['domain']['name']]
             )->id
             : null,
-            'selling_branch' => $car['vehicle_record']['selling_branch'] ? SellingBranch::firstOrCreate(
-                ['selling_branch_api_id' => $car['vehicle_record']['selling_branch']['selling_branch_api_id']],
+            'selling_branch' => $car['selling_branch'] ? SellingBranch::firstOrCreate(
+                ['selling_branch_api_id' => $car['selling_branch']['selling_branch_api_id']],
                 [
-                    'name' => $car['vehicle_record']['selling_branch']['name'],
-                    'link' => $car['vehicle_record']['selling_branch']['link'],
-                    'number' => $car['vehicle_record']['selling_branch']['number'],
-                    'domain_id' => $car['vehicle_record']['selling_branch']['domain_id'],
+                    'name' => $car['selling_branch']['name'],
+                    'link' => $car['selling_branch']['link'],
+                    'number' => $car['selling_branch']['number'],
+                    'domain_id' => $car['selling_branch']['domain_id'],
                 ]
             )->id : null,
             'external_id' => $car['vehicle_record']['external_id'] ?? null,
@@ -230,8 +230,8 @@ class ProcessCachedDataToDatabases extends Command
                 ['name' => $car['vehicle_record']['status']['name']]
             )->id,
             'title_id' => Title::firstOrCreate(
-                ['title_api_id' => $car['vehicle_record']['title_title']['title_api_id']],
-                ['name' => $car['vehicle_record']['title_title']['name']]
+                ['title_api_id' => $car['vehicle_record']['title']['title_api_id']],
+                ['name' => $car['vehicle_record']['title']['name']]
             )->id,
             'detailed_title_id' => DetailedTitle::firstOrCreate(
                 ['detailed_title_api_id' => $car['vehicle_record']['detailed_title']['detailed_title_api_id']],
@@ -280,7 +280,6 @@ class ProcessCachedDataToDatabases extends Command
                 ]
             )->id : null,
             'image_id' => $imageId,
-
         ];
 
         // Check if the record was newly created

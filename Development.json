@@ -1,0 +1,118 @@
+"vehicle_record": {
+    "actual_cash_value": null,
+    "airbags": null,
+    "api_id": 532396,
+    "bid": null,
+    "bid_updated_at": "2025-01-15 00:09:42",
+    "buy_now": null,
+    "buy_now_updated_at": "2025-01-15T00:09:42.000000Z",
+    "city": {
+        "city_api_id": 29,
+        "name": "houston"
+    },
+    "clean_wholesale_price": 14600,
+    "condition": {
+        "condition_api_id": 0,
+        "name": "run_and_drives"
+    },
+    "country": {
+        "iso": "us",
+        "name": "USA"
+    },
+    "cylinders": 4,
+    "damageMain": {
+        "damage_api_id": 3,
+        "name": "Front End"
+    },
+    "damageSecond": null,
+    "detailed_title": {
+        "detailed_title_api_id": 1553,
+        "name": "Tx - Salvage Vehicle Title"
+    },
+    "details": null,
+    "estimate_repair_price": null,
+    "external_id": null,
+    "final_bid": null,
+    "final_bid_updated_at": null,
+    "grade_iaai": null,
+    "imageRecord": {
+        "big": "[\"https:\\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/dbeae4b583bb4da68bd17d0ed00e1a5f_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/a6260b7c93394f76861ecc63ef965dfc_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/240a5178741f4f1fbaf437b195e46b8f_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/8890103917d244419e6f6559e9e8b978_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/1773d7f1fa454650b7e41621ffb4a0d2_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/7db900083e9143b2ad31cc31eda471dc_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/a58bbe61fa8c46418ccf23e67856d3ff_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/aa0df529c4f94d17abd1d6862486bd8b_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/c7d8c5f4227544a0852906a59039707b_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/4cdb76e32eb74302a567522b4af859e8_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/9797ec9014614488b46165f1e3dff022_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/5ecf2d7b853a4c949e4d212046c076a1_hrs.jpg\"]",
+        "downloaded": "[\"https:\\/\/cars.import-motor.com\/copart\/toyota\/yaris\/2020\/87922685\/3MYDLBJV1LY711264-1.webp\",\"https:\/\/cars.import-motor.com\/copart\/toyota\/yaris\/2020\/87922685\/3MYDLBJV1LY711264-2.webp\",\"https:\/\/cars.import-motor.com\/copart\/toyota\/yaris\/2020\/87922685\/3MYDLBJV1LY711264-3.webp\",\"https:\/\/cars.import-motor.com\/copart\/toyota\/yaris\/2020\/87922685\/3MYDLBJV1LY711264-4.webp\",\"https:\/\/cars.import-motor.com\/copart\/toyota\/yaris\/2020\/87922685\/3MYDLBJV1LY711264-5.webp\"]",
+        "exterior": "[]",
+        "external_panorama_url": null,
+        "image_api_id": 12548860,
+        "interior": "[]",
+        "normal": "[\"https:\\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/dbeae4b583bb4da68bd17d0ed00e1a5f_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/a6260b7c93394f76861ecc63ef965dfc_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/240a5178741f4f1fbaf437b195e46b8f_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/8890103917d244419e6f6559e9e8b978_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/1773d7f1fa454650b7e41621ffb4a0d2_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/7db900083e9143b2ad31cc31eda471dc_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/a58bbe61fa8c46418ccf23e67856d3ff_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/aa0df529c4f94d17abd1d6862486bd8b_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/c7d8c5f4227544a0852906a59039707b_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/4cdb76e32eb74302a567522b4af859e8_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/9797ec9014614488b46165f1e3dff022_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/5ecf2d7b853a4c949e4d212046c076a1_hrs.jpg\"]",
+        "small": "[\"https:\\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/dbeae4b583bb4da68bd17d0ed00e1a5f_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/a6260b7c93394f76861ecc63ef965dfc_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/240a5178741f4f1fbaf437b195e46b8f_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/8890103917d244419e6f6559e9e8b978_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/1773d7f1fa454650b7e41621ffb4a0d2_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/7db900083e9143b2ad31cc31eda471dc_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/a58bbe61fa8c46418ccf23e67856d3ff_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/aa0df529c4f94d17abd1d6862486bd8b_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/c7d8c5f4227544a0852906a59039707b_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/4cdb76e32eb74302a567522b4af859e8_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/9797ec9014614488b46165f1e3dff022_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/5ecf2d7b853a4c949e4d212046c076a1_thb.jpg\"]",
+        "video": null,
+        "video_youtube_id": null
+    },
+    "keys_available": true,
+    "location": {
+        "city": {
+            "id": 29,
+            "name": "houston"
+        },
+        "country": {
+            "iso": "us",
+            "name": "USA"
+        },
+        "is_offsite": null,
+        "latitude": 29.96859,
+        "location": {
+            "id": 15,
+            "name": "tx - houston"
+        },
+        "longitude": -95.37359,
+        "postal_code": "77073 4903",
+        "raw": null,
+        "state": {
+            "code": "tx",
+            "id": 90,
+            "name": "texas"
+        }
+    },
+    "locationRecord": {
+        "is_offsite": false,
+        "latitude": 29.96859,
+        "location_api_id": 15,
+        "longitude": -95.37359,
+        "name": "tx - houston",
+        "postal_code": "77073 4903",
+        "raw": "{}"
+    },
+    "lot_id": "87922685",
+    "odometer": {
+        "name": 47169
+    },
+    "odometer_km": 75911,
+    "odometer_mi": 47169,
+    "odometer_status": "actual",
+    "pre_accident_price": 12759,
+    "sale_date": null,
+    "sale_date_updated_at": "2025-01-15T00:09:42.000000Z",
+    "salvage_id": 9592352,
+    "seller": {
+        "name": "GEICO",
+        "seller_api_id": 3
+    },
+    "seller_type": {
+        "name": "unknown",
+        "seller_type_api_id": 0
+    },
+    "state": {
+        "code": "tx",
+        "name": "texas",
+        "state_api_id": 90
+    },
+    "status": {
+        "name": "sale",
+        "status_api_id": 3
+    },
+    "title": {
+        "name": "Sv - Salvage Title",
+        "title_api_id": 4239
+    },
+    "vin": "3MYDLBJV1LY711264",
+    "year": 2020
+},
