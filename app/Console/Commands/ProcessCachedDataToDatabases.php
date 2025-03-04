@@ -127,7 +127,7 @@ class ProcessCachedDataToDatabases extends Command
     }
 
 
-    private function prepareCarData(array $car)
+    public function prepareCarData(array $car)
     {
         $year = null;
         if (!empty($car['year'])) {

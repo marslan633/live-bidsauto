@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\ProcessCachedDataToDatabases;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\VehicleController;
@@ -52,5 +53,37 @@ Route::get('get-read-redis-data', function(){
         }
 
         return response()->json(['processDataForCacheBefore' => $processDataForCacheBefore[0], 'processDataForCacheAfter' => $processDataForCacheAfter[0]]);
+    }
+});
+
+Route::get('store-redis-data-to-database', function(){
+    $IS_KVM_TWO = config('app.is_kvm_two');
+    $CacheModel = $IS_KVM_TWO ? RemoteCacheKey::class : CacheKey::class;
+    $cacheKeys = $CacheModel::where('cache_key', 'like', 'vehicle_data%')
+    ->where('status', 'pending')
+    ->orderBy('created_at', 'asc')
+    // ->lockForUpdate()
+    // ->skipLocked()
+    ->take(1)
+    ->get();
+
+    foreach ($cacheKeys as $cacheKey) {
+        $key = $cacheKey->cache_key;
+        $data = Cache::store('redis')->get($key);
+
+        if (!$data) {
+            CacheKey::where('cache_key', $key)->delete();
+            return response()->json(['message' => 'Data not found']);
+        }
+
+        $originalData = [];
+        $databaseReturedData = [];
+        foreach ($data as $car) {
+            $convertedData = convertAndStoreDataToRedis($car);
+            $originalData[] =  $convertedData;
+            $databaseReturedData = (new ProcessCachedDataToDatabases)->prepareCarData($convertedData);
+        }
+
+        return response()->json(['originalData' => $originalData[0], 'databaseReturedData' => $databaseReturedData[0]]);
     }
 });
