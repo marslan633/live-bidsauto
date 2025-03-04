@@ -69,7 +69,7 @@ Route::get('store-redis-data-to-database', function(){
 
     foreach ($cacheKeys as $cacheKey) {
         $key = $cacheKey->cache_key;
-        $data = json_decode(Cache::store('redis')->get($key));
+        $data = json_decode(Cache::store('redis')->get($key), true);
 
         if (!$data) {
             CacheKey::where('cache_key', $key)->delete();
@@ -79,7 +79,7 @@ Route::get('store-redis-data-to-database', function(){
         $originalData = [];
         $databaseReturedData = [];
         foreach ($data as $car) {
-            $convertedData = convertAndStoreDataToRedis((array) $car);
+            $convertedData = convertAndStoreDataToRedis($car);
             $originalData[] =  $convertedData;
             $databaseReturedData = (new ProcessCachedDataToDatabases)->prepareCarData($convertedData);
         }
