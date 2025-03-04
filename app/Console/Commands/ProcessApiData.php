@@ -38,7 +38,7 @@ class ProcessApiData extends Command
             ->latest('start_time')
             ->first();
 
-        $minutes = 160; // Default minutes value
+        $minutes = 20; // Default minutes value
 
         if ($lastCron && $lastCron->end_time) {
             $endTime = Carbon::parse($lastCron->end_time);
@@ -70,7 +70,7 @@ class ProcessApiData extends Command
             'updated_at' => now(),
         ]);
 
-        $perPage = 1000;
+        $perPage = 5;
         $baseUrl = 'http://carstat.dev/api/cars';
 
         if (config('app.is_full_fetch') === true) {
