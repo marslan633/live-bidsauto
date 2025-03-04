@@ -175,8 +175,8 @@ function convertAndStoreDataToRedis(array $car)
             // 'is_new' => true,
         ];
 
-
         $lot = $car['lots'][0];
+        $convertedData['lot'] = $lot;
 
         $processLotData = processLotData($lot);
         $convertedData['vehicle_record'] = array_merge($convertedData['vehicle_record'], $processLotData);
