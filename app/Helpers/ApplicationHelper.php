@@ -179,7 +179,7 @@ function convertAndStoreDataToRedis(array $car)
         $lot = $car['lots'][0];
 
         $processLotData = processLotData($lot);
-        $convertedData['vehicle_record'] = array_merge($convertedData['vehicle_record'], $processLotData);
+        // $convertedData['vehicle_record'] = array_merge($convertedData['vehicle_record'], $processLotData);
         return $convertedData;
     }
 
@@ -190,7 +190,6 @@ function processLotData($lot)
         $unknownName = 'unknown';
         // Determine buy_now_id based on buy_now value
         $buyNowValue = $lot['buy_now'] ?? null;
-        $buyNowId = null;
 
         $lotConveredData = [];
 
