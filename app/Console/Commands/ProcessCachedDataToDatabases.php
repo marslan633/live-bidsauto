@@ -170,7 +170,7 @@ class ProcessCachedDataToDatabases extends Command
             'api_id' => $car['vehicle_record']['api_id'] ?? null,
             'year' => $car['vehicle_record']['year'] ?? null,
             'year_id' => $year,
-            'title' => $car['vehicle_record']['title'] ?? null,
+            // 'title' => $car['vehicle_record']['title'] ?? null,
             'vin' => $car['vehicle_record']['vin'] ?? null,
             'cylinders' => $car['vehicle_record']['cylinders'] ?? null,
             // Lot Data Processing
@@ -229,10 +229,10 @@ class ProcessCachedDataToDatabases extends Command
                 ['status_api_id' => $car['vehicle_record']['status']['status_api_id']],
                 ['name' => $car['vehicle_record']['status']['name']]
             )->id,
-            'title_id' => Title::firstOrCreate(
-                ['title_api_id' => $car['vehicle_record']['title']['title_api_id']],
-                ['name' => $car['vehicle_record']['title']['name']]
-            )->id,
+            // 'title_id' => Title::firstOrCreate(
+            //     ['title_api_id' => $car['vehicle_record']['title']['title_api_id']],
+            //     ['name' => $car['vehicle_record']['title']['name']]
+            // )->id,
             'detailed_title_id' => DetailedTitle::firstOrCreate(
                 ['detailed_title_api_id' => $car['vehicle_record']['detailed_title']['detailed_title_api_id']],
                 ['name' => $car['vehicle_record']['detailed_title']['name']]
