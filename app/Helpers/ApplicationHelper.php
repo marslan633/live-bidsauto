@@ -180,6 +180,30 @@ function convertAndStoreDataToRedis(array $car)
 
         $processLotData = processLotData($lot);
         $convertedData['vehicle_record'] = array_merge($convertedData['vehicle_record'], $processLotData);
+
+        $convertedData['vehicle_record']['domain'] = isset($car['lots'][0]['domain'])
+        ?
+            [
+                'domain_api_id' => $car['lots'][0]['domain']['id'],
+                'name' => $car['lots'][0]['domain']['name']
+            ]
+        :
+            null;
+
+
+        // Process Selling Branch
+        $convertedData['vehicle_record']['selling_branch'] = isset($car['lots'][0]['selling_branch'])
+        ?
+            [
+                'selling_branch_api_id' => $car['lots'][0]['selling_branch']['id'],
+                'name' => $car['lots'][0]['selling_branch']['name'],
+                'link' => $car['lots'][0]['selling_branch']['link'],
+                'number' => $car['lots'][0]['selling_branch']['number'],
+                'domain_id' => $car['lots'][0]['selling_branch']['domain_id']
+            ]
+        :
+            null;
+
         return $convertedData;
     }
 
@@ -201,28 +225,28 @@ function processLotData($lot)
         }
 
 
-        $lotConveredData['new_domain'] = isset($lot['domain'])
-        ?
-            [
-                'domain_api_id' => $lot['domain']['id'],
-                'name' => $lot['domain']['name']
-            ]
-        :
-            null;
+        // $lotConveredData['new_domain'] = isset($lot['domain'])
+        // ?
+        //     [
+        //         'domain_api_id' => $lot['domain']['id'],
+        //         'name' => $lot['domain']['name']
+        //     ]
+        // :
+        //     null;
 
 
         // Process Selling Branch
-        $lotConveredData['new_selling_branch'] = isset($lot['selling_branch'])
-        ?
-            [
-                'selling_branch_api_id' => $lot['selling_branch']['id'],
-                'name' => $lot['selling_branch']['name'],
-                'link' => $lot['selling_branch']['link'],
-                'number' => $lot['selling_branch']['number'],
-                'domain_id' => $lot['selling_branch']['domain_id']
-            ]
-        :
-            null;
+        // $lotConveredData['new_selling_branch'] = isset($lot['selling_branch'])
+        // ?
+        //     [
+        //         'selling_branch_api_id' => $lot['selling_branch']['id'],
+        //         'name' => $lot['selling_branch']['name'],
+        //         'link' => $lot['selling_branch']['link'],
+        //         'number' => $lot['selling_branch']['number'],
+        //         'domain_id' => $lot['selling_branch']['domain_id']
+        //     ]
+        // :
+        //     null;
 
 
         // Process Odometer

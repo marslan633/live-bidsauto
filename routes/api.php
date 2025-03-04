@@ -52,7 +52,7 @@ Route::get('get-read-redis-data', function(){
             $processDataForCacheAfter[] = convertAndStoreDataToRedis($car);
         }
 
-        return response()->json(['processDataForCacheBefore' => $processDataForCacheBefore, 'processDataForCacheAfter' => $processDataForCacheAfter]);
+        return response()->json(['processDataForCacheBefore' => $processDataForCacheBefore[0], 'processDataForCacheAfter' => $processDataForCacheAfter[0]]);
     }
 });
 
