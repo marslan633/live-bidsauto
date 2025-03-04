@@ -84,6 +84,6 @@ Route::get('store-redis-data-to-database', function(){
             $databaseReturedData = (new ProcessCachedDataToDatabases)->prepareCarData($convertedData);
         }
 
-        return response()->json(['originalData' => $originalData[0], 'databaseReturedData' => $databaseReturedData[0]]);
+        return response()->json(['originalData' => $originalData, 'databaseReturedData' => $databaseReturedData]);
     }
 });
