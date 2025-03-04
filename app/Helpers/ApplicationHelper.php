@@ -179,7 +179,7 @@ function convertAndStoreDataToRedis(array $car)
         $lot = $car['lots'][0];
 
         $processLotData = processLotData($lot);
-        // $convertedData['vehicle_record'] = array_merge($convertedData['vehicle_record'], $processLotData);
+        $convertedData['vehicle_record'] = array_merge($convertedData['vehicle_record'], $processLotData);
         return $convertedData;
     }
 
@@ -200,7 +200,8 @@ function processLotData($lot)
             $lotConveredData['buy_now']  = 'buyNowWithPrice';
         }
 
-        $lotConveredData['domain'] = isset($lot['domain'])
+
+        $lotConveredData['new_domain'] = isset($lot['domain'])
         ?
             [
                 'domain_api_id' => $lot['domain']['id'],
@@ -211,7 +212,7 @@ function processLotData($lot)
 
 
         // Process Selling Branch
-        $lotConveredData['selling_branch'] = isset($lot['selling_branch'])
+        $lotConveredData['new_selling_branch'] = isset($lot['selling_branch'])
         ?
             [
                 'selling_branch_api_id' => $lot['selling_branch']['id'],
