@@ -52,7 +52,7 @@ Route::get('get-read-redis-data', function(){
             $processDataForCacheAfter[] = convertAndStoreDataToRedis($car);
         }
 
-        return response()->json(['processDataForCacheBefore' => $processDataForCacheBefore[0], 'processDataForCacheAfter' => $processDataForCacheAfter[0]]);
+        return response()->json(['processDataForCacheBefore' => $processDataForCacheBefore, 'processDataForCacheAfter' => $processDataForCacheAfter]);
     }
 });
 
@@ -84,6 +84,6 @@ Route::get('store-redis-data-to-database', function(){
             $databaseReturedData = (new ProcessCachedDataToDatabases)->prepareCarData($convertedData);
         }
 
-        return response()->json(['originalData' => $originalData, 'databaseReturedData' => $databaseReturedData]);
+        return response()->json(['originalData' => $originalData[0], 'databaseReturedData' => $databaseReturedData[0]]);
     }
 });
