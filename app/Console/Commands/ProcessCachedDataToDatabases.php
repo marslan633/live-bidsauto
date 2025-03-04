@@ -76,7 +76,7 @@ class ProcessCachedDataToDatabases extends Command
 
          // **Batch processing setup**
         $batchData = [];
-        $batchSize = 1; // Process in chunks of 1000
+        $batchSize = 1000; // Process in chunks of 1000
         foreach ($cacheKeys as $cacheKey) {
             try {
                 $key = $cacheKey->cache_key;
