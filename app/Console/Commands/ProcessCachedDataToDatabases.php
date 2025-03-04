@@ -176,19 +176,19 @@ class ProcessCachedDataToDatabases extends Command
             // Lot Data Processing
             'salvage_id' => $car['vehicle_record']['salvage_id'] ?? null,
             'lot_id' => $car['vehicle_record']['lot_id'] ?? null,
-            'domain_id' =>  isset($car['domain'])
+            'domain_id' =>  isset($car['lot']['domain'])
             ? Domain::firstOrCreate(
-                ['domain_api_id' => $car['domain']['domain_api_id']],
-                ['name' => $car['domain']['name']]
+                ['domain_api_id' => $car['lot']['domain']['domain_api_id']],
+                ['name' => $car['lot']['domain']['name']]
             )->id
             : null,
-            'selling_branch' => $car['selling_branch'] ? SellingBranch::firstOrCreate(
-                ['selling_branch_api_id' => $car['selling_branch']['selling_branch_api_id']],
+            'selling_branch' => $car['lot']['selling_branch'] ? SellingBranch::firstOrCreate(
+                ['selling_branch_api_id' => $car['lot']['selling_branch']['selling_branch_api_id']],
                 [
-                    'name' => $car['selling_branch']['name'],
-                    'link' => $car['selling_branch']['link'],
-                    'number' => $car['selling_branch']['number'],
-                    'domain_id' => $car['selling_branch']['domain_id'],
+                    'name' => $car['lot']['selling_branch']['name'],
+                    'link' => $car['lot']['selling_branch']['link'],
+                    'number' => $car['lot']['selling_branch']['number'],
+                    'domain_id' => $car['lot']['selling_branch']['domain_id'],
                 ]
             )->id : null,
             'external_id' => $car['vehicle_record']['external_id'] ?? null,
