@@ -230,8 +230,8 @@ class ProcessCachedDataToDatabases extends Command
                 ['name' => $car['vehicle_record']['status']['name']]
             )->id,
             'title_id' => Title::firstOrCreate(
-                ['title_api_id' => $car['vehicle_record']['primary_title']['title_api_id']],
-                ['name' => $car['vehicle_record']['primary_title']['name']]
+                ['title_api_id' => $car['vehicle_record']['title_title']['title_api_id']],
+                ['name' => $car['vehicle_record']['title_title']['name']]
             )->id,
             'detailed_title_id' => DetailedTitle::firstOrCreate(
                 ['detailed_title_api_id' => $car['vehicle_record']['detailed_title']['detailed_title_api_id']],
