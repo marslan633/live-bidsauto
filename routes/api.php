@@ -40,7 +40,7 @@ Route::get('get-read-redis-data', function(){
         $data = Cache::store('redis')->get($key);
 
         if (!$data) {
-            // CacheKey::where('cache_key', $key)->delete();
+            CacheKey::where('cache_key', $key)->delete();
             return response()->json(['message' => 'Data not found']);
         }
 
