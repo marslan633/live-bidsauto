@@ -205,11 +205,11 @@ function convertAndStoreDataToRedis(array $car)
             null;
 
           // Process Title
-          $convertedData['vehicle_record']['title_title'] = !empty($car['lots'][0]) && !empty((array) $car['lots'][0])
+          $convertedData['vehicle_record']['title_title'] = !empty($car['lots'][0]['title']) && !empty((array) $car['lots'][0]['title'])
           ?
               [
-                  'title_api_id' => $car['lots'][0]['id'],
-                  'name' => $car['lots'][0]['name']
+                  'title_api_id' => $car['lots'][0]['title']['id'],
+                  'name' => $car['lots'][0]['title']['name']
               ]
           :
               [
