@@ -45,10 +45,8 @@ class ProcessCachedDataJob implements ShouldQueue
 
             $processDataForCache = [];
             foreach ($data as $car) {
-                Log::info('Data Before Proces', ['data' => json_encode($car)]);
                 $processedCar = convertAndStoreDataToRedis($car);
                 $processDataForCache[] = $processedCar;
-                Log::info('Data After Proces', ['data' => json_encode($processedCar)]);
             }
 
             // Store processed data in Redis

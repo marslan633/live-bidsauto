@@ -3,6 +3,9 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\VehicleController;
+use App\Models\CacheKey;
+use App\Models\RemoteCacheKey;
+use Illuminate\Support\Facades\Cache;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -20,3 +23,32 @@ Route::get('cache-key-history', [VehicleController::class, 'cacheKeyHistory']);
 Route::get('get-max-record', [VehicleController::class, 'getMaxRecord']);
 Route::get('test-api', [VehicleController::class, 'testApi']);
 Route::get('removeStaleCacheKeys', [VehicleController::class, 'removeStaleCacheKeys']);
+
+Route::get('get-read-redis-data', function(){
+    $IS_KVM_TWO = config('app.is_kvm_two');
+    $CacheModel = $IS_KVM_TWO ? RemoteCacheKey::class : CacheKey::class;
+    $cacheKeys = $CacheModel::where('cache_key', 'like', 'vehicle_data%')
+    ->where('status', 'pending')
+    ->orderBy('created_at', 'asc')
+    ->take(1)
+    ->get();
+
+    foreach ($cacheKeys as $cacheKey) {
+        $key = $cacheKey->cache_key;
+        $data = Cache::store('redis')->get($key);
+
+        if (!$data) {
+            CacheKey::where('cache_key', $key)->delete();
+            return response()->json(['message' => 'Data not found']);
+        }
+
+        $processDataForCacheBefore = [];
+        $processDataForCacheAfter = [];
+        foreach ($data as $car) {
+            $processDataForCacheBefore[] = $car;
+            $processDataForCacheAfter[] = convertAndStoreDataToRedis($car);
+        }
+
+        return response()->json(['processDataForCacheBefore' => $processDataForCacheBefore, 'processDataForCacheAfter' => $processDataForCacheAfter]);
+    }
+});
