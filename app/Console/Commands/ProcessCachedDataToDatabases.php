@@ -54,8 +54,8 @@ class ProcessCachedDataToDatabases extends Command
             $cacheKeys = RemoteCacheKey::where('cache_key', 'like', 'vehicle_data%')
             ->where('status', 'pending')
             ->orderBy('created_at', 'asc')
-            ->lockForUpdate()
-            // ->take(10)
+            // ->lockForUpdate()
+            ->take(10)
             ->get();
 
             if ($cacheKeys->isEmpty()) {
@@ -83,7 +83,6 @@ class ProcessCachedDataToDatabases extends Command
                 $data = json_decode(Cache::store('redis')->get($key), true);
                 if (!$data) {
                     $this->info("No data found for key: {$key}");
-                    RemoteCacheKey::where('cache_key', $key)->delete();
                     continue;
                 }
                 foreach ($data as $car) {
@@ -105,6 +104,8 @@ class ProcessCachedDataToDatabases extends Command
                 Cache::store('redis')->forget($key);
 
             } catch (\Exception $e) {
+                RemoteCacheKey::find($cacheKey->id)->update(['status' => 'pending']);
+
                 \Log::error("Error processing key {$key}: " . $e->getMessage());
                 $this->info("Data Process Error For Removed Redis:");
                 // $cacheKey->update(['status' => 'pending']); // Revert status

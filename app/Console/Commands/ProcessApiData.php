@@ -79,8 +79,6 @@ class ProcessApiData extends Command
             $apiUrl = "{$baseUrl}?per_page={$perPage}&minutes={$minutes}&simple_paginate=1&page=1";
         }
 
-        $streamName = 'stream:vehicle_data';
-
         try {
             do {
                 // **Fetch Fresh Data from API**
@@ -103,7 +101,7 @@ class ProcessApiData extends Command
 
                         // Save all data to cache with a unique cache key
                     $cacheKey = 'vehicle_data_' . now()->format('Y_m_d_H_i_s');
-                    $expiresAt = now()->addMinutes(300); // Store for 4 hour
+                    $expiresAt = now()->addMinutes(60 * 60 * 20); // Store for 20 Days
                     $this->info("cache key {$cacheKey}.");
                     // \Log::info("cache key {$cacheKey}.");
 
@@ -126,12 +124,10 @@ class ProcessApiData extends Command
 
                     if (config('app.env') !== 'production') {
                         $this->info("🎉 Data pushed to Redis Stream.");
-                        // \Log::info("🎉 Data pushed to Redis Stream.");
                     }
                 } else {
                     if (config('app.env') !== 'production') {
                         $this->info("⚠️ No new data available.");
-                        // \Log::info("⚠️ No new data available.");
                     }
                 }
 
