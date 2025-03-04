@@ -201,7 +201,7 @@ function processLotData($lot)
             $lotConveredData['buy_now']  = 'buyNowWithPrice';
         }
 
-        $lotConveredData['domain'] = !empty($lot['domain']) && !empty((array) $lot['domain'])
+        $lotConveredData['domain'] = isset($lot['domain'])
         ?
             [
                 'domain_api_id' => $lot['domain']['id'],
@@ -212,7 +212,7 @@ function processLotData($lot)
 
 
         // Process Selling Branch
-        $lotConveredData['selling_branch'] = !empty($lot['selling_branch']) && !empty((array) $lot['selling_branch'])
+        $lotConveredData['selling_branch'] = isset($lot['selling_branch'])
         ?
             [
                 'selling_branch_api_id' => $lot['selling_branch']['id'],

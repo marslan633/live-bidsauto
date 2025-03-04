@@ -1,118 +1,166 @@
-"vehicle_record": {
-    "actual_cash_value": null,
-    "airbags": null,
-    "api_id": 532396,
-    "bid": null,
-    "bid_updated_at": "2025-01-15 00:09:42",
-    "buy_now": null,
-    "buy_now_updated_at": "2025-01-15T00:09:42.000000Z",
-    "city": {
-        "city_api_id": 29,
-        "name": "houston"
+"processDataForCacheAfter": {
+    "manufacturer": {
+        "manufacturer_api_id": 26,
+        "name": "Chevrolet"
     },
-    "clean_wholesale_price": 14600,
-    "condition": {
-        "condition_api_id": 0,
-        "name": "run_and_drives"
+    "model": {
+        "vehicle_model_api_id": 1427,
+        "name": "Colorado"
     },
-    "country": {
-        "iso": "us",
-        "name": "USA"
+    "generation": {
+        "generation_api_id": 0,
+        "name": "unknown"
     },
-    "cylinders": 4,
-    "damageMain": {
-        "damage_api_id": 3,
-        "name": "Front End"
+    "year": {
+        "name": 2016
     },
-    "damageSecond": null,
-    "detailed_title": {
-        "detailed_title_api_id": 1553,
-        "name": "Tx - Salvage Vehicle Title"
+    "body_type": {
+        "body_type_api_id": 14,
+        "name": "truck"
     },
-    "details": null,
-    "estimate_repair_price": null,
-    "external_id": null,
-    "final_bid": null,
-    "final_bid_updated_at": null,
-    "grade_iaai": null,
-    "imageRecord": {
-        "big": "[\"https:\\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/dbeae4b583bb4da68bd17d0ed00e1a5f_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/a6260b7c93394f76861ecc63ef965dfc_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/240a5178741f4f1fbaf437b195e46b8f_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/8890103917d244419e6f6559e9e8b978_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/1773d7f1fa454650b7e41621ffb4a0d2_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/7db900083e9143b2ad31cc31eda471dc_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/a58bbe61fa8c46418ccf23e67856d3ff_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/aa0df529c4f94d17abd1d6862486bd8b_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/c7d8c5f4227544a0852906a59039707b_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/4cdb76e32eb74302a567522b4af859e8_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/9797ec9014614488b46165f1e3dff022_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/5ecf2d7b853a4c949e4d212046c076a1_hrs.jpg\"]",
-        "downloaded": "[\"https:\\/\/cars.import-motor.com\/copart\/toyota\/yaris\/2020\/87922685\/3MYDLBJV1LY711264-1.webp\",\"https:\/\/cars.import-motor.com\/copart\/toyota\/yaris\/2020\/87922685\/3MYDLBJV1LY711264-2.webp\",\"https:\/\/cars.import-motor.com\/copart\/toyota\/yaris\/2020\/87922685\/3MYDLBJV1LY711264-3.webp\",\"https:\/\/cars.import-motor.com\/copart\/toyota\/yaris\/2020\/87922685\/3MYDLBJV1LY711264-4.webp\",\"https:\/\/cars.import-motor.com\/copart\/toyota\/yaris\/2020\/87922685\/3MYDLBJV1LY711264-5.webp\"]",
-        "exterior": "[]",
-        "external_panorama_url": null,
-        "image_api_id": 12548860,
-        "interior": "[]",
-        "normal": "[\"https:\\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/dbeae4b583bb4da68bd17d0ed00e1a5f_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/a6260b7c93394f76861ecc63ef965dfc_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/240a5178741f4f1fbaf437b195e46b8f_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/8890103917d244419e6f6559e9e8b978_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/1773d7f1fa454650b7e41621ffb4a0d2_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/7db900083e9143b2ad31cc31eda471dc_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/a58bbe61fa8c46418ccf23e67856d3ff_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/aa0df529c4f94d17abd1d6862486bd8b_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/c7d8c5f4227544a0852906a59039707b_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/4cdb76e32eb74302a567522b4af859e8_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/9797ec9014614488b46165f1e3dff022_hrs.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/5ecf2d7b853a4c949e4d212046c076a1_hrs.jpg\"]",
-        "small": "[\"https:\\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/dbeae4b583bb4da68bd17d0ed00e1a5f_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/a6260b7c93394f76861ecc63ef965dfc_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/240a5178741f4f1fbaf437b195e46b8f_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/8890103917d244419e6f6559e9e8b978_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/1773d7f1fa454650b7e41621ffb4a0d2_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/7db900083e9143b2ad31cc31eda471dc_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/a58bbe61fa8c46418ccf23e67856d3ff_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/aa0df529c4f94d17abd1d6862486bd8b_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/c7d8c5f4227544a0852906a59039707b_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/4cdb76e32eb74302a567522b4af859e8_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/9797ec9014614488b46165f1e3dff022_thb.jpg\",\"https:\/\/cs.copart.com\/v1\/AUTH_svc.pdoc00001\/ids-c-prod-lpp\/0125\/5ecf2d7b853a4c949e4d212046c076a1_thb.jpg\"]",
-        "video": null,
-        "video_youtube_id": null
+    "color": {
+        "color_api_id": 5,
+        "name": "red"
     },
-    "keys_available": true,
-    "location": {
-        "city": {
-            "id": 29,
-            "name": "houston"
+    "engine": {
+        "engine_api_id": 4938,
+        "name": "3.6l v-6 di, dohc, vvt, 305hp"
+    },
+    "transmission": {
+        "transmission_api_id": 1,
+        "name": "automatic"
+    },
+    "drive_wheel": {
+        "drive_wheel_api_id": 3,
+        "name": "all"
+    },
+    "vehicle_type": {
+        "vehicle_type_api_id": 1,
+        "name": "automobile"
+    },
+    "fuel": {
+        "fuel_api_id": 4,
+        "name": "gasoline"
+    },
+    "vehicle_record": {
+        "api_id": 8121599,
+        "year": 2016,
+        "title": {
+            "title_api_id": 6227,
+            "name": "Clear"
+        },
+        "vin": "1GCGTCE31G1149550",
+        "cylinders": 6,
+        "odometer": {
+            "name": 205411
+        },
+        "seller": {
+            "seller_api_id": 7,
+            "name": "Progressive"
+        },
+        "seller_type": {
+            "seller_type_api_id": 1,
+            "name": "insurance"
+        },
+        "condition": {
+            "condition_api_id": 0,
+            "name": "run_and_drives"
+        },
+        "status": {
+            "status_api_id": 3,
+            "name": "sale"
+        },
+        "detailed_title": {
+            "detailed_title_api_id": 1391,
+            "name": "Clear (Indiana)"
+        },
+        "damageMain": {
+            "damage_api_id": 46,
+            "name": "Right Front"
+        },
+        "damageSecond": {
+            "damage_api_id": 3,
+            "name": "Front End"
+        },
+        "location": {
+            "country": {
+                "iso": "us",
+                "name": "USA"
+            },
+            "state": {
+                "id": 29,
+                "code": "in",
+                "name": "indiana"
+            },
+            "city": {
+                "id": 97,
+                "name": "indianapolis"
+            },
+            "location": {
+                "id": 474,
+                "name": "3302 s harding st"
+            },
+            "latitude": 39.71642,
+            "longitude": -86.19171,
+            "postal_code": "46217",
+            "is_offsite": false,
+            "raw": "At the branch"
         },
         "country": {
             "iso": "us",
             "name": "USA"
         },
-        "is_offsite": null,
-        "latitude": 29.96859,
-        "location": {
-            "id": 15,
-            "name": "tx - houston"
-        },
-        "longitude": -95.37359,
-        "postal_code": "77073 4903",
-        "raw": null,
         "state": {
-            "code": "tx",
-            "id": 90,
-            "name": "texas"
-        }
-    },
-    "locationRecord": {
-        "is_offsite": false,
-        "latitude": 29.96859,
-        "location_api_id": 15,
-        "longitude": -95.37359,
-        "name": "tx - houston",
-        "postal_code": "77073 4903",
-        "raw": "{}"
-    },
-    "lot_id": "87922685",
-    "odometer": {
-        "name": 47169
-    },
-    "odometer_km": 75911,
-    "odometer_mi": 47169,
-    "odometer_status": "actual",
-    "pre_accident_price": 12759,
-    "sale_date": null,
-    "sale_date_updated_at": "2025-01-15T00:09:42.000000Z",
-    "salvage_id": 9592352,
-    "seller": {
-        "name": "GEICO",
-        "seller_api_id": 3
-    },
-    "seller_type": {
-        "name": "unknown",
-        "seller_type_api_id": 0
-    },
-    "state": {
-        "code": "tx",
-        "name": "texas",
-        "state_api_id": 90
-    },
-    "status": {
-        "name": "sale",
-        "status_api_id": 3
-    },
-    "title": {
-        "name": "Sv - Salvage Title",
-        "title_api_id": 4239
-    },
-    "vin": "3MYDLBJV1LY711264",
-    "year": 2020
-},
+            "state_api_id": 29,
+            "code": "in",
+            "name": "indiana"
+        },
+        "city": {
+            "city_api_id": 97,
+            "name": "indianapolis"
+        },
+        "locationRecord": {
+            "location_api_id": 474,
+            "name": "3302 s harding st",
+            "latitude": 39.71642,
+            "longitude": -86.19171,
+            "postal_code": "46217",
+            "is_offsite": false,
+            "raw": "At the branch"
+        },
+        "imageRecord": {
+            "image_api_id": 11334987,
+            "small": "[]",
+            "normal": "[\"https:\\/\\/vis.iaai.com\\/resizer?imageKeys=41419896~SID~B541~S0~I1~RW2576~H1932~TH0&width=845&height=633\",\"https:\\/\\/vis.iaai.com\\/resizer?imageKeys=41419896~SID~B541~S0~I2~RW2576~H1932~TH0&width=845&height=633\",\"https:\\/\\/vis.iaai.com\\/resizer?imageKeys=41419896~SID~B541~S0~I3~RW2576~H1932~TH0&width=845&height=633\",\"https:\\/\\/vis.iaai.com\\/resizer?imageKeys=41419896~SID~B541~S0~I4~RW2576~H1932~TH0&width=845&height=633\",\"https:\\/\\/vis.iaai.com\\/resizer?imageKeys=41419896~SID~B541~S0~I5~RW2576~H1932~TH0&width=845&height=633\",\"https:\\/\\/vis.iaai.com\\/resizer?imageKeys=41419896~SID~B541~S0~I6~RW2576~H1932~TH0&width=845&height=633\",\"https:\\/\\/vis.iaai.com\\/resizer?imageKeys=41419896~SID~B541~S0~I7~RW2576~H1932~TH0&width=845&height=633\",\"https:\\/\\/vis.iaai.com\\/resizer?imageKeys=41419896~SID~B541~S0~I8~RW2576~H1932~TH0&width=845&height=633\",\"https:\\/\\/vis.iaai.com\\/resizer?imageKeys=41419896~SID~B541~S0~I9~RW2576~H1932~TH0&width=845&height=633\",\"https:\\/\\/vis.iaai.com\\/resizer?imageKeys=41419896~SID~B541~S0~I10~RW2576~H1932~TH0&width=845&height=633\",\"https:\\/\\/vis.iaai.com\\/resizer?imageKeys=41419896~SID~B541~S0~I11~RW2576~H1932~TH0&width=845&height=633\",\"https:\\/\\/vis.iaai.com\\/resizer?imageKeys=41419896~SID~B541~S0~I115~RW2576~H1932~TH0&width=845&height=633\",\"https:\\/\\/vis.iaai.com\\/resizer?imageKeys=41419896~SID~B541~S0~I116~RW2576~H1932~TH0&width=845&height=633\",\"https:\\/\\/vis.iaai.com\\/resizer?imageKeys=41419896~SID~B541~S0~I117~RW2576~H1932~TH0&width=845&height=633\",\"https:\\/\\/vis.iaai.com\\/resizer?imageKeys=41419896~SID~B541~S0~I118~RW2576~H1932~TH0&width=845&height=633\",\"https:\\/\\/vis.iaai.com\\/resizer?imageKeys=41419896~SID~B541~S0~I119~RW2576~H1932~TH0&width=845&height=633\",\"https:\\/\\/vis.iaai.com\\/resizer?imageKeys=41419896~SID~B541~S0~I152~RW2576~H1932~TH0&width=845&height=633\",\"https:\\/\\/vis.iaai.com\\/resizer?imageKeys=41419896~SID~B541~S0~I153~RW2576~H1932~TH0&width=845&height=633\"]",
+            "big": "[\"https:\\/\\/vis.iaai.com\\/deepzoom?imageKey=41419896~SID~B541~S0~I1~RW2576~H1932~TH0&level=12&x=0&y=0&overlap=0&tilesize=5000\",\"https:\\/\\/vis.iaai.com\\/deepzoom?imageKey=41419896~SID~B541~S0~I2~RW2576~H1932~TH0&level=12&x=0&y=0&overlap=0&tilesize=5000\",\"https:\\/\\/vis.iaai.com\\/deepzoom?imageKey=41419896~SID~B541~S0~I3~RW2576~H1932~TH0&level=12&x=0&y=0&overlap=0&tilesize=5000\",\"https:\\/\\/vis.iaai.com\\/deepzoom?imageKey=41419896~SID~B541~S0~I4~RW2576~H1932~TH0&level=12&x=0&y=0&overlap=0&tilesize=5000\",\"https:\\/\\/vis.iaai.com\\/deepzoom?imageKey=41419896~SID~B541~S0~I5~RW2576~H1932~TH0&level=12&x=0&y=0&overlap=0&tilesize=5000\",\"https:\\/\\/vis.iaai.com\\/deepzoom?imageKey=41419896~SID~B541~S0~I6~RW2576~H1932~TH0&level=12&x=0&y=0&overlap=0&tilesize=5000\",\"https:\\/\\/vis.iaai.com\\/deepzoom?imageKey=41419896~SID~B541~S0~I7~RW2576~H1932~TH0&level=12&x=0&y=0&overlap=0&tilesize=5000\",\"https:\\/\\/vis.iaai.com\\/deepzoom?imageKey=41419896~SID~B541~S0~I8~RW2576~H1932~TH0&level=12&x=0&y=0&overlap=0&tilesize=5000\",\"https:\\/\\/vis.iaai.com\\/deepzoom?imageKey=41419896~SID~B541~S0~I9~RW2576~H1932~TH0&level=12&x=0&y=0&overlap=0&tilesize=5000\",\"https:\\/\\/vis.iaai.com\\/deepzoom?imageKey=41419896~SID~B541~S0~I10~RW2576~H1932~TH0&level=12&x=0&y=0&overlap=0&tilesize=5000\",\"https:\\/\\/vis.iaai.com\\/deepzoom?imageKey=41419896~SID~B541~S0~I11~RW2576~H1932~TH0&level=12&x=0&y=0&overlap=0&tilesize=5000\",\"https:\\/\\/vis.iaai.com\\/deepzoom?imageKey=41419896~SID~B541~S0~I115~RW2576~H1932~TH0&level=12&x=0&y=0&overlap=0&tilesize=5000\",\"https:\\/\\/vis.iaai.com\\/deepzoom?imageKey=41419896~SID~B541~S0~I116~RW2576~H1932~TH0&level=12&x=0&y=0&overlap=0&tilesize=5000\",\"https:\\/\\/vis.iaai.com\\/deepzoom?imageKey=41419896~SID~B541~S0~I117~RW2576~H1932~TH0&level=12&x=0&y=0&overlap=0&tilesize=5000\",\"https:\\/\\/vis.iaai.com\\/deepzoom?imageKey=41419896~SID~B541~S0~I118~RW2576~H1932~TH0&level=12&x=0&y=0&overlap=0&tilesize=5000\",\"https:\\/\\/vis.iaai.com\\/deepzoom?imageKey=41419896~SID~B541~S0~I119~RW2576~H1932~TH0&level=12&x=0&y=0&overlap=0&tilesize=5000\",\"https:\\/\\/vis.iaai.com\\/deepzoom?imageKey=41419896~SID~B541~S0~I152~RW2576~H1932~TH0&level=12&x=0&y=0&overlap=0&tilesize=5000\",\"https:\\/\\/vis.iaai.com\\/deepzoom?imageKey=41419896~SID~B541~S0~I153~RW2576~H1932~TH0&level=12&x=0&y=0&overlap=0&tilesize=5000\"]",
+            "downloaded": "[\"https:\\/\\/cars.import-motor.com\\/iaai\\/chevrolet\\/colorado\\/2016\\/40930174\\/1GCGTCE31G1149550-1.webp\",\"https:\\/\\/cars.import-motor.com\\/iaai\\/chevrolet\\/colorado\\/2016\\/40930174\\/1GCGTCE31G1149550-2.webp\",\"https:\\/\\/cars.import-motor.com\\/iaai\\/chevrolet\\/colorado\\/2016\\/40930174\\/1GCGTCE31G1149550-3.webp\",\"https:\\/\\/cars.import-motor.com\\/iaai\\/chevrolet\\/colorado\\/2016\\/40930174\\/1GCGTCE31G1149550-4.webp\",\"https:\\/\\/cars.import-motor.com\\/iaai\\/chevrolet\\/colorado\\/2016\\/40930174\\/1GCGTCE31G1149550-5.webp\"]",
+            "exterior": "[]",
+            "interior": "[]",
+            "video": "https://mediastorageaccountprod.blob.core.windows.net/media/41419896_VES-100_1",
+            "video_youtube_id": null,
+            "external_panorama_url": "https://vis.iaai.com/Home/ThreeSixtyView?keys=SID-41419896~STP-1~INT-1&iframeview=true"
+        },
+        "salvage_id": 8377165,
+        "lot_id": "40930174",
+        "external_id": "41419896~US",
+        "odometer_km": 330577,
+        "odometer_mi": 205411,
+        "odometer_status": "actual",
+        "estimate_repair_price": 8639,
+        "pre_accident_price": null,
+        "clean_wholesale_price": null,
+        "actual_cash_value": 15687,
+        "sale_date": "2025-03-05T14:30:00.000000Z",
+        "sale_date_updated_at": "2025-02-28T07:07:51.000000Z",
+        "bid": 300,
+        "bid_updated_at": "2025-03-04 19:03:12",
+        "buy_now": 0,
+        "buy_now_updated_at": "2024-11-23T08:12:24.000000Z",
+        "final_bid": null,
+        "final_bid_updated_at": null,
+        "keys_available": true,
+        "airbags": "intact",
+        "grade_iaai": 36,
+        "details": null
+    }
+}
