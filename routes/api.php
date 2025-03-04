@@ -79,7 +79,7 @@ Route::get('store-redis-data-to-database', function(){
         $originalData = [];
         $databaseReturedData = [];
         foreach ($data as $car) {
-            $convertedData = convertAndStoreDataToRedis($car);
+            $convertedData = convertAndStoreDataToRedis((array) $car);
             $originalData[] =  $convertedData;
             $databaseReturedData = (new ProcessCachedDataToDatabases)->prepareCarData($convertedData);
         }
