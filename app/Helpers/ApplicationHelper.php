@@ -204,6 +204,19 @@ function convertAndStoreDataToRedis(array $car)
         :
             null;
 
+          // Process Title
+          $convertedData['vehicle_record']['title_title'] = !empty($car['lots'][0]) && !empty((array) $car['lots'][0])
+          ?
+              [
+                  'title_api_id' => $car['lots'][0]['id'],
+                  'name' => $car['lots'][0]['name']
+              ]
+          :
+              [
+                  'title_api_id' => $unknownApiId,
+                  'name' => $unknownName
+              ];
+
         return $convertedData;
     }
 
@@ -315,18 +328,7 @@ function processLotData($lot)
                 'name' => $unknownName
             ];
 
-        // Process Title
-        $lotConvertedData['title_title'] = !empty($lot['title']) && !empty((array) $lot['title'])
-        ?
-            [
-                'title_api_id' => $lot['title']['id'],
-                'name' => $lot['title']['name']
-            ]
-        :
-            [
-                'title_api_id' => $unknownApiId,
-                'name' => $unknownName
-            ];
+
 
         // Process Detailed Title
         $lotConvertedData['detailed_title'] = !empty($lot['detailed_title']) && !empty((array) $lot['detailed_title'])
