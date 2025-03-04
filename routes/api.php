@@ -58,7 +58,7 @@ Route::get('get-read-redis-data', function(){
 
 Route::get('store-redis-data-to-database', function(){
     $IS_KVM_TWO = config('app.is_kvm_two');
-    $CacheModel = $IS_KVM_TWO ? RemoteCacheKey::class : CacheKey::class;
+    $CacheModel =   RemoteCacheKey::class;
     $cacheKeys = $CacheModel::where('cache_key', 'like', 'vehicle_data%')
     ->where('status', 'pending')
     ->orderBy('created_at', 'asc')
