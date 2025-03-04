@@ -67,7 +67,6 @@ Route::get('store-redis-data-to-database', function(){
     ->take(1)
     ->get();
 
-    return $cacheKeys;
     foreach ($cacheKeys as $cacheKey) {
         $key = $cacheKey->cache_key;
         $data = Cache::store('redis')->get($key);
