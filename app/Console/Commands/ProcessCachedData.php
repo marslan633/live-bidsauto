@@ -64,7 +64,7 @@ public function handle()
             ->orderBy('created_at', 'asc')
             // ->lockForUpdate()
             // ->skipLocked()
-            ->take(1)
+            // ->take(1)
             ->get();
 
         if ($cacheKeys->isEmpty()) {
