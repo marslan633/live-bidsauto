@@ -30,6 +30,8 @@ Route::get('get-read-redis-data', function(){
     $cacheKeys = $CacheModel::where('cache_key', 'like', 'vehicle_data%')
     ->where('status', 'pending')
     ->orderBy('created_at', 'asc')
+    // ->lockForUpdate()
+    // ->skipLocked()
     ->take(1)
     ->get();
 
@@ -49,6 +51,6 @@ Route::get('get-read-redis-data', function(){
             $processDataForCacheAfter[] = convertAndStoreDataToRedis($car);
         }
 
-        return response()->json(['processDataForCacheBefore' => $processDataForCacheBefore[0], 'processDataForCacheAfter' => $processDataForCacheAfter[0]]);
+        return response()->json(['processDataForCacheBefore' => $processDataForCacheBefore, 'processDataForCacheAfter' => $processDataForCacheAfter]);
     }
 });
