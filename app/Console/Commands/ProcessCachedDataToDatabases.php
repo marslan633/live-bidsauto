@@ -176,12 +176,12 @@ class ProcessCachedDataToDatabases extends Command
             // Lot Data Processing
             'salvage_id' => $car['vehicle_record']['salvage_id'] ?? null,
             'lot_id' => $car['vehicle_record']['lot_id'] ?? null,
-            'domain_id' =>  isset($car['vehicle_record']['domain'])
-            ? Domain::firstOrCreate(
-                ['domain_api_id' => $car['vehicle_record']['domain']['domain_api_id']],
-                ['name' => $car['vehicle_record']['domain']['name']]
-            )->id
-            : null,
+            // 'domain_id' =>  isset($car['vehicle_record']['domain'])
+            // ? Domain::firstOrCreate(
+            //     ['domain_api_id' => $car['vehicle_record']['domain']['domain_api_id']],
+            //     ['name' => $car['vehicle_record']['domain']['name']]
+            // )->id
+            // : null,
             // 'selling_branch' => isset($car['vehicle_record']['selling_branch']) ? SellingBranch::firstOrCreate(
             //     ['selling_branch_api_id' => $car['vehicle_record']['selling_branch']['selling_branch_api_id']],
             //     [
