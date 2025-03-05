@@ -249,7 +249,7 @@ class ProcessCachedDataToDatabases extends Command
                 ['damage_api_id' => $car['vehicle_record']['damageSecond']['damage_api_id']],
                 ['name' => $car['vehicle_record']['damageSecond']['name']]
             )->id : null,
-            'buy_now_id' => BuyNow::where('name', $car['vehicle_record']['buy_now'])->value('id'),
+            'buy_now_id' => BuyNow::where('name', $car['vehicle_record']['buy_now'])->value('id') ?? null,
             'details' => $car['vehicle_record']['details'] ?? null,
             'location_id' => !empty($car['vehicle_record']['locationRecord']) && !empty($car['vehicle_record']['locationRecord']['location_api_id']) ? Location::firstOrCreate(
                 ['location_api_id' => $car['vehicle_record']['locationRecord']['location_api_id']],
@@ -281,21 +281,6 @@ class ProcessCachedDataToDatabases extends Command
             )->id : null,
             'image_id' => $imageId,
         ];
-
-        // Check if the record was newly created
-        if ($vehicleRecord->wasRecentlyCreated) {
-            $vehicleRecord->update([
-                'processed_at' => Carbon::now(),
-                'is_new' => true,
-            ]);
-        } elseif ($vehicleRecord->wasChanged()) {
-            // Updated record
-            if ($vehicleRecord->is_new) {
-                $vehicleRecord->update([
-                    'processed_at' => Carbon::now(),
-                ]);
-            }
-        }
 
     }
 
