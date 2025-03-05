@@ -48,7 +48,7 @@ class ArchiveExpiredAuctions extends Command
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-        
+
             $expiredRecords = VehicleRecord::whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [now()])->get();
 
             if ($expiredRecords->isEmpty()) {
@@ -87,7 +87,7 @@ class ArchiveExpiredAuctions extends Command
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-                
+
                 $record->delete();
             }
 

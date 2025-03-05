@@ -16,7 +16,9 @@ return [
     'name' => env('APP_NAME', 'Laravel'),
 
     'car_api_key' => env('CAR_API_KEY', ''),
-    'app_kvm4' => env('APP_KVM4', false),
+    'app_kvm_one' => env('APP_KVM_ONE', false),
+    'app_kvm_two' => env('APP_KVM_TWO', false),
+    'app_kvm_three' => env('APP_KVM_THREE', false),
     'is_full_fetch' => env('IS_FULL_FETCH', false),
     'is_kvm_two' => env('IS_KVM_TWO', false),
     'batch_size' => env('BATCH_SIZE', 1000),
