@@ -65,7 +65,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                 Cache::store('redis')->forget($key);
 
             } catch (\Exception $e) {
-                RemoteCacheKey::find($this->cacheKey->id)->update(['status' => 'pending']);
+                RemoteCacheKey::find($this->cacheKeyId)->update(['status' => 'pending']);
                 Log::error("Error processing key {$key}: " . $e->getMessage());
             }
     }
