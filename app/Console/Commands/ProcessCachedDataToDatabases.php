@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
+use Illuminate\Support\Facades\Log;
 
 class ProcessCachedDataToDatabases extends Command
 {
@@ -72,6 +73,7 @@ class ProcessCachedDataToDatabases extends Command
 
          // **Batch processing setup**
         foreach ($cacheKeys as $cacheKey) {
+            Log::info('Cache Key ID', ['cacheKey' => $cacheKey->id]);
             ProcessCachedDataToDatabaseJob::dispatch($cacheKey->id, $cacheKey->cache_key);
         }
 
