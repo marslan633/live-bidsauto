@@ -494,6 +494,34 @@ public function filterAttributes(Request $request)
     }
 
     /**
+    * Get Vehicle Records Count Hourly/Minutes.
+    */
+    public function getRecordsByInterval(Request $request)
+    {
+        $interval = $request->input('interval', '10min'); // Default to 10min
+        $startOfDay = Carbon::now()->startOfDay();
+        $currentTime = Carbon::now();
+
+        if ($interval === '10min') {
+            $format = '%H:%i'; // MySQL format: 02:00, 02:10
+        } elseif ($interval === 'hourly') {
+            $format = '%H:00'; // MySQL format: 02:00, 03:00
+        } else {
+            return response()->json(['error' => 'Invalid interval'], 400);
+        }
+
+        // Optimized Query
+        $records = VehicleRecord::query()
+            ->selectRaw("DATE_FORMAT(created_at, '{$format}') as started, COUNT(*) as created")
+            ->whereBetween('created_at', [$startOfDay, $currentTime])
+            ->groupBy('started')
+            ->orderBy('started', 'ASC')
+            ->get();
+
+        return response()->json($records);
+    }
+
+    /**
      * Send Quote API
      */
     public function sendQuote(Request $request) {

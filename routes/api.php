@@ -24,7 +24,7 @@ Route::get('cache-key-history', [VehicleController::class, 'cacheKeyHistory']);
 Route::get('get-max-record', [VehicleController::class, 'getMaxRecord']);
 Route::get('test-api', [VehicleController::class, 'testApi']);
 Route::get('removeStaleCacheKeys', [VehicleController::class, 'removeStaleCacheKeys']);
-
+Route::get('/records-by-interval', [VehicleController::class, 'getRecordsByInterval']);
 Route::get('get-read-redis-data', function(){
     $IS_KVM_TWO = config('app.is_kvm_two');
     $CacheModel = $IS_KVM_TWO ? RemoteCacheKey::class : CacheKey::class;
