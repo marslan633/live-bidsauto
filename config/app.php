@@ -19,6 +19,8 @@ return [
     'app_kvm4' => env('APP_KVM4', false),
     'is_full_fetch' => env('IS_FULL_FETCH', false),
     'is_kvm_two' => env('IS_KVM_TWO', false),
+    'batch_size' => env('BATCH_SIZE', 1000),
+    'cache_key_expiry' => env('CACHE_KEY_EXPIRY', 1000),
 
     /*
     |--------------------------------------------------------------------------
