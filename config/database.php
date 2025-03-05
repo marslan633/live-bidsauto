@@ -177,6 +177,10 @@ return [
             'password' => env('REDIS_PASSWORD'),
             'port' => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_DB', 0),
+            'persistent' => true, // Keep connections alive
+            'timeout' => 10.0, // Default is 5s; increase to 10s
+            'read_timeout' => 10.0, // Allow longer reads from Redis
+            'retry_interval' => 200, // Retry delay in milliseconds
         ],
 
         'cache' => [
@@ -185,6 +189,10 @@ return [
             'password' => env('REDIS_CACHE_PASSWORD', null),
             'port' => env('REDIS_CACHE_PORT', 6380), // Different port or host
             'database' => env('REDIS_CACHE_DB', 1),
+            'persistent' => true, // Keep connections alive
+            'timeout' => env('REDIS_CACHE_TIMEOUT', 5.0), // Default is 5s; increase to 10s
+            'read_timeout' => env('REDIS_CACHE_READ_TIMEOUT', 5.0), // Allow longer reads from Redis
+            'retry_interval' => 200, // Retry delay in milliseconds
         ],
 
     ],
