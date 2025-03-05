@@ -71,16 +71,11 @@ class ProcessCachedDataToDatabases extends Command
         }
 
          // **Batch processing setup**
-        $batchData = [];
-        $batchSize = config('app.batch_size'); // Process in chunks of 1000
         foreach ($cacheKeys as $cacheKey) {
             ProcessCachedDataToDatabaseJob::dispatch($cacheKey->id, $cacheKey->cache_key)->onQueue('high');
         }
 
-         // Insert any remaining data (if less than 1000)
-        if (!empty($batchData)) {
-            $this->insertBatch($batchData);
-        }
+
 
         DB::table('cron_run_history')->where('id', $cronRun)->update([
             'end_time' => Carbon::now(),
