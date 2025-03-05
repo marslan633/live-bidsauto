@@ -9,8 +9,6 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -44,11 +42,13 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                 $batchData = [];
                 $batchSize = 1000;
                 foreach ($data as $car) {
+                    Log::info('Starting Batch Insert');
                     // **Process Data but Store in Batch**
                     $batchData[] = prepareCarData((array)$car);
 
                     // If batch reaches 1000, insert and reset
                     if (count($batchData) >= $batchSize) {
+                        Log::info('Batch Inserted');
                         insertBatch($batchData);
                         $batchData = []; // Reset batch
                     }
