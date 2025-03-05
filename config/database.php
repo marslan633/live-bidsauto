@@ -192,7 +192,7 @@ return [
             'persistent' => true, // Keep connections alive
             'timeout' => env('REDIS_CACHE_TIMEOUT', 5.0), // Default is 5s; increase to 10s
             'read_timeout' => env('REDIS_CACHE_READ_TIMEOUT', 5.0), // Allow longer reads from Redis
-            'retry_interval' => 200, // Retry delay in milliseconds
+            'retry_interval' => env('REDIS_CACHE_RETRY_INTERVAL', 1000 * 5), // Retry delay in milliseconds
         ],
 
     ],
