@@ -72,7 +72,7 @@ class ProcessCachedDataToDatabases extends Command
 
          // **Batch processing setup**
         foreach ($cacheKeys as $cacheKey) {
-            ProcessCachedDataToDatabaseJob::dispatch($cacheKey->id, $cacheKey->cache_key)->onQueue('high');
+            ProcessCachedDataToDatabaseJob::dispatch($cacheKey->id, $cacheKey->cache_key);
         }
 
 
