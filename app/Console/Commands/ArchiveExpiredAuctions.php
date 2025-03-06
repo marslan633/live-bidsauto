@@ -56,6 +56,7 @@ class ArchiveExpiredAuctions extends Command
             VehicleRecord::whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [now()])
             ->chunk($batchSize, function ($expiredRecords) use (&$totalArchived) {
                 foreach ($expiredRecords as $record) {
+                    $record->status_id = 7;
                     ArchiveExpiredAuctionsJob::dispatch($record);
                 }
                 $totalArchived += $expiredRecords->count();
