@@ -252,6 +252,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
         // Lists for new and updated records
         $newRecords = [];
         $updatedRecords = [];
+        $failedRecords = []; // ❌ Store records that failed
 
         foreach ($batchData as $record) {
             try {
@@ -269,9 +270,8 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     $newRecords[] = $record;
                 }
             } catch (\Exception $e) {
-                // Ignore failed records, log them but continue processing
-                Log::warning("Skipping record due to error: " . $e->getMessage());
-                continue;
+                $failedRecords[] = $record;
+                Log::error("Skipping record due to error: " . $e->getMessage());
             }
         }
 
@@ -287,12 +287,12 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
 
         DB::commit(); // ✅ Commit Successful Inserts
 
-        // ✅ Remove Redis Cache **Only If Successful**
-        RemoteCacheKey::where('id', $this->cacheKeyId)->delete();
-        Cache::store('redis')->forget($this->cacheKey);
+            RemoteCacheKey::where('id', $this->cacheKeyId)->delete();
+            Cache::store('redis')->forget($this->cacheKey);
+
 
     } catch (\Exception $e) {
-        DB::rollBack(); // ❌ Rollback Only If Critical Error
+        DB::rollBack(); // ❌ Rollback only in case of a major failure
 
         // Mark cache as pending in case of failure
         RemoteCacheKey::where('id', $this->cacheKeyId)->update(['status' => 'pending']);
@@ -300,7 +300,6 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
         Log::error("Batch insert failed: " . $e->getMessage());
     }
 }
-
 
      // public function insertBatch(array $batchData)
     // {
