@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\ArchiveExpiredAuctionsJob;
 use Illuminate\Console\Command;
 use App\Models\VehicleRecord;
 use App\Models\VehicleRecordArchived;
@@ -49,9 +50,18 @@ class ArchiveExpiredAuctions extends Command
                 'updated_at' => now(),
             ]);
 
-            $expiredRecords = VehicleRecord::whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [now()])->get();
+            $batchSize = config('app.batch_size');
+            // $expiredRecords = VehicleRecord::whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [now()])->get();
+            $totalArchived = 0;
+            VehicleRecord::whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [now()])
+            ->chunk($batchSize, function ($expiredRecords) use (&$totalArchived) {
+                foreach ($expiredRecords as $record) {
+                    ArchiveExpiredAuctionsJob::dispatch($record);
+                }
+                $totalArchived += $expiredRecords->count();
+            });
 
-            if ($expiredRecords->isEmpty()) {
+            if ($totalArchived === 0) {
                 $this->info("No expired auctions found.");
                 Log::info("No expired auctions found.");
                 DB::table('cron_run_history')->where('id', $cronRun)->update([
@@ -62,41 +72,11 @@ class ArchiveExpiredAuctions extends Command
                 return;
             }
 
-            foreach ($expiredRecords as $record) {
-                // Check if the record already exists in VehicleRecordArchived
-                $archivedRecord = VehicleRecordArchived::where('vin', $record->vin)->first();
-
-                if ($archivedRecord) {
-                    // If it exists, update the existing record
-                    $archivedRecord->update($record->toArray());
-                } else {
-                    // If it doesn't exist, create a new one
-                    VehicleRecordArchived::create($record->toArray());
-                }
-
-                // Insert record into SaleAuctionHistory
-                SaleAuctionHistory::create([
-                    'vin' => $record->vin,
-                    'domain_id' => $record->domain_id,
-                    'sale_date' => $record->sale_date,
-                    'lot_id' => $record->lot_id,
-                    'bid' => $record->bid,
-                    'odometer_mi' => $record->odometer_mi,
-                    'status_id' => $record->status_id,
-                    'seller_id' => $record->seller_id,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                $record->delete();
-            }
-
-            $count = $expiredRecords->count();
-            $this->info("Successfully archived and deleted {$count} expired auctions.");
-            Log::info("Successfully archived and deleted {$count} expired auctions.");
+            $this->info("Successfully archived and deleted {$totalArchived} expired auctions.");
+            Log::info("Successfully archived and deleted {$totalArchived} expired auctions.");
 
             DB::table('cron_run_history')->where('id', $cronRun)->update([
-                'total_records' => $count,
+                'total_records' => $totalArchived,
                 'end_time' => Carbon::now(),
                 'status' => 'success',
                 'updated_at' => now(),

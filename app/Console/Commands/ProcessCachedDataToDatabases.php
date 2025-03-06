@@ -76,8 +76,6 @@ class ProcessCachedDataToDatabases extends Command
             ProcessCachedDataToDatabaseJob::dispatch($cacheKey->id, $cacheKey->cache_key);
         }
 
-
-
         DB::table('cron_run_history')->where('id', $cronRun)->update([
             'end_time' => Carbon::now(),
             'status' => 'success',
