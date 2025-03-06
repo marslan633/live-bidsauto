@@ -235,25 +235,26 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
      * ✅ Insert batch of processed data
      */
     public function insertBatch(array $batchData)
-    {
-        try{
-            if (empty($batchData)) {
-                return;
-            }
+{
+    try {
+        if (empty($batchData)) {
+            return;
+        }
 
-            DB::beginTransaction(); // ✅ Start Transaction
+        DB::beginTransaction(); // ✅ Start Transaction
 
-            // Extract API IDs from batchData
-            $apiIds = array_column($batchData, 'api_id');
+        // Extract API IDs from batchData
+        $apiIds = array_column($batchData, 'api_id');
 
-            // Fetch existing records by API ID
-            $existingRecords = VehicleRecord::whereIn('api_id', $apiIds)->pluck('id', 'api_id');
+        // Fetch existing records by API ID
+        $existingRecords = VehicleRecord::whereIn('api_id', $apiIds)->pluck('id', 'api_id');
 
-            // Lists for new and updated records
-            $newRecords = [];
-            $updatedRecords = [];
+        // Lists for new and updated records
+        $newRecords = [];
+        $updatedRecords = [];
 
-            foreach ($batchData as $record) {
+        foreach ($batchData as $record) {
+            try {
                 if (isset($existingRecords[$record['api_id']])) {
                     // Existing record - update full data
                     $record['id'] = $existingRecords[$record['api_id']]; // Add ID for update
@@ -267,45 +268,113 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     $record['created_at'] = Carbon::now();
                     $newRecords[] = $record;
                 }
+            } catch (\Exception $e) {
+                // Ignore failed records, log them but continue processing
+                Log::warning("Skipping record due to error: " . $e->getMessage());
+                continue;
             }
-
-            // ✅ Bulk Insert New Records
-            if (!empty($newRecords)) {
-                DB::table('vehicle_records')->insert($newRecords);
-                // $this->info("Inserted " . count($newRecords) . " new records.");
-            }
-
-            // ✅ Bulk Update Existing Records (Full Data Update)
-            if (!empty($updatedRecords)) {
-                // Convert data for bulk update
-                $updateQuery = "UPDATE vehicle_records SET ";
-                $columns = array_keys($updatedRecords[0]);
-                $updateFields = [];
-                foreach ($columns as $column) {
-                    if ($column !== 'id') {
-                        $updateFields[] = "`$column` = VALUES(`$column`)";
-                    }
-                }
-                $updateQuery .= implode(", ", $updateFields) . " WHERE id = VALUES(id)";
-
-                DB::table('vehicle_records')->upsert($updatedRecords, ['id'], $columns);
-                // $this->info("Updated " . count($updatedRecords) . " existing records.");
-            }
-
-            // Remove cache key from DB and Redis
-            RemoteCacheKey::where('id', $this->cacheKeyId)->delete();
-            Cache::store('redis')->forget($this->cacheKey);
-
-            DB::commit(); // ✅ Commit Transaction if everything is successful
-        }catch(\Exception $e){
-            DB::rollBack(); // ❌ Rollback Transaction if an error occurs
-
-            // Mark cache as pending in case of failure
-            RemoteCacheKey::find($this->cacheKeyId)->update(['status' => 'pending']);
-
-            // Optionally log the error
-            Log::error("Batch insert failed: " . $e->getMessage());
         }
 
+        // ✅ Bulk Insert New Records
+        if (!empty($newRecords)) {
+            DB::table('vehicle_records')->insert($newRecords);
+        }
+
+        // ✅ Bulk Update Existing Records
+        if (!empty($updatedRecords)) {
+            DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
+        }
+
+        DB::commit(); // ✅ Commit Successful Inserts
+
+        // ✅ Remove Redis Cache **Only If Successful**
+        RemoteCacheKey::where('id', $this->cacheKeyId)->delete();
+        Cache::store('redis')->forget($this->cacheKey);
+
+    } catch (\Exception $e) {
+        DB::rollBack(); // ❌ Rollback Only If Critical Error
+
+        // Mark cache as pending in case of failure
+        RemoteCacheKey::where('id', $this->cacheKeyId)->update(['status' => 'pending']);
+
+        Log::error("Batch insert failed: " . $e->getMessage());
     }
+}
+
+
+     // public function insertBatch(array $batchData)
+    // {
+    //     try{
+    //         if (empty($batchData)) {
+    //             return;
+    //         }
+
+    //         DB::beginTransaction(); // ✅ Start Transaction
+
+    //         // Extract API IDs from batchData
+    //         $apiIds = array_column($batchData, 'api_id');
+
+    //         // Fetch existing records by API ID
+    //         $existingRecords = VehicleRecord::whereIn('api_id', $apiIds)->pluck('id', 'api_id');
+
+    //         // Lists for new and updated records
+    //         $newRecords = [];
+    //         $updatedRecords = [];
+
+    //         foreach ($batchData as $record) {
+    //             if (isset($existingRecords[$record['api_id']])) {
+    //                 // Existing record - update full data
+    //                 $record['id'] = $existingRecords[$record['api_id']]; // Add ID for update
+    //                 $record['processed_at'] = Carbon::now();
+    //                 $record['updated_at'] = Carbon::now();
+    //                 $updatedRecords[] = $record;
+    //             } else {
+    //                 // New record - insert
+    //                 $record['is_new'] = true;
+    //                 $record['processed_at'] = Carbon::now();
+    //                 $record['created_at'] = Carbon::now();
+    //                 $newRecords[] = $record;
+    //             }
+    //         }
+
+    //         // ✅ Bulk Insert New Records
+    //         if (!empty($newRecords)) {
+    //             DB::table('vehicle_records')->insert($newRecords);
+    //             // $this->info("Inserted " . count($newRecords) . " new records.");
+    //         }
+
+    //         // ✅ Bulk Update Existing Records (Full Data Update)
+    //         if (!empty($updatedRecords)) {
+    //             // Convert data for bulk update
+    //             $updateQuery = "UPDATE vehicle_records SET ";
+    //             $columns = array_keys($updatedRecords[0]);
+    //             $updateFields = [];
+    //             foreach ($columns as $column) {
+    //                 if ($column !== 'id') {
+    //                     $updateFields[] = "`$column` = VALUES(`$column`)";
+    //                 }
+    //             }
+    //             $updateQuery .= implode(", ", $updateFields) . " WHERE id = VALUES(id)";
+
+    //             DB::table('vehicle_records')->upsert($updatedRecords, ['id'], $columns);
+    //             // $this->info("Updated " . count($updatedRecords) . " existing records.");
+    //         }
+
+    //         DB::commit(); // ✅ Commit Transaction if everything is successful
+
+    //         // Remove cache key from DB and Redis
+    //         RemoteCacheKey::where('id', $this->cacheKeyId)->delete();
+    //         Cache::store('redis')->forget($this->cacheKey);
+
+    //     }catch(\Exception $e){
+    //         DB::rollBack(); // ❌ Rollback Transaction if an error occurs
+
+    //         // Mark cache as pending in case of failure
+    //         RemoteCacheKey::find($this->cacheKeyId)->update(['status' => 'pending']);
+
+    //         // Optionally log the error
+    //         Log::error("Batch insert failed: " . $e->getMessage());
+    //     }
+
+    // }
 }
