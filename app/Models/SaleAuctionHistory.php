@@ -25,7 +25,7 @@ class SaleAuctionHistory extends Model
     {
         return $this->belongsTo(Seller::class, 'seller_id');
     }
-    
+
     /**
      * Define the inverse relationship with VehicleRecordArchived.
      */

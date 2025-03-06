@@ -46,18 +46,7 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
               }
 
               // Insert record into SaleAuctionHistory
-              SaleAuctionHistory::create([
-                  'vin' => $record->vin,
-                  'domain_id' => $record->domain_id,
-                  'sale_date' => $record->sale_date,
-                  'lot_id' => $record->lot_id,
-                  'bid' => $record->bid,
-                  'odometer_mi' => $record->odometer_mi,
-                  'status_id' => 7,
-                  'seller_id' => $record->seller_id,
-                  'created_at' => now(),
-                  'updated_at' => now(),
-              ]);
+              SaleAuctionHistory::create($record);
 
               $record->delete();
 
