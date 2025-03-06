@@ -21,7 +21,7 @@ class ArchiveExpiredAuctions extends Command
      *
      * @var string
      */
-    protected $signature = 'auction:archive';
+    protected $signature = 'process:expired-auction-archive';
 
     /**
      * The console command description.
