@@ -87,8 +87,9 @@ class ProcessArchivedData extends Command
         $perPage = 1000;
         $baseUrl = 'http://carstat.dev/api/archived-lots';
         $minutes = 1600;
+
         $apiUrl = "{$baseUrl}?per_page={$perPage}&minutes={$minutes}&simple_paginate=1&page=1";
-        // $apiUrl = "{$baseUrl}?per_page={$perPage}&simple_paginate=1&page=1";
+
         if(config('app.env') !== 'production'){
         \Log::info("API: {$apiUrl}");
         }
@@ -108,10 +109,10 @@ class ProcessArchivedData extends Command
                 if ($response->successful()) {
                     $data = $response->json()['data'] ?? [];
                     $cacheKey = 'vehicle_archived_data_' . now()->format('Y_m_d_H_i_s');
-                    $expiresAt = now()->addMinutes(60 * 24 * 9); // Store for 8 hours
+                    $expiresAt = now()->addMinutes(intval(config('app.cache_key_expiry'))); // Store for 8 hours
 
                     if (count($data) > 0) {
-                        Cache::put($cacheKey, $data, $expiresAt);
+                        Cache::store('redis')->put($cacheKey, $data, $expiresAt);
 
                         // Save cache details to database
                         CacheKey::updateOrCreate(
