@@ -48,7 +48,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     return;
                 }
                 $batchData = [];
-                $batchSize = 1000;
+                $batchSize = config('app.batch_size');
                 foreach ($data as $car) {
                     Log::info('Starting Batch Insert');
                     // **Process Data but Store in Batch**
@@ -67,12 +67,8 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     $this->insertBatch($batchData);
                 }
 
-                // Remove cache key from DB and Redis
-                RemoteCacheKey::where('id', $this->cacheKeyId)->delete();
-                Cache::store('redis')->forget($key);
 
             } catch (\Exception $e) {
-                RemoteCacheKey::find($this->cacheKeyId)->update(['status' => 'pending']);
                 Log::error("Error processing key {$key}: " . $e->getMessage());
             }
     }
@@ -234,60 +230,82 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
 
     }
 
+
     /**
      * ✅ Insert batch of processed data
      */
     public function insertBatch(array $batchData)
     {
-        if (empty($batchData)) {
-            return;
-        }
-
-        // Extract API IDs from batchData
-        $apiIds = array_column($batchData, 'api_id');
-
-        // Fetch existing records by API ID
-        $existingRecords = VehicleRecord::whereIn('api_id', $apiIds)->pluck('id', 'api_id');
-
-        // Lists for new and updated records
-        $newRecords = [];
-        $updatedRecords = [];
-
-        foreach ($batchData as $record) {
-            if (isset($existingRecords[$record['api_id']])) {
-                // Existing record - update full data
-                $record['id'] = $existingRecords[$record['api_id']]; // Add ID for update
-                $record['processed_at'] = Carbon::now();
-                $updatedRecords[] = $record;
-            } else {
-                // New record - insert
-                $record['is_new'] = true;
-                $record['processed_at'] = Carbon::now();
-                $newRecords[] = $record;
+        try{
+            if (empty($batchData)) {
+                return;
             }
-        }
 
-        // ✅ Bulk Insert New Records
-        if (!empty($newRecords)) {
-            DB::table('vehicle_records')->insert($newRecords);
-            // $this->info("Inserted " . count($newRecords) . " new records.");
-        }
+            DB::beginTransaction(); // ✅ Start Transaction
 
-        // ✅ Bulk Update Existing Records (Full Data Update)
-        if (!empty($updatedRecords)) {
-            // Convert data for bulk update
-            $updateQuery = "UPDATE vehicle_records SET ";
-            $columns = array_keys($updatedRecords[0]);
-            $updateFields = [];
-            foreach ($columns as $column) {
-                if ($column !== 'id') {
-                    $updateFields[] = "`$column` = VALUES(`$column`)";
+            // Extract API IDs from batchData
+            $apiIds = array_column($batchData, 'api_id');
+
+            // Fetch existing records by API ID
+            $existingRecords = VehicleRecord::whereIn('api_id', $apiIds)->pluck('id', 'api_id');
+
+            // Lists for new and updated records
+            $newRecords = [];
+            $updatedRecords = [];
+
+            foreach ($batchData as $record) {
+                if (isset($existingRecords[$record['api_id']])) {
+                    // Existing record - update full data
+                    $record['id'] = $existingRecords[$record['api_id']]; // Add ID for update
+                    $record['processed_at'] = Carbon::now();
+                    $record['updated_at'] = Carbon::now();
+                    $updatedRecords[] = $record;
+                } else {
+                    // New record - insert
+                    $record['is_new'] = true;
+                    $record['processed_at'] = Carbon::now();
+                    $record['created_at'] = Carbon::now();
+                    $newRecords[] = $record;
                 }
             }
-            $updateQuery .= implode(", ", $updateFields) . " WHERE id = VALUES(id)";
 
-            DB::table('vehicle_records')->upsert($updatedRecords, ['id'], $columns);
-            // $this->info("Updated " . count($updatedRecords) . " existing records.");
+            // ✅ Bulk Insert New Records
+            if (!empty($newRecords)) {
+                DB::table('vehicle_records')->insert($newRecords);
+                // $this->info("Inserted " . count($newRecords) . " new records.");
+            }
+
+            // ✅ Bulk Update Existing Records (Full Data Update)
+            if (!empty($updatedRecords)) {
+                // Convert data for bulk update
+                $updateQuery = "UPDATE vehicle_records SET ";
+                $columns = array_keys($updatedRecords[0]);
+                $updateFields = [];
+                foreach ($columns as $column) {
+                    if ($column !== 'id') {
+                        $updateFields[] = "`$column` = VALUES(`$column`)";
+                    }
+                }
+                $updateQuery .= implode(", ", $updateFields) . " WHERE id = VALUES(id)";
+
+                DB::table('vehicle_records')->upsert($updatedRecords, ['id'], $columns);
+                // $this->info("Updated " . count($updatedRecords) . " existing records.");
+            }
+
+            // Remove cache key from DB and Redis
+            RemoteCacheKey::where('id', $this->cacheKeyId)->delete();
+            Cache::store('redis')->forget($this->cacheKey);
+
+            DB::commit(); // ✅ Commit Transaction if everything is successful
+        }catch(\Exception $e){
+            DB::rollBack(); // ❌ Rollback Transaction if an error occurs
+
+            // Mark cache as pending in case of failure
+            RemoteCacheKey::find($this->cacheKeyId)->update(['status' => 'pending']);
+
+            // Optionally log the error
+            Log::error("Batch insert failed: " . $e->getMessage());
         }
+
     }
 }
