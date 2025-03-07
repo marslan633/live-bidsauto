@@ -24,8 +24,7 @@ class ProcessCachedDataJob implements ShouldQueue
     {
         $this->queue = 'process_cache_data_queue';
         $this->is_kvm_two = config('app.is_kvm_two');
-        $this->cacheKey = DB::connection($this->is_kvm_two ? 'mysql_remote' : 'mysql')->table('cache_keys')->where('id', $cacheKey)
-        ->first();
+        $this->cacheKey = DB::connection($this->is_kvm_two ? 'mysql_remote' : 'mysql')->table('cache_keys')->where('id', $cacheKey)->first();
     }
 
     /**
