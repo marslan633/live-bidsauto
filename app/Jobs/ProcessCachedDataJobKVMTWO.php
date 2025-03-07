@@ -10,6 +10,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class ProcessCachedDataJobKVMTWO implements ShouldQueue
@@ -18,9 +19,10 @@ class ProcessCachedDataJobKVMTWO implements ShouldQueue
 
     public $cacheKey;
 
-    public function __construct(RemoteCacheKey $cacheKey)
+    public function __construct($cacheKey)
     {
-        $this->cacheKey = $cacheKey;
+        $this->queue = 'process_cache_data_queue';
+        $this->cacheKey =  $this->cacheKey = DB::connection('mysql_remote')->table('cache_keys')->find($cacheKey);
     }
 
     /**
@@ -30,7 +32,7 @@ class ProcessCachedDataJobKVMTWO implements ShouldQueue
     {
         try {
             $IS_KVM_TWO = config('app.is_kvm_two');
-            $CacheModel = $IS_KVM_TWO ? RemoteCacheKey::class : CacheKey::class;
+            $CacheModel = $IS_KVM_TWO ? DB::connection('mysql_remote')->table('cache_keys') : DB::connection('mysql')->table('cache_keys');
 
             $key = $this->cacheKey->cache_key;
             // IF KVM_TWO than Read it from Remote Redis
@@ -39,7 +41,7 @@ class ProcessCachedDataJobKVMTWO implements ShouldQueue
 
 
             if (!$data) {
-                $CacheModel::where('cache_key', $key)->delete();
+                $CacheModel->where('cache_key', $key)->delete();
                 return;
             }
 
@@ -49,7 +51,7 @@ class ProcessCachedDataJobKVMTWO implements ShouldQueue
             }
 
             // Store processed data in Redis
-            $cacheKey = 'vehicle_data_' . now()->format('Y_m_d_H_i_s');
+            $cacheKey = 'vehicle_process_data_' . now()->format('Y_m_d_H_i_s');
             $expiresAt = now()->addMinutes(300);
             // IF KVM_TWO THAN READ IT FROM DEFAULT
             // IF KVM_ONE THAN READ IT FROM REMIVE
@@ -58,19 +60,20 @@ class ProcessCachedDataJobKVMTWO implements ShouldQueue
             // Save cache details to the database
             // IF KVM_TWO THAN USE DEFAULT DATABASE CONNECTION
             // IF KVM_ONE THAN USE REMOTE DATABASE CONNECTION
-            $RemoteCacheModel = $IS_KVM_TWO  ? CacheKey::class : RemoteCacheKey::class;
+            $RemoteCacheModel = $IS_KVM_TWO  ? DB::connection('mysql')->table('cache_keys') : DB::connection('mysql_remote')->table('cache_keys');
 
-            $RemoteCacheModel::updateOrCreate(
+            $RemoteCacheModel->updateOrCreate(
                 ['cache_key' => $cacheKey],
                 ['status' => 'pending', 'expires_at' => $expiresAt]
             );
 
             // Remove cache key from DB and Redis
-            $CacheModel::where('cache_key', $key)->delete();
+            $CacheModel->where('cache_key', $key)->delete();
             // IF KVM_TWO THAN REMOVE IT FROM REMOTE
             // IF KVM_ONE THAN REMOVE IT FROM DEFAULT
             Cache::store($IS_KVM_TWO ? 'redis_cache' :'redis')->forget($key);
         } catch (\Exception $e) {
+            DB::connection('mysql')->table('cache_keys')->find($this->cacheKey->id)->update(['status' => 'pending']);
             Log::error("Error processing key {$this->cacheKey->cache_key}: " . $e->getMessage());
         }
     }

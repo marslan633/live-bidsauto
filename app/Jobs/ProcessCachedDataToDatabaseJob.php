@@ -31,6 +31,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
      */
     public function __construct($cacheKeyId, $cacheKey)
     {
+        $this->queue = 'process_cached_data_to_database_job';
         $this->cacheKeyId = $cacheKeyId;
         $this->cacheKey = $cacheKey;
     }
@@ -77,16 +78,16 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
     {
         $year = null;
         if (!empty($car['year'])) {
-            $year = Year::firstOrCreate(['name' => $car['year']])->id;
+            $year = DB::connection('mysql')->table('years')->firstOrCreate(['name' => $car['year']])->id;
         }
         $car['vehicle_record'] = (array) $car['vehicle_record'];
-        $model_id = VehicleModel::firstOrCreate(['vehicle_model_api_id' => $car['model']['vehicle_model_api_id']], ['name' => $car['model']['name']])->id;
+        $model_id = DB::connection('mysql')->table('vehicle_models')->firstOrCreate(['vehicle_model_api_id' => $car['model']['vehicle_model_api_id']], ['name' => $car['model']['name']])->id;
 
         $imageRecord = $car['vehicle_record']['imageRecord'] ?? [];
         if (!isset($imageRecord['image_api_id'])) {
             $imageId = null;
         } else {
-            $imageId = Image::updateOrCreate(
+            $imageId = DB::connection('mysql')->table('images')->updateOrCreate(
                 ['image_api_id' => $imageRecord['image_api_id']],
                 [
                     'small' => $imageRecord['small'] ?? [],
@@ -103,16 +104,16 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
         }
 
         return [
-            'manufacturer_id' => Manufacturer::firstOrCreate(['manufacturer_api_id' => $car['manufacturer']['manufacturer_api_id']], ['name' => $car['manufacturer']['name']])->id,
+            'manufacturer_id' => DB::connection('mysql')->table('manufacturers')->firstOrCreate(['manufacturer_api_id' => $car['manufacturer']['manufacturer_api_id']], ['name' => $car['manufacturer']['name']])->id,
             'vehicle_model_id' =>  $model_id,
-            'generation_id' => Generation::firstOrCreate(['generation_api_id' => $car['generation']['generation_api_id']], ['name' => $car['generation']['name'], 'model_id' =>  $model_id])->id,
-            'body_type_id' => BodyType::firstOrCreate(['body_type_api_id' => $car['body_type']['body_type_api_id']], ['name' => $car['body_type']['name']])->id,
-            'color_id' => Color::firstOrCreate(['color_api_id' => $car['color']['color_api_id']], ['name' => $car['color']['name']])->id,
-            'engine_id' => Engine::firstOrCreate(['engine_api_id' => $car['engine']['engine_api_id']], ['name' => $car['engine']['name']])->id,
-            'transmission_id' => Transmission::firstOrCreate(['transmission_api_id' => $car['transmission']['transmission_api_id']], ['name' => $car['transmission']['name']])->id,
-            'drive_wheel_id' =>  DriveWheel::firstOrCreate(['drive_wheel_api_id' => $car['drive_wheel']['drive_wheel_api_id']],['name' => $car['drive_wheel']['name']])->id,
-            'vehicle_type_id' => VehicleType::firstOrCreate(['vehicle_type_api_id' => $car['vehicle_type']['vehicle_type_api_id']],['name' => $car['vehicle_type']['name']])->id,
-            'fuel_id' => Fuel::firstOrCreate(['fuel_api_id' => $car['fuel']['fuel_api_id']], ['name' => $car['fuel']['name']])->id,
+            'generation_id' => DB::connection('mysql')->table('generations')->firstOrCreate(['generation_api_id' => $car['generation']['generation_api_id']], ['name' => $car['generation']['name'], 'model_id' =>  $model_id])->id,
+            'body_type_id' => DB::connection('mysql')->table('body_types')->firstOrCreate(['body_type_api_id' => $car['body_type']['body_type_api_id']], ['name' => $car['body_type']['name']])->id,
+            'color_id' => DB::connection('mysql')->table('colors')->firstOrCreate(['color_api_id' => $car['color']['color_api_id']], ['name' => $car['color']['name']])->id,
+            'engine_id' => DB::connection('mysql')->table('engines')->firstOrCreate(['engine_api_id' => $car['engine']['engine_api_id']], ['name' => $car['engine']['name']])->id,
+            'transmission_id' => DB::connection('mysql')->table('transmissions')->firstOrCreate(['transmission_api_id' => $car['transmission']['transmission_api_id']], ['name' => $car['transmission']['name']])->id,
+            'drive_wheel_id' =>  DB::connection('mysql')->table('drive_wheels')->firstOrCreate(['drive_wheel_api_id' => $car['drive_wheel']['drive_wheel_api_id']],['name' => $car['drive_wheel']['name']])->id,
+            'vehicle_type_id' => DB::connection('mysql')->table('vehicle_types')->firstOrCreate(['vehicle_type_api_id' => $car['vehicle_type']['vehicle_type_api_id']],['name' => $car['vehicle_type']['name']])->id,
+            'fuel_id' => DB::connection('mysql')->table('fuels')->firstOrCreate(['fuel_api_id' => $car['fuel']['fuel_api_id']], ['name' => $car['fuel']['name']])->id,
             'api_id' => $car['vehicle_record']['api_id'] ?? null,
             'year' => $car['vehicle_record']['year'] ?? null,
             'year_id' => $year,
@@ -123,12 +124,12 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
             'salvage_id' => $car['vehicle_record']['salvage_id'] ?? null,
             'lot_id' => $car['vehicle_record']['lot_id'] ?? null,
             'domain_id' =>  isset($car['vehicle_record']['domain'])
-            ? Domain::firstOrCreate(
+            ? DB::connection('mysql')->table('domains')->firstOrCreate(
                 ['domain_api_id' => $car['vehicle_record']['domain']['domain_api_id']],
                 ['name' => $car['vehicle_record']['domain']['name']]
             )->id
             : null,
-            'selling_branch' => isset($car['vehicle_record']['selling_branch']) ? SellingBranch::firstOrCreate(
+            'selling_branch' => isset($car['vehicle_record']['selling_branch']) ? DB::connection('mysql')->table('selling_branches')->firstOrCreate(
                 ['selling_branch_api_id' => $car['vehicle_record']['selling_branch']['selling_branch_api_id']],
                 [
                     'name' => $car['vehicle_record']['selling_branch']['name'],
@@ -156,57 +157,57 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
             'keys_available' => $car['vehicle_record']['keys_available'] ?? null,
             'airbags' => $car['vehicle_record']['airbags'] ?? null,
             'grade_iaai' => $car['vehicle_record']['grade_iaai'] ?? null,
-            'odometer_id' => Odometer::firstOrCreate(
+            'odometer_id' => DB::connection('mysql')->table('odometer')->firstOrCreate(
                 ['name' => $car['vehicle_record']['odometer']['name']]
             )->id,
-            'seller_id' => Seller::firstOrCreate(
+            'seller_id' => DB::connection('mysql')->table('sellers')->firstOrCreate(
                 ['seller_api_id' => $car['vehicle_record']['seller']['seller_api_id']],
                 ['name' => $car['vehicle_record']['seller']['name']]
             )->id,
-            'seller_type_id' => SellerType::firstOrCreate(
+            'seller_type_id' => DB::connection('mysql')->table('seller_types')->firstOrCreate(
                 ['seller_type_api_id' => $car['vehicle_record']['seller_type']['seller_type_api_id']],
                 ['name' => $car['vehicle_record']['seller_type']['name']]
             )->id,
-            'condition_id' => Condition::firstOrCreate(
+            'condition_id' => DB::connection('mysql')->table('conditions')->firstOrCreate(
                 ['condition_api_id' => $car['vehicle_record']['condition']['condition_api_id']],
                 ['name' => $car['vehicle_record']['condition']['name']]
             )->id,
-            'status_id' =>  Status::firstOrCreate(
+            'status_id' =>  DB::connection('mysql')->table('statuses')->firstOrCreate(
                 ['status_api_id' => $car['vehicle_record']['status']['status_api_id']],
                 ['name' => $car['vehicle_record']['status']['name']]
             )->id,
-            'title_id' => isset($car['vehicle_record']['title_title']) ? Title::firstOrCreate(
+            'title_id' => isset($car['vehicle_record']['title_title']) ? DB::connection('mysql')->table('titles')->firstOrCreate(
                 ['title_api_id' => $car['vehicle_record']['title_title']['title_api_id']],
                 ['name' => $car['vehicle_record']['title_title']['name']]
             )->id : null,
-            'detailed_title_id' => DetailedTitle::firstOrCreate(
+            'detailed_title_id' => DB::connection('mysql')->table('detailed_titles')->firstOrCreate(
                 ['detailed_title_api_id' => $car['vehicle_record']['detailed_title']['detailed_title_api_id']],
                 ['name' => $car['vehicle_record']['detailed_title']['name']]
             )->id,
-            'damage_id' => $car['vehicle_record']['damageMain'] ? Damage::firstOrCreate(
+            'damage_id' => $car['vehicle_record']['damageMain'] ? DB::connection('mysql')->table('damages')->firstOrCreate(
                 ['damage_api_id' => $car['vehicle_record']['damageMain']['damage_api_id']],
                 ['name' => $car['vehicle_record']['damageMain']['name']]
             )->id : null,
-            'damage_main' => $car['vehicle_record']['damageMain'] ? Damage::firstOrCreate(
+            'damage_main' => $car['vehicle_record']['damageMain'] ? DB::connection('mysql')->table('damages')->firstOrCreate(
                 ['damage_api_id' => $car['vehicle_record']['damageMain']['damage_api_id']],
                 ['name' => $car['vehicle_record']['damageMain']['name']]
             )->id : null,
-            'damage_second' => $car['vehicle_record']['damageSecond'] ? Damage::firstOrCreate(
+            'damage_second' => $car['vehicle_record']['damageSecond'] ? DB::connection('mysql')->table('damages')->firstOrCreate(
                 ['damage_api_id' => $car['vehicle_record']['damageSecond']['damage_api_id']],
                 ['name' => $car['vehicle_record']['damageSecond']['name']]
             )->id : null,
-            'buy_now_id' => BuyNow::where('name', $car['vehicle_record']['buy_now'])->value('id') ?? null,
+            'buy_now_id' => DB::connection('mysql')->table('buy_nows')->where('name', $car['vehicle_record']['buy_now'])->value('id') ?? null,
             'details' => $car['vehicle_record']['details'] ?? null,
-            'location_id' => !empty($car['vehicle_record']['locationRecord']) && !empty($car['vehicle_record']['locationRecord']['location_api_id']) ? Location::firstOrCreate(
+            'location_id' => !empty($car['vehicle_record']['locationRecord']) && !empty($car['vehicle_record']['locationRecord']['location_api_id']) ? DB::connection('mysql')->table('locations')->firstOrCreate(
                 ['location_api_id' => $car['vehicle_record']['locationRecord']['location_api_id']],
                 [
-                    'city_id' => !empty($car['vehicle_record']['city']) ? City::firstOrCreate(
+                    'city_id' => !empty($car['vehicle_record']['city']) ? DB::connection('mysql')->table('cities')->firstOrCreate(
                         ['city_api_id' => $car['vehicle_record']['city']['city_api_id']],
                         [
-                            'state_id' => !empty($car['vehicle_record']['state']) ? State::firstOrCreate(
+                            'state_id' => !empty($car['vehicle_record']['state']) ? DB::connection('mysql')->table('states')->firstOrCreate(
                                 ['state_api_id' => $car['vehicle_record']['state']['state_api_id']],
                                 [
-                                    'country_id' => $car['vehicle_record']['country'] ? Country::firstOrCreate(
+                                    'country_id' => $car['vehicle_record']['country'] ? DB::connection('mysql')->table('countries')->firstOrCreate(
                                         ['iso' => $car['vehicle_record']['country']['iso']],
                                         ['name' => $car['vehicle_record']['country']['name']]
                                     )->id : null,
@@ -235,71 +236,71 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
      * ✅ Insert batch of processed data
      */
     public function insertBatch(array $batchData)
-{
-    try {
-        if (empty($batchData)) {
-            return;
-        }
-
-        DB::beginTransaction(); // ✅ Start Transaction
-
-        // Extract API IDs from batchData
-        $apiIds = array_column($batchData, 'api_id');
-
-        // Fetch existing records by API ID
-        $existingRecords = VehicleRecord::whereIn('api_id', $apiIds)->pluck('id', 'api_id');
-
-        // Lists for new and updated records
-        $newRecords = [];
-        $updatedRecords = [];
-        $failedRecords = []; // ❌ Store records that failed
-
-        foreach ($batchData as $record) {
-            try {
-                if (isset($existingRecords[$record['api_id']])) {
-                    // Existing record - update full data
-                    $record['id'] = $existingRecords[$record['api_id']]; // Add ID for update
-                    $record['processed_at'] = Carbon::now();
-                    $record['updated_at'] = Carbon::now();
-                    $updatedRecords[] = $record;
-                } else {
-                    // New record - insert
-                    $record['is_new'] = true;
-                    $record['processed_at'] = Carbon::now();
-                    $record['created_at'] = Carbon::now();
-                    $newRecords[] = $record;
-                }
-            } catch (\Exception $e) {
-                $failedRecords[] = $record;
-                Log::error("Skipping record due to error: " . $e->getMessage());
+    {
+        try {
+            if (empty($batchData)) {
+                return;
             }
+
+            DB::connection('mysql')->beginTransaction(); // ✅ Start Transaction
+
+            // Extract API IDs from batchData
+            $apiIds = array_column($batchData, 'api_id');
+
+            // Fetch existing records by API ID
+            $existingRecords = DB::connection('mysql')->table('vehicle_records')->whereIn('api_id', $apiIds)->pluck('id', 'api_id');
+
+            // Lists for new and updated records
+            $newRecords = [];
+            $updatedRecords = [];
+            $failedRecords = []; // ❌ Store records that failed
+
+            foreach ($batchData as $record) {
+                try {
+                    if (isset($existingRecords[$record['api_id']])) {
+                        // Existing record - update full data
+                        $record['id'] = $existingRecords[$record['api_id']]; // Add ID for update
+                        $record['processed_at'] = Carbon::now();
+                        $record['updated_at'] = Carbon::now();
+                        $updatedRecords[] = $record;
+                    } else {
+                        // New record - insert
+                        $record['is_new'] = true;
+                        $record['processed_at'] = Carbon::now();
+                        $record['created_at'] = Carbon::now();
+                        $newRecords[] = $record;
+                    }
+                } catch (\Exception $e) {
+                    $failedRecords[] = $record;
+                    Log::error("Skipping record due to error: " . $e->getMessage());
+                }
+            }
+
+            // ✅ Bulk Insert New Records
+            if (!empty($newRecords)) {
+                DB::connection('mysql')->table('vehicle_records')->insert($newRecords);
+            }
+
+            // ✅ Bulk Update Existing Records
+            if (!empty($updatedRecords)) {
+                DB::connection('mysql')->table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
+            }
+
+            DB::connection('mysql')->commit(); // ✅ Commit Successful Inserts
+
+                DB::connection('mysql_remote')->table('cache_keys')->where('id', $this->cacheKeyId)->delete();
+                Cache::store('redis')->forget($this->cacheKey);
+
+
+        } catch (\Exception $e) {
+            DB::connection('mysql')->rollBack(); // ❌ Rollback only in case of a major failure
+
+            // Mark cache as pending in case of failure
+            DB::connection('mysql_remote')->table('cache_keys')->where('id', $this->cacheKeyId)->update(['status' => 'pending']);
+
+            Log::error("Batch insert failed: " . $e->getMessage());
         }
-
-        // ✅ Bulk Insert New Records
-        if (!empty($newRecords)) {
-            DB::table('vehicle_records')->insert($newRecords);
-        }
-
-        // ✅ Bulk Update Existing Records
-        if (!empty($updatedRecords)) {
-            DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
-        }
-
-        DB::commit(); // ✅ Commit Successful Inserts
-
-            RemoteCacheKey::where('id', $this->cacheKeyId)->delete();
-            Cache::store('redis')->forget($this->cacheKey);
-
-
-    } catch (\Exception $e) {
-        DB::rollBack(); // ❌ Rollback only in case of a major failure
-
-        // Mark cache as pending in case of failure
-        RemoteCacheKey::where('id', $this->cacheKeyId)->update(['status' => 'pending']);
-
-        Log::error("Batch insert failed: " . $e->getMessage());
     }
-}
 
      // public function insertBatch(array $batchData)
     // {

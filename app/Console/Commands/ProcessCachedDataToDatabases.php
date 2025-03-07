@@ -37,9 +37,9 @@ class ProcessCachedDataToDatabases extends Command
         $this->info("Process started at: " . $startDateTime);
         \Log::info("Process started at: " . $startDateTime);
 
-        DB::beginTransaction();
+        DB::connection('mysql')->beginTransaction();
         try{
-            $cronRun = DB::table('cron_run_history')->insertGetId([
+            $cronRun = DB::connection('mysql')->table('cron_run_history')->insertGetId([
                 'cron_name' => 'process_cached_data_to_database',
                 'start_time' => $startDateTime,
                 'status' => 'running',
@@ -48,7 +48,7 @@ class ProcessCachedDataToDatabases extends Command
             ]);
 
             // Lock the cache keys for update
-            $cacheKeys = RemoteCacheKey::where('cache_key', 'like', 'vehicle_process_data%')
+            $cacheKeys = DB::connection('mysql_remote')->table('cache_keys')->where('cache_key', 'like', 'vehicle_process_data%')
             ->where('status', 'pending')
             ->orderBy('created_at', 'asc')
             // ->lockForUpdate()
@@ -57,16 +57,16 @@ class ProcessCachedDataToDatabases extends Command
 
             if ($cacheKeys->isEmpty()) {
                 $this->info("No pending cache keys found.");
-                DB::commit();
+                DB::connection('mysql')->commit();
                 return;
             }
 
             $cacheKeyIds = $cacheKeys->pluck('id')->toArray();
               // Update status in bulk
-            RemoteCacheKey::whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
-            DB::commit();
+            DB::connection('mysql_remote')->table('cache_keys')->whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
+            DB::connection('mysql')->commit();
         }catch(\Exception $e){
-            DB::rollBack();
+            DB::connection('mysql')->rollBack();
             $this->handleCronError($cronRun, "Error fetching cache keys: " . $e->getMessage());
             return;
         }
@@ -76,7 +76,7 @@ class ProcessCachedDataToDatabases extends Command
             ProcessCachedDataToDatabaseJob::dispatch($cacheKey->id, $cacheKey->cache_key);
         }
 
-        DB::table('cron_run_history')->where('id', $cronRun)->update([
+        DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
             'end_time' => Carbon::now(),
             'status' => 'success',
             'updated_at' => now(),
