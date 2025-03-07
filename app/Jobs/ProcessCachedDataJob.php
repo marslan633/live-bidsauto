@@ -50,7 +50,7 @@ class ProcessCachedDataJob implements ShouldQueue
             }
 
             // Store processed data in Redis
-            $cacheKey = 'vehicle_data_' . now()->format('Y_m_d_H_i_s');
+            $cacheKey = 'vehicle_process_data_' . now()->format('Y_m_d_H_i_s');
             $expiresAt = now()->addMinutes(intval(config('app.cache_key_expiry')));
             // IF KVM_TWO THAN READ IT FROM DEFAULT
             // IF KVM_ONE THAN READ IT FROM REMIVE
@@ -78,3 +78,4 @@ class ProcessCachedDataJob implements ShouldQueue
     }
 
 }
+––

@@ -59,7 +59,8 @@ public function handle()
         // IF KVM_ONE THAN USE DEFAULT DATABASE CONNECTION
         $IS_KVM_TWO = config('app.is_kvm_two');
         $CacheModel = $IS_KVM_TWO ? RemoteCacheKey::class : CacheKey::class;
-        $cacheKeys = $CacheModel::where('cache_key', 'like', 'vehicle_data%')
+        $keyName = $IS_KVM_TWO ? 'vehicle_process_data_' : 'vehicle_api_data_';
+        $cacheKeys = $CacheModel::where('cache_key', 'like', $keyName.'%')
             ->where('status', 'pending')
             ->orderBy('created_at', 'asc')
             // ->lockForUpdate()
