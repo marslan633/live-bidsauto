@@ -16,12 +16,12 @@ class ProcessCachedDataJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $queue = 'process_cache_data_queue';
 
     public $cacheKey;
 
     public function __construct(CacheKey $cacheKey)
     {
+        $this->queue = 'process_cache_data_queue';
         $this->cacheKey = $cacheKey;
     }
 
