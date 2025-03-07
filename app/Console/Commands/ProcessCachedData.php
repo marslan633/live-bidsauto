@@ -61,7 +61,7 @@ public function handle()
         $CacheModel = $IS_KVM_TWO ? RemoteCacheKey::class : CacheKey::class;
         $keyName = $IS_KVM_TWO ? 'vehicle_process_data_' : 'vehicle_api_data_';
         $cacheKeys = $CacheModel::where('cache_key', 'like', $keyName.'%')
-            ->where('status', 'progress')
+            ->where('status', 'pending')
             ->orderBy('created_at', 'asc')
             // ->lockForUpdate()
             // ->skipLocked()
