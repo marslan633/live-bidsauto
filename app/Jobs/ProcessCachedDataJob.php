@@ -77,7 +77,7 @@ class ProcessCachedDataJob implements ShouldQueue
             // IF KVM_ONE THAN REMOVE IT FROM DEFAULT
             Cache::store($this->is_kvm_two ? 'redis_cache' :'redis')->forget($key);
         } catch (\Exception $e) {
-            DB::connection('mysql')->table('cache_keys')->find($this->cacheKey->id)->update(['status' => 'pending']);
+            DB::connection('mysql')->table('cache_keys')->where('id',$this->cacheKey->id)->update(['status' => 'pending']);
             Log::error("Error processing key {$this->cacheKey->cache_key}: " . $e->getMessage());
         }
     }
