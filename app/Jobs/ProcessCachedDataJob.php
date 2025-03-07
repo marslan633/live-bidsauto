@@ -78,4 +78,3 @@ class ProcessCachedDataJob implements ShouldQueue
     }
 
 }
-––
