@@ -43,9 +43,9 @@ public function handle()
 {
     $startDateTime = Carbon::now();
     $this->info("Process started at: " . $startDateTime);
-    \Log::info("Process started at: " . $startDateTime);
+    Log::info("Process started at: " . $startDateTime);
 
-    DB::connection('mysql')->beginTransaction();
+    DB::beginTransaction();
     try {
         $cronRun = DB::table('cron_run_history')->insertGetId([
             'cron_name' => 'process_cached_data',
@@ -59,14 +59,14 @@ public function handle()
         // IF KVM_TWO THAN USE REMOTE DATABSE CONNECTION
         // IF KVM_ONE THAN USE DEFAULT DATABASE CONNECTION
         $IS_KVM_TWO = config('app.is_kvm_two');
-        $CacheModel = $IS_KVM_TWO === true ? DB::connection('mysql_remote')->table('cache_keys') : DB::connection('mysql')->table('cache_keys');
+        $CacheModel = $IS_KVM_TWO === true ? RemoteCacheKey::class : CacheKey::class;
         Log::info('IS_KVM_TWO ' . config('app.is_kvm_two'));
         Log::info('Cache Model ' . $IS_KVM_TWO === true ? 'REMOTE_CACHE_KEY' : 'CACHE_KEY');
         $this->info('Cache Model ' . $IS_KVM_TWO === true ? 'REMOTE_CACHE_KEY' : 'CACHE_KEY');
         $this->info('IS_KVM_TWO type => ' . gettype(config('app.is_kvm_two')) . ' ' . config('app.is_kvm_two') === true ? 'Yes' : 'No');
 
         $keyName = $IS_KVM_TWO ? 'vehicle_process_data_' : 'vehicle_api_data_';
-        $cacheKeys = $CacheModel->where('cache_key', 'like', $keyName.'%')
+        $cacheKeys = $CacheModel::where('cache_key', 'like', $keyName.'%')
             ->where('status', 'pending')
             ->orderBy('created_at', 'asc')
             // ->lockForUpdate()
@@ -76,17 +76,17 @@ public function handle()
 
         if ($cacheKeys->isEmpty()) {
             $this->info("No pending cache keys found.");
-            DB::connection('mysql')->commit();
+            DB::commit();
             return;
         }
 
         $cacheKeyIds = $cacheKeys->pluck('id')->toArray();
 
         // Update status in bulk
-        $CacheModel->whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
-        DB::connection('mysql')->commit();
+        $CacheModel::whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
+        DB::commit();
     } catch (\Exception $e) {
-        DB::connection('mysql')->rollBack();
+        DB::rollBack();
         $this->handleCronError($cronRun, "Error fetching cache keys: " . $e->getMessage());
         return;
     }
@@ -97,7 +97,7 @@ public function handle()
             ProcessCachedDataJob::dispatch($cacheKey->id);
     }
 
-    DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
+    DB::table('cron_run_history')->where('id', $cronRun)->update([
         'end_time' => Carbon::now(),
         'status' => 'success',
         'updated_at' => now(),
@@ -109,8 +109,8 @@ public function handle()
  */
 private function handleCronError($cronRun, $errorMessage)
 {
-    \Log::error($errorMessage);
-    DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
+    Log::error($errorMessage);
+    DB::table('cron_run_history')->where('id', $cronRun)->update([
         'end_time' => Carbon::now(),
         'status' => 'failed',
         'error_message' => $errorMessage,
