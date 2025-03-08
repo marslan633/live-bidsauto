@@ -12,20 +12,20 @@ use Illuminate\Support\Facades\Log;
 
 if(config('app.app_kvm_one') === true){
 
-    app(Schedule::class)->command('process:api-data')
-    ->everyFifteenMinutes()
-    ->withoutOverlapping()
-    ->onSuccess(function () {
-        // Log the successful completion of process:api-data
-        Log::info('process:api-data completed successfully.');
+    // app(Schedule::class)->command('process:api-data')
+    // ->everyFifteenMinutes()
+    // ->withoutOverlapping()
+    // ->onSuccess(function () {
+    //     // Log the successful completion of process:api-data
+    //     Log::info('process:api-data completed successfully.');
 
-        // Dispatch the process:cached-data command
-        Artisan::call('process:cached-data');
-    })
-    ->onFailure(function () {
-        // Log the failure of process:api-data
-        Log::error('process:api-data failed.');
-    });
+    //     // Dispatch the process:cached-data command
+    //     Artisan::call('process:cached-data');
+    // })
+    // ->onFailure(function () {
+    //     // Log the failure of process:api-data
+    //     Log::error('process:api-data failed.');
+    // });
 }
 
 if(config('app.app_kvm_two') === true){
