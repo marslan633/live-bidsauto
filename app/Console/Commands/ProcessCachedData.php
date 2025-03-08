@@ -65,7 +65,7 @@ public function handle()
         $this->info('Cache Model ' . $IS_KVM_TWO === true ? 'REMOTE_CACHE_KEY' : 'CACHE_KEY');
         $this->info('IS_KVM_TWO type => ' . gettype(config('app.is_kvm_two')) . ' ' . config('app.is_kvm_two') === true ? 'Yes' : 'No');
 
-        $keyName = $IS_KVM_TWO ? 'vehicle_process_data_' : 'vehicle_api_data_';
+        $keyName = $IS_KVM_TWO === true ? 'vehicle_process_data_' : 'vehicle_api_data_';
         $cacheKeys = $CacheModel::where('cache_key', 'like', $keyName.'%')
             ->where('status', 'pending')
             ->orderBy('created_at', 'asc')

@@ -46,7 +46,7 @@ class ProcessCachedDataJob implements ShouldQueue
 
 
             if (!$data) {
-                $CacheModel::where('cache_key', $key)->delete();
+                Log::info('Data Not Found In Redis Job');
                 return;
             }
 
