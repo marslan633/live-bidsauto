@@ -90,7 +90,7 @@ class ProcessCachedDataJob implements ShouldQueue
             Cache::store($this->is_kvm_two === true ? 'redis_cache' :'redis')->forget($key);
         } catch (\Exception $e) {
             DB::connection('mysql')->table('cache_keys')->where('id',$this->cacheKey->id)->update(['status' => 'pending']);
-            Log::error("Error processing key {$this->cacheKey->cache_key}: " . $e->getMessage());
+            Log::info("Error processing key {$this->cacheKey->cache_key}: " . $e->getMessage());
         }
     }
 
