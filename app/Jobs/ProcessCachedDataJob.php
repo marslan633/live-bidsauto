@@ -19,14 +19,12 @@ class ProcessCachedDataJob implements ShouldQueue
 
     public $cacheKey;
     public $is_kvm_two;
-    public function __construct($cacheKey)
+    public function __construct(CacheKey $cacheKey)
     {
         $this->queue = 'process_cache_data_queue';
         $this->is_kvm_two = config('app.is_kvm_two');
-        $keyData = DB::connection($this->is_kvm_two === true ? 'mysql_remote' : 'mysql')->table('cache_keys')->where('id', $cacheKey)->first();
         Log::info('Cache Model Job ' . $this->is_kvm_two === true ? 'REMOTE_CACHE_KEY' : 'CACHE_KEY');
-        Log::info('Cache Key Data From Job', ['keyData' => json_encode($keyData)]);
-        $this->cacheKey = $keyData;
+        $this->cacheKey = $cacheKey;
     }
 
     /**
@@ -34,7 +32,9 @@ class ProcessCachedDataJob implements ShouldQueue
      */
     public function handle(): void
     {
+        Log::info('Handle Function Called Fro Job');
         try {
+            Log::info('Handle Function Called INSIDE Try Job');
 
             // Read Modal
             $CacheModel = $this->is_kvm_two === true ? RemoteCacheKey::class : CacheKey::class;
@@ -43,7 +43,7 @@ class ProcessCachedDataJob implements ShouldQueue
             // IF KVM_TWO than Read it from Remote Redis
             // IF KVM_ONE than Read it from Default Redis
             $data = Cache::store($this->is_kvm_two === true ? 'redis_cache' : 'redis')->get($key);
-
+            Log::info($this->is_kvm_two === true ? 'redis_cache' : 'redis');
 
             if (!$data) {
                 Log::info('Data Not Found In Redis Job');

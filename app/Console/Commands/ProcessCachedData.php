@@ -94,7 +94,7 @@ public function handle()
     foreach ($cacheKeys as $cacheKey) {
             Log::info('Cache Key ' . $cacheKey->cache_key);
             $this->info('Cache Key ' . $cacheKey->cache_key);
-            ProcessCachedDataJob::dispatch($cacheKey->id);
+            ProcessCachedDataJob::dispatch($cacheKey);
     }
 
     DB::table('cron_run_history')->where('id', $cronRun)->update([
