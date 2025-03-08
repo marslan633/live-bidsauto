@@ -2,8 +2,6 @@
 
 namespace App\Jobs;
 
-use Illuminate\Bus\Batchable;
-use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -18,6 +16,8 @@ use App\Models\{
     State, City, Location, SellingBranch, Year, BuyNow, Odometer, RemoteCacheKey,
 };
 use Carbon\Carbon;
+use Illuminate\Bus\Batchable;
+use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
 
 class ProcessCachedDataToDatabaseJob implements ShouldQueue
