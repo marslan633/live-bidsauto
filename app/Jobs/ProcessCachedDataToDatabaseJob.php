@@ -89,6 +89,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
         if (!empty($car['year'])) {
             $year = DB::connection('mysql')->table('years')->insertGetId(['name' => $car['year']]);
         }
+        Log::info('Year', ['data' => $year]);
 
         $car['vehicle_record'] = (array) $car['vehicle_record'];
         $model_id = DB::connection('mysql')->table('vehicle_models')
@@ -98,6 +99,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     'vehicle_model_api_id' => $car['model']['vehicle_model_api_id'],
                     'name' => $car['model']['name'],
                 ]);
+        Log::info('Model', ['data' => $model_id]);
 
 
         $imageRecord = $car['vehicle_record']['imageRecord'] ?? [];
@@ -142,6 +144,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                 ]);
             });
         }
+        Log::info('Image', ['data' => $imageId]);
 
 
         $manufacturer_id =  DB::connection('mysql')->table('manufacturers')
@@ -151,6 +154,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     'manufacturer_api_id' => $car['manufacturer']['manufacturer_api_id'],
                     'name' => $car['manufacturer']['name'],
                 ]);
+        Log::info('Manufacturer', ['data' => $manufacturer_id]);
 
         $generation_id = DB::connection('mysql')->table('generations')
         ->where('generation_api_id', $car['generation']['generation_api_id'])
@@ -160,6 +164,8 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                 'model_id' => $model_id,
             ]);
 
+        Log::info('Generation', ['data' => $generation_id]);
+
         $body_type_id = DB::connection('mysql')->table('body_types')
                 ->where('body_type_api_id', $car['body_type']['body_type_api_id'])
                 ->value('id')
@@ -168,6 +174,8 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     'name' => $car['body_type']['name'],
                 ]);
 
+        Log::info('Body Type', ['data' => $body_type_id]);
+
         $color_id =  DB::connection('mysql')->table('colors')
                 ->where('color_api_id', $car['color']['color_api_id'])
                 ->value('id')
@@ -175,7 +183,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     'color_api_id' => $car['color']['color_api_id'],
                     'name' => $car['color']['name'],
                 ]);
-
+        Log::info('Color', ['data' => $color_id]);
         $engine_id =  DB::connection('mysql')->table('engines')
                 ->where('engine_api_id', $car['engine']['engine_api_id'])
                 ->value('id')
@@ -183,6 +191,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     'engine_api_id' => $car['engine']['engine_api_id'],
                     'name' => $car['engine']['name'],
                 ]);
+                Log::info('Engine', ['data' => $engine_id]);
 
         $transmission_id =  DB::connection('mysql')->table('transmissions')
                 ->where('transmission_api_id', $car['transmission']['transmission_api_id'])
@@ -191,6 +200,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     'transmission_api_id' => $car['transmission']['transmission_api_id'],
                     'name' => $car['transmission']['name'],
                 ]);
+                Log::info('Transmission', ['data' => $transmission_id]);
 
         $drive_wheel_id =  DB::connection('mysql')->table('drive_wheels')
                 ->where('drive_wheel_api_id', $car['drive_wheel']['drive_wheel_api_id'])
@@ -199,6 +209,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     'drive_wheel_api_id' => $car['drive_wheel']['drive_wheel_api_id'],
                     'name' => $car['drive_wheel']['name'],
                 ]);
+                Log::info('Driver Wheel', ['data' => $drive_wheel_id]);
 
         $vehicle_type_id = DB::connection('mysql')->table('vehicle_types')
                 ->where('vehicle_type_api_id', $car['vehicle_type']['vehicle_type_api_id'])
@@ -207,6 +218,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     'vehicle_type_api_id' => $car['vehicle_type']['vehicle_type_api_id'],
                     'name' => $car['vehicle_type']['name'],
                 ]);
+                Log::info('Vehicle Type', ['data' => $vehicle_type_id]);
 
         $fuel_id =  DB::connection('mysql')->table('fuels')
                 ->where('fuel_api_id', $car['fuel']['fuel_api_id'])
@@ -215,6 +227,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     'fuel_api_id' => $car['fuel']['fuel_api_id'],
                     'name' => $car['fuel']['name'],
                 ]);
+                Log::info('Fuel', ['data' => $fuel_id]);
 
         $domain_id = isset($car['vehicle_record']['domain'])
         ?  DB::connection('mysql')->table('domains')
@@ -225,6 +238,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     'name' => $car['vehicle_record']['domain']['name'],
                 ])
         : null;
+                Log::info('Domain', ['data' => $domain_id]);
 
         $selling_branch_id = isset($car['vehicle_record']['selling_branch'])
         ?  DB::connection('mysql')->table('selling_branches')
@@ -238,11 +252,13 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     'domain_id' => $domain_id, // Use the computed domain_id
                 ])
         : null;
+        Log::info('Seller Branch', ['data' => $selling_branch_id]);
 
         $odometer_id = DB::connection('mysql')->table('odometer')
             ->where('name', $car['vehicle_record']['odometer']['name'])
             ->value('id')
             ?? DB::connection('mysql')->table('odometer')->insertGetId(['name' => $car['vehicle_record']['odometer']['name']]);
+        Log::info('Odometer', ['data' => $odometer_id]);
 
         $seller_id = DB::connection('mysql')->table('sellers')
             ->where('seller_api_id', $car['vehicle_record']['seller']['seller_api_id'])
@@ -251,6 +267,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                 'seller_api_id' => $car['vehicle_record']['seller']['seller_api_id'],
                 'name' => $car['vehicle_record']['seller']['name']
             ]);
+            Log::info('Seller', ['data' => $seller_id]);
 
         $seller_type_id = DB::connection('mysql')->table('seller_types')
             ->where('seller_type_api_id', $car['vehicle_record']['seller_type']['seller_type_api_id'])
@@ -259,6 +276,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                 'seller_type_api_id' => $car['vehicle_record']['seller_type']['seller_type_api_id'],
                 'name' => $car['vehicle_record']['seller_type']['name']
             ]);
+            Log::info('Seller Type', ['data' => $seller_type_id]);
 
         $condition_id = DB::connection('mysql')->table('conditions')
             ->where('condition_api_id', $car['vehicle_record']['condition']['condition_api_id'])
@@ -267,6 +285,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                 'condition_api_id' => $car['vehicle_record']['condition']['condition_api_id'],
                 'name' => $car['vehicle_record']['condition']['name']
             ]);
+            Log::info('Condition', ['data' => $condition_id]);
 
         $status_id = DB::connection('mysql')->table('statuses')
             ->where('status_api_id', $car['vehicle_record']['status']['status_api_id'])
@@ -275,6 +294,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                 'status_api_id' => $car['vehicle_record']['status']['status_api_id'],
                 'name' => $car['vehicle_record']['status']['name']
             ]);
+            Log::info('Status', ['data' => $status_id]);
 
         $title_id = !empty($car['vehicle_record']['title_title'])
             ? DB::connection('mysql')->table('titles')
@@ -285,6 +305,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     'name' => $car['vehicle_record']['title_title']['name']
                 ])
             : null;
+            Log::info('Title', ['data' => $title_id]);
 
         $detailed_title_id = DB::connection('mysql')->table('detailed_titles')
             ->where('detailed_title_api_id', $car['vehicle_record']['detailed_title']['detailed_title_api_id'])
@@ -293,6 +314,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                 'detailed_title_api_id' => $car['vehicle_record']['detailed_title']['detailed_title_api_id'],
                 'name' => $car['vehicle_record']['detailed_title']['name']
             ]);
+            Log::info('Detailed Title', ['data' => $detailed_title_id]);
 
         $damage_id = !empty($car['vehicle_record']['damageMain'])
             ? DB::connection('mysql')->table('damages')
@@ -303,6 +325,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     'name' => $car['vehicle_record']['damageMain']['name']
                 ])
             : null;
+            Log::info('Damage', ['data' => $damage_id]);
 
         $damage_second = !empty($car['vehicle_record']['damageSecond'])
             ? DB::connection('mysql')->table('damages')
@@ -313,6 +336,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     'name' => $car['vehicle_record']['damageSecond']['name']
                 ])
             : null;
+            Log::info('Damage Second', ['data' => $damage_second]);
 
         $country_id = DB::connection('mysql')->table('countries')
             ->where('iso', $car['vehicle_record']['country']['iso'])
@@ -321,6 +345,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                 'iso' => $car['vehicle_record']['country']['iso'],
                 'name' => $car['vehicle_record']['country']['name']
             ]);
+            Log::info('Country', ['data' => $country_id]);
 
         $state_id = !empty($car['vehicle_record']['state'])
             ? DB::connection('mysql')->table('states')
@@ -333,6 +358,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     'name' => $car['vehicle_record']['state']['name']
                 ])
             : null;
+            Log::info('State', ['data' => $state_id]);
 
         $city_id = !empty($car['vehicle_record']['city'])
             ? DB::connection('mysql')->table('cities')
@@ -344,6 +370,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     'name' => $car['vehicle_record']['city']['name']
                 ])
             : null;
+            Log::info('City', ['data' => $city_id]);
 
         $location_id = !empty($car['vehicle_record']['locationRecord']['location_api_id'])
             ? DB::connection('mysql')->table('locations')
@@ -360,9 +387,9 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     'raw' => $car['vehicle_record']['locationRecord']['raw'] ?? '{}'
                 ])
             : null;
+            Log::info('Location', ['data' => $location_id]);
 
-
-        return [
+        $data = [
             'manufacturer_id' => $manufacturer_id,
             'vehicle_model_id' =>  $model_id,
             'generation_id' => $generation_id,
@@ -418,6 +445,8 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
             'location_id' => $location_id,
             'image_id' => $imageId,
         ];
+        Log::info('Returned Array Data', ['data' => json_encode($data)]);
+        return $data;
 
     }
     // public function prepareCarDataOld(array $car)
