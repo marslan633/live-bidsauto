@@ -87,6 +87,7 @@ public function handle()
         DB::connection('mysql')->commit();
     } catch (\Exception $e) {
         DB::connection('mysql')->rollBack();
+        Log::info("Error fetching cache keys: ", ['data' => json_encode($e->getMessage())]);
         $this->handleCronError($cronRun, "Error fetching cache keys: " . $e->getMessage());
         return;
     }
