@@ -21,7 +21,7 @@ class ProcessCachedDataJobKVMTWO implements ShouldQueue
 
     public function __construct($cacheKey)
     {
-        $this->queue = 'process_cache_data_queue';
+        $this->queue = 'process_cache_data_queue_two';
         $this->cacheKey =  $this->cacheKey = DB::connection('mysql_remote')->table('cache_keys')->find($cacheKey);
     }
 
