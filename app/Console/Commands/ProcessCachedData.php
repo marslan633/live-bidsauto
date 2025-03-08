@@ -59,10 +59,10 @@ public function handle()
         // IF KVM_TWO THAN USE REMOTE DATABSE CONNECTION
         // IF KVM_ONE THAN USE DEFAULT DATABASE CONNECTION
         $IS_KVM_TWO = config('app.is_kvm_two');
-        $CacheModel = $IS_KVM_TWO ? DB::connection('mysql_remote')->table('cache_keys') : DB::connection('mysql')->table('cache_keys');
+        $CacheModel = $IS_KVM_TWO === true ? DB::connection('mysql_remote')->table('cache_keys') : DB::connection('mysql')->table('cache_keys');
         Log::info('IS_KVM_TWO ' . config('app.is_kvm_two'));
-        Log::info('Cache Model ' . $IS_KVM_TWO ? 'REMOTE_CACHE_KEY' : 'CACHE_KEY');
-        $this->info('Cache Model ' . $IS_KVM_TWO ? 'REMOTE_CACHE_KEY' : 'CACHE_KEY');
+        Log::info('Cache Model ' . $IS_KVM_TWO === true ? 'REMOTE_CACHE_KEY' : 'CACHE_KEY');
+        $this->info('Cache Model ' . $IS_KVM_TWO === true ? 'REMOTE_CACHE_KEY' : 'CACHE_KEY');
         $this->info('IS_KVM_TWO type => ' . gettype(config('app.is_kvm_two')) . ' ' . config('app.is_kvm_two') === true ? 'Yes' : 'No');
 
         $keyName = $IS_KVM_TWO ? 'vehicle_process_data_' : 'vehicle_api_data_';
