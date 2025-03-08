@@ -589,6 +589,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
             }
 
             DB::connection('mysql')->beginTransaction(); // ✅ Start Transaction
+            DB::connection('mysql_remote')->beginTransaction(); // ✅ Start Transaction
 
             // Extract API IDs from batchData
             $apiIds = array_column($batchData, 'api_id');
@@ -633,13 +634,16 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
             }
 
             DB::connection('mysql')->commit(); // ✅ Commit Successful Inserts
-
             DB::connection('mysql_remote')->table('cache_keys')->where('id', $this->cacheKeyId)->delete();
+
+            DB::connection('mysql_remote')->commit(); // ✅ Commit Successful Inserts
+
             Cache::store('redis_cache')->forget($this->cacheKey);
 
 
         } catch (\Exception $e) {
             DB::connection('mysql')->rollBack(); // ❌ Rollback only in case of a major failure
+            DB::connection('mysql_remote')->rollBack(); // ❌ Rollback only in case of a major failure
 
             // Mark cache as pending in case of failure
             DB::connection('mysql_remote')->table('cache_keys')->where('id', $this->cacheKeyId)->update(['status' => 'pending']);
