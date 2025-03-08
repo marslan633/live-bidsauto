@@ -37,7 +37,7 @@ class ProcessCachedDataJob implements ShouldQueue
     {
         Log::info('Handle Call');
 
-        try {
+        // try {
 
             // Read Modal
             $CacheModel = $this->is_kvm_two === true ? DB::connection('mysql_remote')->table('cache_keys') : DB::connection('mysql')->table('cache_keys');
@@ -88,10 +88,10 @@ class ProcessCachedDataJob implements ShouldQueue
             // IF KVM_TWO THAN REMOVE IT FROM REMOTE
             // IF KVM_ONE THAN REMOVE IT FROM DEFAULT
             Cache::store($this->is_kvm_two === true ? 'redis_cache' :'redis')->forget($key);
-        } catch (\Exception $e) {
-            DB::connection('mysql')->table('cache_keys')->where('id',$this->cacheKey->id)->update(['status' => 'pending']);
-            Log::info("Error processing key {$this->cacheKey->cache_key}: " . $e->getMessage());
-        }
+        // } catch (\Exception $e) {
+        //     DB::connection('mysql')->table('cache_keys')->where('id',$this->cacheKey->id)->update(['status' => 'pending']);
+        //     Log::info("Error processing key {$this->cacheKey->cache_key}: " . $e->getMessage());
+        // }
     }
 
 }
