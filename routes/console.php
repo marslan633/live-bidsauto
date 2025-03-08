@@ -14,7 +14,7 @@ if(config('app.app_kvm_one') === true){
     /**
     * Cron Job - Process Vehicle Data from third Party API and Populate it into Cache.
     */
-    app(Schedule::class)->command('process:api-data')->everyTenMinutes()->withoutOverlapping();
+    // app(Schedule::class)->command('process:api-data')->everyTenMinutes()->withoutOverlapping();
     // app(Schedule::class)->command('process:api-data')->dailyAt('21:00')->withoutOverlapping();
 
     /**
