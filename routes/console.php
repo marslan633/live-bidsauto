@@ -4,24 +4,27 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 // Artisan::command('inspire', function () {
 //     $this->comment(Inspiring::quote());
 // })->purpose('Display an inspiring quote')->hourly();
 
 if(config('app.app_kvm_one') === true){
+    Schedule::command('process:api-data')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping()
+    ->onSuccess(function () {
+        // Log the successful completion of process:api-data
+        Log::info('process:api-data completed successfully.');
 
-    /**
-    * Cron Job - Process Vehicle Data from third Party API and Populate it into Cache.
-    */
-    // app(Schedule::class)->command('process:api-data')->everyTenMinutes()->withoutOverlapping();
-    // app(Schedule::class)->command('process:api-data')->dailyAt('21:00')->withoutOverlapping();
-
-    /**
-     * Cron Job - Process Vehicle Data from kvm4.1 redis cache and populate it into kvm4.2 redis cache.
-    */
-    app(Schedule::class)->command('process:cached-data')->everyFiveMinutes()->withoutOverlapping();
-
+        // Dispatch the process:cached-data command
+        Artisan::call('process:cached-data');
+    })
+    ->onFailure(function () {
+        // Log the failure of process:api-data
+        Log::error('process:api-data failed.');
+    });
 }
 
 if(config('app.app_kvm_two') === true){
