@@ -35,6 +35,8 @@ class ProcessCachedDataJob implements ShouldQueue
      */
     public function handle(): void
     {
+        Log::info('Handle Call');
+
         try {
 
             // Read Modal
@@ -47,7 +49,8 @@ class ProcessCachedDataJob implements ShouldQueue
 
 
             if (!$data) {
-                $CacheModel->where('cache_key', $key)->delete();
+                Log::info('Deleted Job Key');
+                // $CacheModel->where('cache_key', $key)->delete();
                 return;
             }
 
