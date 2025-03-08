@@ -43,7 +43,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
     {
           try {
                 $key = $this->cacheKey;
-                $data = json_decode(Cache::store('redis')->get($key), true);
+                $data = json_decode(Cache::store('redis_cache')->get($key), true);
                 if (!$data) {
                     Log::warning("No data found for key: {$key}");
                     return;
@@ -634,7 +634,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
             DB::connection('mysql')->commit(); // ✅ Commit Successful Inserts
 
             DB::connection('mysql_remote')->table('cache_keys')->where('id', $this->cacheKeyId)->delete();
-            Cache::store('redis')->forget($this->cacheKey);
+            Cache::store('redis_cache')->forget($this->cacheKey);
 
 
         } catch (\Exception $e) {
