@@ -85,11 +85,6 @@ class ProcessCachedDataToDatabases extends Command
 
     }
 
-
-
-
-
-
     /**
      * Handle cron job failure and send email notification.
      */

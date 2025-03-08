@@ -170,29 +170,41 @@ return [
             'prefix' => env('REDIS_PREFIX', ''),
         ],
 
+        // Use For Stroing Process Cached Data Keys
         'default' => [
-            'url' => env('REDIS_URL'),
             'host' => env('REDIS_HOST', '127.0.0.1'),
-            'username' => env('REDIS_USERNAME'),
             'password' => env('REDIS_PASSWORD'),
             'port' => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_DB', 0),
-            'persistent' => true, // Keep connections alive
-            'timeout' => env('REDIS_TIMEOUT', 5.0), // Default is 5s; increase to 10s
-            'read_timeout' => env('REDIS_READ_TIMEOUT', 5.0), // Allow longer reads from Redis
-            'retry_interval' => env('REDIS_RETRY_INTERVAL', 1000 * 5), // Retry delay in milliseconds
+            'persistent' => true,
+            'timeout' => env('REDIS_TIMEOUT', 2.0),
+            'read_timeout' => env('REDIS_READ_TIMEOUT', 1.5),
+            'retry_interval' => env('REDIS_RETRY_INTERVAL', 5000),
+            'prefix' => 'process_cached_data_',
+        ],
+
+        'default_queue' => [
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'password' => env('REDIS_PASSWORD'),
+            'port' => env('REDIS_PORT', '6379'),
+            'database' => env('REDIS_QUEUE_DB', 1),
+            'persistent' => true,
+            'timeout' => env('REDIS_TIMEOUT', 2.0),
+            'read_timeout' => env('REDIS_READ_TIMEOUT', 1.5),
+            'retry_interval' => env('REDIS_RETRY_INTERVAL', 5000),
+            'prefix' => 'default_queue_',
         ],
 
         'cache' => [
-            'url' => env('REDIS_CACHE_URL'),
             'host' => env('REDIS_CACHE_HOST', '127.0.0.1'),
             'password' => env('REDIS_CACHE_PASSWORD', null),
-            'port' => env('REDIS_CACHE_PORT', 6380), // Different port or host
-            'database' => env('REDIS_CACHE_DB', 1),
-            'persistent' => true, // Keep connections alive
-            'timeout' => env('REDIS_CACHE_TIMEOUT', 5.0), // Default is 5s; increase to 10s
-            'read_timeout' => env('REDIS_CACHE_READ_TIMEOUT', 5.0), // Allow longer reads from Redis
-            'retry_interval' => env('REDIS_CACHE_RETRY_INTERVAL', 1000 * 5), // Retry delay in milliseconds
+            'port' => env('REDIS_CACHE_PORT', 6380),
+            'database' => env('REDIS_CACHE_DB', 0),
+            'persistent' => true,
+            'timeout' => env('REDIS_TIMEOUT', 2.0),
+            'read_timeout' => env('REDIS_READ_TIMEOUT', 1.5),
+            'retry_interval' => env('REDIS_RETRY_INTERVAL', 5000),
+            'prefix' => 'process_cached_clean_data_',
         ],
 
     ],
