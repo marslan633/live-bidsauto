@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\Log;
 // })->purpose('Display an inspiring quote')->hourly();
 
 if(config('app.app_kvm_one') === true){
-    Schedule::command('process:api-data')
+
+    app(Schedule::class)->command('process:api-data')
     ->everyFifteenMinutes()
     ->withoutOverlapping()
     ->onSuccess(function () {
