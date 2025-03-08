@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Jobs\ProcessCachedDataToDatabaseJob;
+use App\Jobs\TestJob;
 use Illuminate\Console\Command;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\{DB, Mail, Log, Bus};
@@ -91,23 +92,24 @@ class ProcessCachedDataToDatabases extends Command
         $jobs = [];
         // Iterate over the cache keys and create jobs
         foreach ($cacheKeys as $cacheKey) {
-            $jobs[] = new ProcessCachedDataToDatabaseJob($cacheKey->id, $cacheKey->cache_key);
+            TestJob::dispatch($cacheKey->id, $cacheKey->cache_key);
+            // $jobs[] = new ProcessCachedDataToDatabaseJob($cacheKey->id, $cacheKey->cache_key);
         }
 
-        // Dispatch the batch of jobs
-        Bus::batch($jobs)
-        ->finally(function (Batch $batch) use ($cronRun) {
-            // This callback will be executed after the batch has finished executing
-            // You can perform any necessary cleanup here
-             if($cronRun){
-                DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
-                    'end_time' => Carbon::now(),
-                    'status' => 'success',
-                    'updated_at' => now(),
-                ]);
-            }
-        })
-        ->dispatch();
+        // // Dispatch the batch of jobs
+        // Bus::batch($jobs)
+        // ->finally(function (Batch $batch) use ($cronRun) {
+        //     // This callback will be executed after the batch has finished executing
+        //     // You can perform any necessary cleanup here
+        //      if($cronRun){
+        //         DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
+        //             'end_time' => Carbon::now(),
+        //             'status' => 'success',
+        //             'updated_at' => now(),
+        //         ]);
+        //     }
+        // })
+        // ->dispatch();
 
 
 

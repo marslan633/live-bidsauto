@@ -20,9 +20,11 @@ class TestJob implements ShouldQueue
     /**
      * Create a new job instance.
      */
-    public function __construct()
+    public function __construct($cacheKeyId, $cacheKey)
     {
-        //
+        $this->queue = 'test_job';
+        $this->cacheKeyId = $cacheKeyId;
+        $this->cacheKey = $cacheKey;
     }
 
     /**
@@ -30,6 +32,6 @@ class TestJob implements ShouldQueue
      */
     public function handle(): void
     {
-        Log::info('Hello World');
+        Log::info('Hello World ' . $this->cacheKeyId . ' ' . $this->cacheKey);
     }
 }
