@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
+use Illuminate\Support\Facades\Log;
 
 class ProcessCachedData extends Command
 {
@@ -59,6 +60,8 @@ public function handle()
         // IF KVM_ONE THAN USE DEFAULT DATABASE CONNECTION
         $IS_KVM_TWO = config('app.is_kvm_two');
         $CacheModel = $IS_KVM_TWO ? DB::connection('mysql_remote')->table('cache_keys') : DB::connection('mysql')->table('cache_keys');
+        Log::info('Cache Model ' . $IS_KVM_TWO ? 'REMOTE_CACHE_KEY' : 'CACHE_KEY');
+        $this->info('Cache Model ' . $IS_KVM_TWO ? 'REMOTE_CACHE_KEY' : 'CACHE_KEY');
         $keyName = $IS_KVM_TWO ? 'vehicle_process_data_' : 'vehicle_api_data_';
         $cacheKeys = $CacheModel->where('cache_key', 'like', $keyName.'%')
             ->where('status', 'pending')
@@ -86,6 +89,8 @@ public function handle()
     }
 
     foreach ($cacheKeys as $cacheKey) {
+            Log::info('Cache Key ' . $cacheKey->cache_key);
+            $this->info('Cache Key ' . $cacheKey->cache_key);
             ProcessCachedDataJob::dispatch($cacheKey->id);
     }
 
