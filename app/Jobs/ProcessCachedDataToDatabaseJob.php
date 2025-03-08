@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -21,7 +22,7 @@ use Illuminate\Support\Facades\DB;
 
 class ProcessCachedDataToDatabaseJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
     protected $cacheKeyId;
     protected $cacheKey;
     // protected $queue = 'process_cached_data_to_database_job';
