@@ -20,7 +20,7 @@ if(config('app.app_kvm_one') === true){
         Log::info('process:api-data completed successfully.');
 
         // Dispatch the process:cached-data command
-        app(Schedule::class)->command('process:cached-data');
+        Artisan::call('process:cached-data');
     })
     ->onFailure(function () {
         // Log the failure of process:api-data
