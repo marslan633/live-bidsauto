@@ -89,10 +89,11 @@ class ProcessCachedDataToDatabases extends Command
 
         // **Batch processing setup**
         // Initialize an empty array to hold the jobs
-        $jobs = [];
+        // $jobs = [];
         // Iterate over the cache keys and create jobs
         foreach ($cacheKeys as $cacheKey) {
-            TestJob::dispatch($cacheKey->id, $cacheKey->cache_key);
+            // TestJob::dispatch($cacheKey->id, $cacheKey->cache_key);
+            ProcessCachedDataToDatabaseJob::dispatch($cacheKey->id, $cacheKey->cache_key);
             // $jobs[] = new ProcessCachedDataToDatabaseJob($cacheKey->id, $cacheKey->cache_key);
         }
 
@@ -111,7 +112,13 @@ class ProcessCachedDataToDatabases extends Command
         // })
         // ->dispatch();
 
-
+        if($cronRun){
+            DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
+                'end_time' => Carbon::now(),
+                'status' => 'success',
+                'updated_at' => now(),
+            ]);
+        }
 
         // ...Jobs, finalJob
 

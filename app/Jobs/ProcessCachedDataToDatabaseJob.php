@@ -16,13 +16,13 @@ use App\Models\{
     State, City, Location, SellingBranch, Year, BuyNow, Odometer, RemoteCacheKey,
 };
 use Carbon\Carbon;
-use Illuminate\Bus\Batchable;
+// use Illuminate\Bus\Batchable;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
 
 class ProcessCachedDataToDatabaseJob implements ShouldQueue
 {
-    use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
     protected $cacheKeyId;
     protected $cacheKey;
     // protected $queue = 'process_cached_data_to_database_job';
