@@ -5,12 +5,10 @@ namespace App\Console\Commands;
 use App\Jobs\ProcessCachedDataToDatabaseJob;
 use Illuminate\Console\Command;
 use Carbon\Carbon;
-use App\Models\{ RemoteCacheKey};
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\{DB, Mail, Log, Bus};
 use App\Mail\CronJobFailedMail;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Bus\Batch;
+use Throwable;
 
 class ProcessCachedDataToDatabases extends Command
 {
@@ -35,9 +33,21 @@ class ProcessCachedDataToDatabases extends Command
     {
         $startDateTime = Carbon::now();
         $this->info("Process started at: " . $startDateTime);
-        \Log::info("Process started at: " . $startDateTime);
+        Log::info("Process started at: " . $startDateTime);
+
+        try {
+            DB::connection('mysql')->getPdo(); // Check MySQL connection
+            DB::connection('mysql_remote')->getPdo(); // Check Remote DB connection
+        } catch (\Exception $e) {
+            $this->error('Database connection failed:');
+            Log::info("Database connection failed: ", ['exception' => json_encode($e->getMessage())]);
+            return;
+        }
+
+        $cronRun = null;
 
         DB::connection('mysql')->beginTransaction();
+        DB::connection('mysql_remote')->beginTransaction();
         try{
             $cronRun = DB::connection('mysql')->table('cron_run_history')->insertGetId([
                 'cron_name' => 'process_cached_data_to_database',
@@ -58,6 +68,7 @@ class ProcessCachedDataToDatabases extends Command
             if ($cacheKeys->isEmpty()) {
                 $this->info("No pending cache keys found.");
                 DB::connection('mysql')->commit();
+                DB::connection('mysql_remote')->commit();
                 return;
             }
 
@@ -65,23 +76,42 @@ class ProcessCachedDataToDatabases extends Command
               // Update status in bulk
             DB::connection('mysql_remote')->table('cache_keys')->whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
             DB::connection('mysql')->commit();
+            DB::connection('mysql_remote')->commit();
         }catch(\Exception $e){
             DB::connection('mysql')->rollBack();
-            $this->handleCronError($cronRun, "Error fetching cache keys: " . $e->getMessage());
+            DB::connection('mysql_remote')->rollBack();
+            if($cronRun !== null){
+                $this->handleCronError($cronRun, "Error fetching cache keys: " . $e->getMessage());
+            }
             return;
         }
 
-         // **Batch processing setup**
+        // **Batch processing setup**
+        // Initialize an empty array to hold the jobs
+        $jobs = [];
+        // Iterate over the cache keys and create jobs
         foreach ($cacheKeys as $cacheKey) {
-            ProcessCachedDataToDatabaseJob::dispatch($cacheKey->id, $cacheKey->cache_key);
+            $jobs[] = new ProcessCachedDataToDatabaseJob($cacheKey->id, $cacheKey->cache_key);
         }
 
-        DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
-            'end_time' => Carbon::now(),
-            'status' => 'success',
-            'updated_at' => now(),
-        ]);
+        // Dispatch the batch of jobs
+        Bus::batch($jobs)
+        ->finally(function (Batch $batch) use ($cronRun) {
+            // This callback will be executed after the batch has finished executing
+            // You can perform any necessary cleanup here
+             if($cronRun){
+                DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
+                    'end_time' => Carbon::now(),
+                    'status' => 'success',
+                    'updated_at' => now(),
+                ]);
+            }
+        })
+        ->dispatch();
 
+
+
+        // ...Jobs, finalJob
 
     }
 
@@ -90,7 +120,7 @@ class ProcessCachedDataToDatabases extends Command
      */
     private function handleCronError($cronRun, $errorMessage)
     {
-        \Log::error($errorMessage);
+        Log::error($errorMessage);
         DB::table('cron_run_history')->where('id', $cronRun)->update([
             'end_time' => Carbon::now(),
             'status' => 'failed',

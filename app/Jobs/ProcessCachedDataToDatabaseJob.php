@@ -24,8 +24,9 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
     protected $cacheKeyId;
     protected $cacheKey;
+    // protected $queue = 'process_cached_data_to_database_job';
 
-     /**
+    /**
      * Create a new job instance.
      */
     public function __construct($cacheKeyId, $cacheKey)
@@ -44,7 +45,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                 $key = $this->cacheKey;
                 $data = json_decode(Cache::store('redis')->get($key), true);
                 if (!$data) {
-                    Log::info("No data found for key: {$key}");
+                    Log::warning("No data found for key: {$key}");
                     return;
                 }
                 $batchData = [];
@@ -85,10 +86,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
     {
         $year = null;
         if (!empty($car['year'])) {
-            $year =  DB::connection('mysql')->table('years')
-                    ->where('name', $car['year'])
-                    ->value('id')  // Fetch only the 'id' column
-                    ?? DB::connection('mysql')->table('years')->insertGetId(['name' => $car['year']]);
+            $year = DB::connection('mysql')->table('years')->insertGetId(['name' => $car['year']]);
         }
 
         $car['vehicle_record'] = (array) $car['vehicle_record'];
