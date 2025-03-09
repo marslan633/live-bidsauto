@@ -454,6 +454,94 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
         return $data;
 
     }
+
+
+      /**
+     * ✅ Insert batch of processed data
+     */
+    public function insertBatch(array $batchData)
+    {
+        Log::info('Starting Batch Insertion');
+        try {
+            if (empty($batchData)) {
+                return;
+            }
+
+            DB::connection('mysql')->beginTransaction(); // ✅ Start Transaction
+            DB::connection('mysql_remote')->beginTransaction(); // ✅ Start Transaction
+
+            // Extract API IDs from batchData
+            $apiIds = array_column($batchData, 'api_id');
+
+            // Fetch existing records by API ID
+            $existingRecords = DB::connection('mysql')->table('vehicle_records')
+            ->whereIn('api_id', $apiIds)
+            ->get(['api_id', 'id'])
+            ->mapWithKeys(fn($row) => [(string) $row->api_id => (int) $row->id])
+            ->toArray();
+
+
+
+            // Lists for new and updated records
+            $newRecords = [];
+            $updatedRecords = [];
+            $failedRecords = []; // ❌ Store records that failed
+
+            foreach ($batchData as $record) {
+                try {
+                    if (isset($existingRecords[$record['api_id']])) {
+                        // Existing record - update full data
+                        $record['id'] = $existingRecords[$record['api_id']]; // Add ID for update
+                        $record['processed_at'] = Carbon::now();
+                        $record['updated_at'] = Carbon::now();
+                        $updatedRecords[] = (array)$record;
+                    } else {
+                        // New record - insert
+                        $record['is_new'] = true;
+                        $record['processed_at'] = Carbon::now();
+                        $record['created_at'] = Carbon::now();
+                        $newRecords[] = (array)$record;
+                    }
+                } catch (\Exception $e) {
+                    $failedRecords[] = (array)$record;
+                    Log::info("Skipping record due to error: " . $e->getMessage());
+                }
+            }
+
+            // ✅ Bulk Insert New Records
+            if (!empty($newRecords)) {
+                DB::connection('mysql')->table('vehicle_records')->insert($newRecords);
+            }
+
+            // ✅ Bulk Update Existing Records
+            if (!empty($updatedRecords)) {
+                $updatedRecords = array_map(fn($record) =>
+                    array_map(fn($value) => is_object($value) ? json_encode($value) : $value, $record),
+                    $updatedRecords
+                );
+                DB::connection('mysql')->table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
+            }
+
+            DB::connection('mysql')->commit(); // ✅ Commit Successful Inserts
+            DB::connection('mysql_remote')->table('cache_keys')->where('id', $this->cacheKeyId)->delete();
+
+            DB::connection('mysql_remote')->commit(); // ✅ Commit Successful Inserts
+
+            Cache::store('redis_cache')->forget($this->cacheKey);
+
+
+        } catch (\Exception $e) {
+            DB::connection('mysql')->rollBack(); // ❌ Rollback only in case of a major failure
+            DB::connection('mysql_remote')->rollBack(); // ❌ Rollback only in case of a major failure
+
+            // Mark cache as pending in case of failure
+            DB::connection('mysql_remote')->table('cache_keys')->where('id', $this->cacheKeyId)->update(['status' => 'pending']);
+
+            Log::info("Batch insert failed: " . $e->getMessage());
+        }
+    }
+
+
     // public function prepareCarDataOld(array $car)
     // {
     //     $year = null;
@@ -612,80 +700,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
     // }
 
 
-    /**
-     * ✅ Insert batch of processed data
-     */
-    public function insertBatch(array $batchData)
-    {
-        Log::info('Starting Batch Insertion');
-        try {
-            if (empty($batchData)) {
-                return;
-            }
 
-            DB::connection('mysql')->beginTransaction(); // ✅ Start Transaction
-            DB::connection('mysql_remote')->beginTransaction(); // ✅ Start Transaction
-
-            // Extract API IDs from batchData
-            $apiIds = array_column($batchData, 'api_id');
-
-            // Fetch existing records by API ID
-            $existingRecords = DB::connection('mysql')->table('vehicle_records')->whereIn('api_id', $apiIds)->pluck('id', 'api_id')->toArray();
-
-            // Lists for new and updated records
-            $newRecords = [];
-            $updatedRecords = [];
-            $failedRecords = []; // ❌ Store records that failed
-
-            foreach ($batchData as $record) {
-                try {
-                    if (isset($existingRecords[$record['api_id']])) {
-                        // Existing record - update full data
-                        $record['id'] = $existingRecords[$record['api_id']]; // Add ID for update
-                        $record['processed_at'] = Carbon::now();
-                        $record['updated_at'] = Carbon::now();
-                        $updatedRecords[] = (array)$record;
-                    } else {
-                        // New record - insert
-                        $record['is_new'] = true;
-                        $record['processed_at'] = Carbon::now();
-                        $record['created_at'] = Carbon::now();
-                        $newRecords[] = (array)$record;
-                    }
-                } catch (\Exception $e) {
-                    $failedRecords[] = (array)$record;
-                    Log::info("Skipping record due to error: " . $e->getMessage());
-                }
-            }
-
-            // ✅ Bulk Insert New Records
-            if (!empty($newRecords)) {
-                DB::connection('mysql')->table('vehicle_records')->insert($newRecords);
-            }
-
-            // ✅ Bulk Update Existing Records
-            if (!empty($updatedRecords)) {
-                DB::connection('mysql')->table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
-            }
-
-            DB::connection('mysql')->commit(); // ✅ Commit Successful Inserts
-            DB::connection('mysql_remote')->table('cache_keys')->where('id', $this->cacheKeyId)->delete();
-
-            DB::connection('mysql_remote')->commit(); // ✅ Commit Successful Inserts
-
-            Cache::store('redis_cache')->forget($this->cacheKey);
-
-
-        } catch (\Exception $e) {
-            DB::connection('mysql')->rollBack(); // ❌ Rollback only in case of a major failure
-            DB::connection('mysql_remote')->rollBack(); // ❌ Rollback only in case of a major failure
-
-            // Mark cache as pending in case of failure
-            DB::connection('mysql_remote')->table('cache_keys')->where('id', $this->cacheKeyId)->update(['status' => 'pending']);
-
-            Log::info("Batch insert failed: " . $e->getMessage());
-        }
-    }
 
      // public function insertBatch(array $batchData)
     // {
