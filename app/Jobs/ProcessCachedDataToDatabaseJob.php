@@ -35,6 +35,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
         $this->queue = 'process_cached_data_to_database_job';
         $this->cacheKeyId = $cacheKeyId;
         $this->cacheKey = $cacheKey;
+        Log::info('Log From Database Constructor');
     }
 
     /**
@@ -42,6 +43,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
      */
     public function handle(): void
     {
+        Log::info('Log From Database Hanlde');
           try {
                 $key = $this->cacheKey;
                 $data = json_decode(Cache::store('redis_cache')->get($key), true);
@@ -55,7 +57,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     Log::info('Starting Batch Insert');
                     // **Process Data but Store in Batch**
                     Log::info('Car Dara', ['CarData' => json_encode((array)$car)]);
-                    $batchData[] = $this->prepareCarData((array)$car);
+                    $batchData[] = $this->prepareCarData((array) $car);
 
                     // If batch reaches 1000, insert and reset
                     if (count($batchData) >= $batchSize) {
@@ -88,7 +90,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
     {
         Log::info('Car Dara', ['CarData' => json_encode($car)]);
         $year = null;
-        if (!empty($car['year'])) {
+        if (!isset($car['year'])) {
             $year = DB::connection('mysql')->table('years')->insertGetId(['name' => $car['year']]);
         }
         Log::info('Year', ['data' => $year]);

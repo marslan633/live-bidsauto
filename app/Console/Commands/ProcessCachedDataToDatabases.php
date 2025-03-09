@@ -92,30 +92,13 @@ class ProcessCachedDataToDatabases extends Command
 
         // **Batch processing setup**
         // Initialize an empty array to hold the jobs
-        // $jobs = [];
         // Iterate over the cache keys and create jobs
         foreach ($cacheKeys as $cacheKey) {
             // TestJob::dispatch($cacheKey->id, $cacheKey->cache_key);
             $this->info('Data Starting Handover To Job Done ' . $cacheKey->cache_key);
             ProcessCachedDataToDatabaseJob::dispatch($cacheKey->id, $cacheKey->cache_key);
             $this->info('Data End Handover To Job Done ' . $cacheKey->cache_key);
-            // $jobs[] = new ProcessCachedDataToDatabaseJob($cacheKey->id, $cacheKey->cache_key);
         }
-
-        // // Dispatch the batch of jobs
-        // Bus::batch($jobs)
-        // ->finally(function (Batch $batch) use ($cronRun) {
-        //     // This callback will be executed after the batch has finished executing
-        //     // You can perform any necessary cleanup here
-        //      if($cronRun){
-        //         DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
-        //             'end_time' => Carbon::now(),
-        //             'status' => 'success',
-        //             'updated_at' => now(),
-        //         ]);
-        //     }
-        // })
-        // ->dispatch();
 
         if($cronRun){
             DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
@@ -125,7 +108,6 @@ class ProcessCachedDataToDatabases extends Command
             ]);
         }
 
-        // ...Jobs, finalJob
 
     }
 
