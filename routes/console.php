@@ -35,7 +35,7 @@ if(config('app.app_kvm_two') === true){
         /**
      * Cron Job - Update the data (bid, final_bid_updated_at, status) of archived vehicle table on the base of third party api.
     */
-    // app(Schedule::class)->command('process:archived-data')->everyThirtyMinutes()->withoutOverlapping();
+    app(Schedule::class)->command('process:archived-data')->everySixHours()->withoutOverlapping();
 }
 
 if(config('app.app_kvm_three') === true){
@@ -57,7 +57,7 @@ if(config('app.app_kvm_three') === true){
     /**
      * Cron Job - Update the data (bid, final_bid_updated_at, status) of archived vehicle table on the base of third party api.
     */
-    // app(Schedule::class)->command('process:cached-archived-data')->everyThirtyMinutes()->withoutOverlapping();
+    app(Schedule::class)->command('process:cached-archived-data')->everySixHours()->withoutOverlapping();
 
 
     /**
