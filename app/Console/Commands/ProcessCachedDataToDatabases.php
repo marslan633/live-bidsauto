@@ -63,7 +63,7 @@ class ProcessCachedDataToDatabases extends Command
             ->where('status', 'pending')
             ->orderBy('created_at', 'asc')
             // ->lockForUpdate()
-            ->take(30)
+            ->take(20)
             ->get();
 
             if ($cacheKeys->isEmpty()) {
