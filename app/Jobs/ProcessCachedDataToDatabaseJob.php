@@ -681,7 +681,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
             // Mark cache as pending in case of failure
             DB::connection('mysql_remote')->table('cache_keys')->where('id', $this->cacheKeyId)->update(['status' => 'pending']);
 
-            Log::error("Batch insert failed: " . $e->getMessage());
+            Log::info("Batch insert failed: " . $e->getMessage());
         }
     }
 
