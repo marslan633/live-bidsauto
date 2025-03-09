@@ -52,11 +52,10 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     return;
                 }
                 $batchData = [];
-                $batchSize = config('app.batch_size');
+                $batchSize = intval(config('app.batch_size'));
                 foreach ($data as $car) {
                     Log::info('Starting Batch Insert');
                     // **Process Data but Store in Batch**
-                    Log::info('Car Dara', ['CarData' => json_encode((array)$car)]);
                     $batchData[] = $this->prepareCarData((array) $car);
 
                     // If batch reaches 1000, insert and reset
