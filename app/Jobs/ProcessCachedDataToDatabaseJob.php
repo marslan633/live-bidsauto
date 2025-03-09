@@ -616,6 +616,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
      */
     public function insertBatch(array $batchData)
     {
+        Log::info('Starting Batch Insertion');
         try {
             if (empty($batchData)) {
                 return;
@@ -652,7 +653,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     }
                 } catch (\Exception $e) {
                     $failedRecords[] = $record;
-                    Log::error("Skipping record due to error: " . $e->getMessage());
+                    Log::info("Skipping record due to error: " . $e->getMessage());
                 }
             }
 
