@@ -88,7 +88,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
 
     public function prepareCarData(array $car)
     {
-        Log::info('Car Dara', ['CarData' => json_encode($car)]);
+        // Log::info('Car Dara', ['CarData' => json_encode($car)]);
         $year = null;
         if (!isset($car['year'])) {
             $year = DB::connection('mysql')->table('years')->insertGetId(['name' => $car['year']]);
@@ -449,7 +449,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
             'location_id' => $location_id,
             'image_id' => $imageId,
         ];
-        Log::info('Returned Array Data', ['data' => json_encode($data)]);
+        // Log::info('Returned Array Data', ['data' => json_encode($data)]);
         return $data;
 
     }
