@@ -71,7 +71,7 @@ class ProcessCachedDataJob implements ShouldQueue
             // IF KVM_TWO THAN USE DEFAULT DATABASE CONNECTION
             // IF KVM_ONE THAN USE REMOTE DATABASE CONNECTION
             $RemoteCacheModel = $this->is_kvm_two === true  ? DB::connection('mysql')->table('cache_keys') : DB::connection('mysql_remote')->table('cache_keys');
-                Log::info('Remote Cache Model Job ' . $this->is_kvm_two === true ? 'CACHE_KEY' : 'REMOTE_CACHE_KEY');
+                Log::info('Remote Cache Model Job ' . ($this->is_kvm_two === true ? 'CACHE_KEY' : 'REMOTE_CACHE_KEY'));
 
             // $RemoteCacheModel->updateOrCreate(
             //     ['cache_key' => $cacheKey],

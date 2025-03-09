@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
+use Illuminate\Support\Facades\Log;
 
 class ProcessApiData extends Command
 {
@@ -38,7 +39,7 @@ class ProcessApiData extends Command
             ->latest('start_time')
             ->first();
 
-        $minutes = 160; // Default minutes value
+        $minutes = 400; // Default minutes value
 
         if ($lastCron && $lastCron->end_time) {
             $endTime = Carbon::parse($lastCron->end_time);
@@ -46,6 +47,7 @@ class ProcessApiData extends Command
 
             if (config('app.env') !== 'production') {
                 $this->info("⏳ Time Difference: {$timeDifference}");
+                Log::info("⏳ Time Difference: {$timeDifference}");
                 // \Log::info("⏳ Time Difference: {$timeDifference}");
             }
 
@@ -58,6 +60,7 @@ class ProcessApiData extends Command
 
         if (config('app.env') !== 'production') {
             $this->info("🚀 Process started at: " . $startDateTime);
+            Log::info("🚀 Process started at: " . $startDateTime);
             // \Log::info("🚀 Process started at: " . $startDateTime);
         }
 
@@ -102,6 +105,7 @@ class ProcessApiData extends Command
                         // Save all data to cache with a unique cache key
                     $cacheKey = 'vehicle_api_data_' . now()->format('Y_m_d_H_i_s');
                     $expiresAt = now()->addMinutes(intval(config('app.cache_key_expiry'))); // Store for 20 Days
+                    $this->info("cache key {$cacheKey}.");
                     $this->info("cache key {$cacheKey}.");
                     // \Log::info("cache key {$cacheKey}.");
 
