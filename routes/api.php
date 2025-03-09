@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\VehicleController;
 use App\Models\CacheKey;
 use App\Models\RemoteCacheKey;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -25,6 +26,7 @@ Route::get('get-max-record', [VehicleController::class, 'getMaxRecord']);
 Route::get('test-api', [VehicleController::class, 'testApi']);
 Route::get('removeStaleCacheKeys', [VehicleController::class, 'removeStaleCacheKeys']);
 Route::get('/records-by-interval', [VehicleController::class, 'getRecordsByInterval']);
+
 Route::get('get-read-redis-data', function(){
     $IS_KVM_TWO = config('app.is_kvm_two');
     $CacheModel = $IS_KVM_TWO ? RemoteCacheKey::class : CacheKey::class;
@@ -86,4 +88,8 @@ Route::get('store-redis-data-to-database', function(){
 
         return response()->json(['originalData' => $originalData, 'databaseReturedData' => $databaseReturedData]);
     }
+});
+
+Route::get('get-jobs', function(Request $request){
+    return DB::connection('mysql')->table($request->table)->get();
 });
