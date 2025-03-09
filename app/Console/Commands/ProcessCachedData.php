@@ -141,6 +141,7 @@ public function handle()
             // IF KVM_TWO THAN REMOVE IT FROM REMOTE
             // IF KVM_ONE THAN REMOVE IT FROM DEFAULT
             Cache::store($IS_KVM_TWO === true ? 'redis_cache' :'redis')->forget($key);
+            $this->info('Key Stored: '. $key);
 
         }catch(\Exception $e){
             DB::connection('mysql')->table('cache_keys')->where('id',$cacheKey->id)->update(['status' => 'pending']);
