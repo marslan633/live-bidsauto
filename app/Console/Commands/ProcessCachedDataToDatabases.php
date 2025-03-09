@@ -63,7 +63,7 @@ class ProcessCachedDataToDatabases extends Command
             ->where('status', 'pending')
             ->orderBy('created_at', 'asc')
             // ->lockForUpdate()
-            ->take(5)
+            ->take(1)
             ->get();
 
             if ($cacheKeys->isEmpty()) {
@@ -78,9 +78,12 @@ class ProcessCachedDataToDatabases extends Command
             DB::connection('mysql_remote')->table('cache_keys')->whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
             DB::connection('mysql')->commit();
             DB::connection('mysql_remote')->commit();
+            Log::info('Database Commit Done');
+
         }catch(\Exception $e){
             DB::connection('mysql')->rollBack();
             DB::connection('mysql_remote')->rollBack();
+            Log::info('Rolle Back From Process Cahed To Database');
             if($cronRun !== null){
                 $this->handleCronError($cronRun, "Error fetching cache keys: " . $e->getMessage());
             }
