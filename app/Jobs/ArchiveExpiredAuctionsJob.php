@@ -10,20 +10,21 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class ArchiveExpiredAuctionsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $record;
+    protected $recordId;
 
     /**
      * Create a new job instance.
      */
-    public function __construct(VehicleRecord $record)
+    public function __construct($recordId)
     {
-        $this->record = $record;
+        $this->recordId = $recordId;
     }
 
     /**
@@ -32,26 +33,34 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
     public function handle()
     {
         try {
-            $record = $this->record;
 
+            $record  = DB::connection('mysql')->table('vehicle_records')->where('id', $this->recordId)->first();
+
+            if (!$record) {
+                Log::error("Auction record not found for ID: {$this->recordId}");
+                return;
+            }
+
+            $record = (array) $record;
+            $record['status_id'] = 7;
               // Check if the record already exists in VehicleRecordArchived
-              $archivedRecord = VehicleRecordArchived::where('vin', $record->vin)->first();
+              $archivedRecord = DB::connection('mysql')->table('vehicle_record_archiveds')->where('vin', $record['vin'])->first();
 
               if ($archivedRecord) {
                   // If it exists, update the existing record
-                  $archivedRecord->update($record->toArray());
+                  $archivedRecord->update($record);
               } else {
                   // If it doesn't exist, create a new one
-                  VehicleRecordArchived::create($record->toArray());
+                  DB::connection('mysql')->table('vehicle_record_archiveds')->insert($record);
               }
 
               // Insert record into SaleAuctionHistory
-              SaleAuctionHistory::create($record);
+              DB::connection('mysql')->table('sale_auction_histories')->insert($record);
 
-              $record->delete();
+              DB::table('vehicle_records')->where('id', $this->recordId)->delete();
 
         } catch (\Exception $e) {
-            Log::error("Error processing auction record VIN: {$this->record->vin} - " . $e->getMessage());
+            Log::error("Error processing auction record VIN: {$record['vin']} - " . $e->getMessage());
         }
     }
 }

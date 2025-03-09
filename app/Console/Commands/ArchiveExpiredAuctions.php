@@ -40,9 +40,9 @@ class ArchiveExpiredAuctions extends Command
             $startTime = microtime(true);
             $startDateTime = Carbon::now();
             $this->info("Process Archived Expired Auction Data started at: " . $startDateTime);
-            \Log::info("Process Archived Expired Auction Data started at: " . $startDateTime);
+            Log::info("Process Archived Expired Auction Data started at: " . $startDateTime);
 
-            $cronRun = DB::table('cron_run_history')->insertGetId([
+            $cronRun = DB::connection('mysql')->table('cron_run_history')->insertGetId([
                 'cron_name' => 'process_auction_archive',
                 'start_time' => $startDateTime,
                 'status' => 'running',
@@ -50,22 +50,22 @@ class ArchiveExpiredAuctions extends Command
                 'updated_at' => now(),
             ]);
 
-            $batchSize = config('app.batch_size');
+            $batchSize = intval(config('app.batch_size'));
             // $expiredRecords = VehicleRecord::whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [now()])->get();
             $totalArchived = 0;
-            VehicleRecord::whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [now()])
+            DB::table('vehicle_records')
+            ->whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [now()])
             ->chunk($batchSize, function ($expiredRecords) use (&$totalArchived) {
                 foreach ($expiredRecords as $record) {
-                    $record->status_id = 7;
-                    ArchiveExpiredAuctionsJob::dispatch($record);
+                    ArchiveExpiredAuctionsJob::dispatch($record->id);
                 }
-                $totalArchived += $expiredRecords->count();
+                $totalArchived += count($expiredRecords);
             });
 
             if ($totalArchived === 0) {
                 $this->info("No expired auctions found.");
                 Log::info("No expired auctions found.");
-                DB::table('cron_run_history')->where('id', $cronRun)->update([
+                DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
                     'end_time' => Carbon::now(),
                     'status' => 'success',
                     'updated_at' => now(),
@@ -76,7 +76,7 @@ class ArchiveExpiredAuctions extends Command
             $this->info("Successfully archived and deleted {$totalArchived} expired auctions.");
             Log::info("Successfully archived and deleted {$totalArchived} expired auctions.");
 
-            DB::table('cron_run_history')->where('id', $cronRun)->update([
+            DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
                 'total_records' => $totalArchived,
                 'end_time' => Carbon::now(),
                 'status' => 'success',
@@ -87,7 +87,7 @@ class ArchiveExpiredAuctions extends Command
             Log::error("Error in auction:archive cron job - " . $e->getMessage());
             $this->error("An error occurred while archiving expired auctions.");
 
-            DB::table('cron_run_history')->where('id', $cronRun)->update([
+            DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
                 'end_time' => Carbon::now(),
                 'status' => 'failed',
                 'error_message' => $e->getMessage(),
