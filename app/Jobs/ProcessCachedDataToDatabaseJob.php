@@ -474,13 +474,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
             $apiIds = array_column($batchData, 'api_id');
 
             // Fetch existing records by API ID
-            $existingRecords = DB::connection('mysql')->table('vehicle_records')
-            ->whereIn('api_id', $apiIds)
-            ->get(['api_id', 'id'])
-            ->mapWithKeys(fn($row) => [(string) $row->api_id => (int) $row->id])
-            ->toArray();
-
-
+            $existingRecords = DB::connection('mysql')->table('vehicle_records')->whereIn('api_id', $apiIds)->pluck('id', 'api_id');
 
             // Lists for new and updated records
             $newRecords = [];
@@ -515,10 +509,6 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
 
             // ✅ Bulk Update Existing Records
             if (!empty($updatedRecords)) {
-                $updatedRecords = array_map(fn($record) =>
-                    array_map(fn($value) => is_object($value) ? json_encode($value) : $value, $record),
-                    $updatedRecords
-                );
                 DB::connection('mysql')->table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
             }
 
