@@ -258,7 +258,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
         : null;
         Log::info('Seller Branch', ['data' => $selling_branch_id]);
 
-        $odometer_id = DB::connection('mysql')->table('odometer')
+        $odometer_id = DB::connection('mysql')->table('odometers')
             ->where('name', $car['vehicle_record']['odometer']['name'])
             ->value('id')
             ?? DB::connection('mysql')->table('odometer')->insertGetId(['name' => $car['vehicle_record']['odometer']['name']]);
