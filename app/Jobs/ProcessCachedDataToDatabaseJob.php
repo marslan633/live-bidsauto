@@ -488,16 +488,16 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                         $record['id'] = $existingRecords[$record['api_id']]; // Add ID for update
                         $record['processed_at'] = Carbon::now();
                         $record['updated_at'] = Carbon::now();
-                        $updatedRecords[] = (array)$record;
+                        $updatedRecords[] = $record;
                     } else {
                         // New record - insert
                         $record['is_new'] = true;
                         $record['processed_at'] = Carbon::now();
                         $record['created_at'] = Carbon::now();
-                        $newRecords[] = (array)$record;
+                        $newRecords[] = $record;
                     }
                 } catch (\Exception $e) {
-                    $failedRecords[] = (array)$record;
+                    $failedRecords[] = $record;
                     Log::info("Skipping record due to error: " . $e->getMessage());
                 }
             }
