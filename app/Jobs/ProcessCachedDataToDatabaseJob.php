@@ -121,12 +121,12 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     DB::connection('mysql')->table('images')
                         ->where('id', $existingImage->id)
                         ->update([
-                            'small' => json_encode($imageRecord['small'] ?? []),
-                            'normal' => json_encode($imageRecord['normal'] ?? []),
-                            'big' => json_encode($imageRecord['big'] ?? []),
-                            'downloaded' => json_encode($imageRecord['downloaded'] ?? []),
-                            'exterior' => json_encode($imageRecord['exterior'] ?? []),
-                            'interior' => json_encode($imageRecord['interior'] ?? []),
+                            'small' => $imageRecord['small'] ?? [],
+                            'normal' => $imageRecord['normal'] ?? [],
+                            'big' => $imageRecord['big'] ?? [],
+                            'downloaded' => $imageRecord['downloaded'] ?? [],
+                            'exterior' => $imageRecord['exterior'] ?? [],
+                            'interior' => $imageRecord['interior'] ?? [],
                             'video' => $imageRecord['video'] ?? null,
                             'video_youtube_id' => $imageRecord['video_youtube_id'] ?? null,
                             'external_panorama_url' => $imageRecord['external_panorama_url'] ?? null,
@@ -137,12 +137,12 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
 
                 return DB::connection('mysql')->table('images')->insertGetId([
                     'image_api_id' => $imageRecord['image_api_id'],
-                    'small' => json_encode($imageRecord['small'] ?? []),
-                    'normal' => json_encode($imageRecord['normal'] ?? []),
-                    'big' => json_encode($imageRecord['big'] ?? []),
-                    'downloaded' => json_encode($imageRecord['downloaded'] ?? []),
-                    'exterior' => json_encode($imageRecord['exterior'] ?? []),
-                    'interior' => json_encode($imageRecord['interior'] ?? []),
+                    'small' => $imageRecord['small'] ?? [],
+                    'normal' => $imageRecord['normal'] ?? [],
+                    'big' => $imageRecord['big'] ?? [],
+                    'downloaded' => $imageRecord['downloaded'] ?? [],
+                    'exterior' => $imageRecord['exterior'] ?? [],
+                    'interior' => $imageRecord['interior'] ?? [],
                     'video' => $imageRecord['video'] ?? null,
                     'video_youtube_id' => $imageRecord['video_youtube_id'] ?? null,
                     'external_panorama_url' => $imageRecord['external_panorama_url'] ?? null,

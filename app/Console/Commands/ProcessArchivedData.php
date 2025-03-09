@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
+use Illuminate\Support\Facades\Log;
 
 class ProcessArchivedData extends Command
 {
@@ -40,7 +41,7 @@ class ProcessArchivedData extends Command
         $startDateTime = Carbon::now();
         if(config('app.env') !== 'production'){
             $this->info("Process started at: " . $startDateTime);
-            \Log::info("Process started at: " . $startDateTime);
+            Log::info("Process started at: " . $startDateTime);
         }
 
         // Get the last cron job status
@@ -60,7 +61,7 @@ class ProcessArchivedData extends Command
             $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
         if(config('app.env') !== 'production'){
             $this->info("Time Difference: {$timeDifference}");
-            \Log::info("Time Difference: {$timeDifference}");
+            Log::info("Time Difference: {$timeDifference}");
         }
 
             // Apply the new conditions
@@ -73,7 +74,7 @@ class ProcessArchivedData extends Command
 
         if(config('app.env') !== 'production'){
         $this->info("Minutes Parameter After Checking: {$minutes}");
-        \Log::info("Minutes Parameter After Checking: {$minutes}");
+        Log::info("Minutes Parameter After Checking: {$minutes}");
         }
         $cronRun = DB::table('cron_run_history')->insertGetId([
             'cron_name' => 'process_archived_vehicle_data',
@@ -91,7 +92,7 @@ class ProcessArchivedData extends Command
         $apiUrl = "{$baseUrl}?per_page={$perPage}&minutes={$minutes}&simple_paginate=1&page=1";
 
         if(config('app.env') !== 'production'){
-        \Log::info("API: {$apiUrl}");
+        Log::info("API: {$apiUrl}");
         }
 
         try {
@@ -104,7 +105,7 @@ class ProcessArchivedData extends Command
                 ->retry(3, 1000)
                 ->get($apiUrl);
                 if(config('app.env') !== 'production'){
-                    \Log::info("API URL: {$apiUrl}");
+                    Log::info("API URL: {$apiUrl}");
                 }
                 if ($response->successful()) {
                     $data = $response->json()['data'] ?? [];
@@ -122,24 +123,24 @@ class ProcessArchivedData extends Command
 
                         if(config('app.env') !== 'production'){
                             $this->info("Data saved in cache with key: {$cacheKey}");
-                            \Log::info("Data saved in cache with key: {$cacheKey}");
+                            Log::info("Data saved in cache with key: {$cacheKey}");
                         }
                     } else {
                         if(config('app.env') !== 'production'){
-                            \Log::info("No data to cache. Skipping cache storage for key: {$cacheKey}");
+                            Log::info("No data to cache. Skipping cache storage for key: {$cacheKey}");
                         }
                     }
                 } else {
                     if(config('app.env') !== 'production'){
                         $this->error('Failed to fetch API data.');
-                        \Log::info('Failed to fetch API data.');
+                        Log::info('Failed to fetch API data.');
                     }
                     break;
                 }
 
                 if(config('app.env') !== 'production'){
                     $this->info('Data processed successfully.');
-                    \Log::info('Data processed successfully.');
+                    Log::info('Data processed successfully.');
                 }
                 // Get 'next' page URL
                 $nextUrl = $response->json()['links']['next'] ?? null;
@@ -175,14 +176,14 @@ class ProcessArchivedData extends Command
 
                     if(config('app.env') !== 'production'){
                         $this->info('No more pages to fetch.');
-                        \Log::info('No more pages to fetch.');
+                        Log::info('No more pages to fetch.');
                     }
                 }
             } while ($nextUrl !== null);
         } catch (\Exception $e) {
             if(config('app.env') !== 'production'){
                 $this->error("Error: " . $e->getMessage());
-                \Log::error("Error: " . $e->getMessage());
+                Log::error("Error: " . $e->getMessage());
             }
             DB::table('cron_run_history')->where('id', $cronRun)->update([
                 'end_time' => Carbon::now(),

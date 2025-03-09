@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('api_id')->nullable();
             $table->integer('year')->nullable();
             $table->unsignedBigInteger('year_id')->nullable();
-            $table->string('title')->nullable();    
+            $table->string('title')->nullable();
             $table->string('vin')->nullable();
             $table->unsignedBigInteger('manufacturer_id')->nullable();
             $table->unsignedBigInteger('vehicle_model_id')->nullable();
