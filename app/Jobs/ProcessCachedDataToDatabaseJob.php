@@ -85,6 +85,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
 
     public function prepareCarData(array $car)
     {
+        Log::info('Car Dara', ['CarData' => json_encode($car)]);
         $year = null;
         if (!empty($car['year'])) {
             $year = DB::connection('mysql')->table('years')->insertGetId(['name' => $car['year']]);
