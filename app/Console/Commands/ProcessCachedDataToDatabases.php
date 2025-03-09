@@ -96,7 +96,9 @@ class ProcessCachedDataToDatabases extends Command
         // Iterate over the cache keys and create jobs
         foreach ($cacheKeys as $cacheKey) {
             // TestJob::dispatch($cacheKey->id, $cacheKey->cache_key);
+            $this->info('Data Starting Handover To Job Done ' . $cacheKey->cache_key);
             ProcessCachedDataToDatabaseJob::dispatch($cacheKey->id, $cacheKey->cache_key);
+            $this->info('Data End Handover To Job Done ' . $cacheKey->cache_key);
             // $jobs[] = new ProcessCachedDataToDatabaseJob($cacheKey->id, $cacheKey->cache_key);
         }
 
