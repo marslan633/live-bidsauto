@@ -43,7 +43,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
      */
     public function handle(): void
     {
-        Log::info('Log From Database Hanlde');
+        // Log::info('Log From Database Hanlde');
           try {
                 $key = $this->cacheKey;
                 $data = json_decode(Cache::store('redis_cache')->get($key), true);
@@ -54,15 +54,17 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                 $batchData = [];
                 $batchSize = intval(config('app.batch_size'));
                 foreach ($data as $car) {
-                    Log::info('Starting Batch Insert');
+                    // Log::info('Starting Batch Insert');
                     // **Process Data but Store in Batch**
                     $batchData[] = $this->prepareCarData((array) $car);
-
+                    Log::info('Batch Condiiton', ['batchData' => count($batchData), 'batchSize' => $batchSize]);
                     // If batch reaches 1000, insert and reset
                     if (count($batchData) >= $batchSize) {
                         Log::info('Batch Inserted');
                         $this->insertBatch($batchData);
                         $batchData = []; // Reset batch
+                    }else{
+                        Log::info('Batch Condition Not Meet');
                     }
 
                 }
