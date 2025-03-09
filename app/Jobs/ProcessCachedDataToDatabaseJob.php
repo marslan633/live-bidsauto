@@ -163,7 +163,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
 
         $generation_id = DB::connection('mysql')->table('generations')
         ->where('generation_api_id', $car['generation']['generation_api_id'])
-        ->value(['id']) ?? DB::connection('mysql')->table('generations')->insertGetId([
+        ->value('id') ?? DB::connection('mysql')->table('generations')->insertGetId([
                 'generation_api_id' => $car['generation']['generation_api_id'],
                 'name' => $car['generation']['name'],
                 'model_id' => $model_id,
