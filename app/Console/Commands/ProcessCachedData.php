@@ -45,8 +45,8 @@ public function handle()
     \Log::info("Process started at: " . $startDateTime);
 
     try {
-        DB::connection('mysql')->beginTransaction();
-        DB::connection('mysql_remote')->beginTransaction();
+        // DB::connection('mysql')->beginTransaction();
+        // DB::connection('mysql_remote')->beginTransaction();
         $cronRun = DB::table('cron_run_history')->insertGetId([
             'cron_name' => 'process_cached_data',
             'start_time' => $startDateTime,
@@ -76,8 +76,8 @@ public function handle()
 
         if ($cacheKeys->isEmpty()) {
             $this->info("No pending cache keys found.");
-            DB::connection('mysql')->commit();
-            DB::connection('mysql_remote')->commit();
+            // DB::connection('mysql')->commit();
+            // DB::connection('mysql_remote')->commit();
             return;
         }
 
@@ -85,11 +85,11 @@ public function handle()
 
         // Update status in bulk
         $CacheModel->whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
-        DB::connection('mysql')->commit();
-        DB::connection('mysql_remote')->commit();
+        // DB::connection('mysql')->commit();
+        // DB::connection('mysql_remote')->commit();
     } catch (\Exception $e) {
-        DB::connection('mysql')->rollBack();
-        DB::connection('mysql_remote')->rollBack();
+        // DB::connection('mysql')->rollBack();
+        // DB::connection('mysql_remote')->rollBack();
         Log::info("Error fetching cache keys: ", ['data' => json_encode($e->getMessage())]);
         $this->handleCronError($cronRun, "Error fetching cache keys: " . $e->getMessage());
         return;
@@ -97,6 +97,7 @@ public function handle()
 
 
     foreach ($cacheKeys as $cacheKey) {
+        $this->info('Cache Key Running: ' . $cacheKey->cache_key);
         try{
             $CacheModel = $IS_KVM_TWO === true ? DB::connection('mysql_remote')->table('cache_keys') : DB::connection('mysql')->table('cache_keys');
 
