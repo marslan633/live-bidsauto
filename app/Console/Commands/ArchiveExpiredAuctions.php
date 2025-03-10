@@ -59,7 +59,7 @@ class ArchiveExpiredAuctions extends Command
             ->limit(1000)
             ->chunk($batchSize, function ($expiredRecords) use (&$totalArchived) {
                 foreach ($expiredRecords as $record) {
-                    Log::info('Archived Expired Acution Job Running For: ' . $record->id);
+                    // Log::info('Archived Expired Acution Job Running For: ' . $record->id);
                     ArchiveExpiredAuctionsJob::dispatch($record->id);
                 }
                 $totalArchived += count($expiredRecords);
