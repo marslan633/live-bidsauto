@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\VehicleRecord;
 use App\Models\VehicleRecordArchived;
 use App\Models\SaleAuctionHistory;
+use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -47,6 +48,8 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
 
             $record = (array) $record;
             $record['status_id'] = 7;
+            $record['updated_at'] = Carbon::now();
+
               // Check if the record already exists in VehicleRecordArchived
               $archivedRecord = DB::connection('mysql')->table('vehicle_record_archiveds')->where('vin', $record['vin'])->first();
 
@@ -60,7 +63,8 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
               } else {
                   // If it doesn't exist, create a new one
                 //   Log::info("Archived Expired Creating Record: ", ['record' => json_encode($record)]);
-                  DB::connection('mysql')->table('vehicle_record_archiveds')->insert($record);
+                $record['created_at'] = Carbon::now();
+                DB::connection('mysql')->table('vehicle_record_archiveds')->insert($record);
               }
 
               // Insert record into SaleAuctionHistory
@@ -83,7 +87,9 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
                 'bid' => $record['bid'],
                 'odometer_mi' => $record['odometer_mi'],
                 'status_id' => $record['status_id'],
-                'seller_id' => $record['seller_id']
+                'seller_id' => $record['seller_id'],
+                'created_at' => $record['created_at'],
+                'updated_at' => $record['updated_at']
               ]);
 
 
