@@ -55,8 +55,6 @@ class ArchiveExpiredAuctions extends Command
             $totalArchived = 0;
             DB::table('vehicle_records')
             ->whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [now()])
-            ->orderBy('id', 'asc')
-            ->limit(1000)
             ->chunk($batchSize, function ($expiredRecords) use (&$totalArchived) {
                 foreach ($expiredRecords as $record) {
                     // Log::info('Archived Expired Acution Job Running For: ' . $record->id);

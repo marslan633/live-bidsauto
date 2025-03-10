@@ -23,6 +23,8 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
     {
         $this->queue = "cached_archived_data_queue";
         $this->cacheKey = $cacheKey;
+        Log::info('Process Cached Archived Constructr ');
+
     }
 
     /**
@@ -30,6 +32,8 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
      */
     public function handle(): void
     {
+        Log::info('Process Cached Archived Data Job Handle Calling');
+
         try {
             $key = $this->cacheKey->cache_key;
             // Retrieve data from cache
@@ -48,7 +52,9 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
 
                 // Process batch when the limit is reached
                 if (count($batchData) >= $batchSize) {
+                    Log::info('Batch Start Insert');
                     $this->insertBatch($batchData);
+                    Log::info('Batch End Insert');
                     $batchData = []; // Reset batch
                 }
             }
@@ -62,7 +68,7 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
             Log::info("Data for cache key '{$key}' processed successfully.");
 
             // Delete the cache key from the table
-            DB::connection('mysql')->table('cache_keys')->where('cache_key', $key)->delete();
+            DB::connection('mysql_remote')->table('cache_keys')->where('cache_key', $key)->delete();
 
             // Remove processed data from cache
             Cache::store('redis_cache')->forget($key);
@@ -95,7 +101,7 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
                 return;
             }
 
-            DB::beginTransaction();
+            DB::connection('mysql')->beginTransaction();
 
             // Extract lot IDs
             $lotIds = array_column($batchData, 'lot_id');
@@ -138,11 +144,11 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
                 DB::connection('mysql')->table('vehicle_record_archiveds')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
             }
 
-            DB::commit();
+            DB::connection('mysql')->commit();
 
             Log::info("Batch processed successfully with " . count($newRecords) . " new and " . count($updatedRecords) . " updated records.");
         } catch (\Exception $e) {
-            DB::rollBack();
+            DB::connection('mysql')->rollBack();
             Log::error("Batch processing failed: " . $e->getMessage());
         }
     }

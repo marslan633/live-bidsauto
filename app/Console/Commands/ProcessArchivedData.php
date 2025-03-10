@@ -39,19 +39,20 @@ class ProcessArchivedData extends Command
     {
         $startTime = microtime(true);
         $startDateTime = Carbon::now();
+
         if(config('app.env') !== 'production'){
             $this->info("Process started at: " . $startDateTime);
             Log::info("Process started at: " . $startDateTime);
         }
 
         // Get the last cron job status
-        $lastCron = DB::table('cron_run_history')
+        $lastCron = DB::connection('mysql')->table('cron_run_history')
             ->where('cron_name', 'process_archived_vehicle_data')
             ->where('status', 'success')
             ->latest('start_time')
             ->first();
 
-        $minutes = 20; // Default minutes value
+        $minutes = 2500; // Default minutes value
 
         if ($lastCron && $lastCron->end_time) {
             // Convert end_time to Carbon instance
@@ -76,7 +77,7 @@ class ProcessArchivedData extends Command
         $this->info("Minutes Parameter After Checking: {$minutes}");
         Log::info("Minutes Parameter After Checking: {$minutes}");
         }
-        $cronRun = DB::table('cron_run_history')->insertGetId([
+        $cronRun = DB::connection('mysql')->table('cron_run_history')->insertGetId([
             'cron_name' => 'process_archived_vehicle_data',
             'start_time' => $startDateTime,
             'status' => 'running',
@@ -87,7 +88,6 @@ class ProcessArchivedData extends Command
 
         $perPage = 1000;
         $baseUrl = 'http://carstat.dev/api/archived-lots';
-        $minutes = 1600;
 
         $apiUrl = "{$baseUrl}?per_page={$perPage}&minutes={$minutes}&simple_paginate=1&page=1";
 
@@ -168,7 +168,7 @@ class ProcessArchivedData extends Command
                     $apiUrl = $nextUrl;
                 } else {
                     // Update cron_run_history with success status
-                    DB::table('cron_run_history')->where('id', $cronRun)->update([
+                    DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
                         'end_time' => Carbon::now(),
                         'status' => 'success',
                         'updated_at' => now(),
@@ -185,7 +185,7 @@ class ProcessArchivedData extends Command
                 $this->error("Error: " . $e->getMessage());
                 Log::error("Error: " . $e->getMessage());
             }
-            DB::table('cron_run_history')->where('id', $cronRun)->update([
+            DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
                 'end_time' => Carbon::now(),
                 'status' => 'failed',
                 'error_message' => $e->getMessage(),
