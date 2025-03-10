@@ -62,7 +62,18 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
 
               // Insert record into SaleAuctionHistory
               Log::info("Archived Expired Record Insert In Sale_acution_histories: ", ['record' => json_encode($record)]);
-              DB::connection('mysql')->table('sale_auction_histories')->insert($record);
+
+              DB::connection('mysql')->table('sale_auction_histories')->insert([
+                'vin' => $record['vin'],
+                'domain_id' => $record['domain_id'],
+                'sale_date' => $record['sale_date'],
+                'lot_id' => $record['lot_id'],
+                'bid' => $record['bid'],
+                'odometer_mi' => $record['odometer_mi'],
+                'status_id' => $record['status_id'],
+                'seller_id' => $record['seller_id']
+              ]);
+
 
               DB::table('vehicle_records')->where('id', $this->recordId)->delete();
 
