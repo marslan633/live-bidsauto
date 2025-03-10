@@ -91,5 +91,5 @@ Route::get('store-redis-data-to-database', function(){
 });
 
 Route::get('get-jobs', function(Request $request){
-    return DB::connection('mysql')->table($request->table)->paginate();
+    return DB::connection('mysql')->table($request->table)->paginate(100);
 });
