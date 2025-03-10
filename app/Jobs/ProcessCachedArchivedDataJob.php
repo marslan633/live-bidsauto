@@ -37,7 +37,7 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
         try {
             $key = $this->cacheKey->cache_key;
             // Retrieve data from cache
-            $data = Cache::store('redis_cache')->get($key);
+            $data =  json_decode(Cache::store('redis_cache')->get($key), true);
 
             if (!$data) {
                 Log::info("No data found in cache for key: {$key}");
