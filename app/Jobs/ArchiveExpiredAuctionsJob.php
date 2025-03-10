@@ -24,7 +24,9 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
      */
     public function __construct($recordId)
     {
+        $this->queue = 'expired_auction_archive_queue';
         $this->recordId = $recordId;
+        Log::info('Archived Expired Job Construter Calling');
     }
 
     /**
@@ -32,12 +34,14 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
      */
     public function handle()
     {
+        Log::info('Archived Expired Job Handle Function Calling');
         try {
 
             $record  = DB::connection('mysql')->table('vehicle_records')->where('id', $this->recordId)->first();
+            Log::info('Record Fetched', ['record' => json_encode($record)]);
 
             if (!$record) {
-                Log::error("Auction record not found for ID: {$this->recordId}");
+                Log::info("Auction record not found for ID: {$this->recordId}");
                 return;
             }
 
@@ -48,13 +52,16 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
 
               if ($archivedRecord) {
                   // If it exists, update the existing record
+                    Log::info("Archived Expired Updating Record: ", ['record' => json_encode($archivedRecord)]);
                   $archivedRecord->update($record);
               } else {
                   // If it doesn't exist, create a new one
+                  Log::info("Archived Expired Creating Record: ", ['record' => json_encode($record)]);
                   DB::connection('mysql')->table('vehicle_record_archiveds')->insert($record);
               }
 
               // Insert record into SaleAuctionHistory
+              Log::info("Archived Expired Record Insert In Sale_acution_histories: ", ['record' => json_encode($record)]);
               DB::connection('mysql')->table('sale_auction_histories')->insert($record);
 
               DB::table('vehicle_records')->where('id', $this->recordId)->delete();

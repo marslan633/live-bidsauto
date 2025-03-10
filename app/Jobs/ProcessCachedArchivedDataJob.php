@@ -21,6 +21,7 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
     public $cacheKey;
     public function __construct($cacheKey)
     {
+        $this->queue = "cached_archived_data_queue";
         $this->cacheKey = $cacheKey;
     }
 
