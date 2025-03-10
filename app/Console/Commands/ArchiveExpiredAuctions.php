@@ -55,6 +55,7 @@ class ArchiveExpiredAuctions extends Command
             $totalArchived = 0;
             DB::table('vehicle_records')
             ->whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [now()])
+            ->orderBy('id', 'asc')
             ->limit(1000)
             ->chunk($batchSize, function ($expiredRecords) use (&$totalArchived) {
                 foreach ($expiredRecords as $record) {
@@ -86,8 +87,8 @@ class ArchiveExpiredAuctions extends Command
             ]);
 
         } catch (Exception $e) {
-            Log::error("Error in auction:archive cron job - " . $e->getMessage());
             $this->error("An error occurred while archiving expired auctions.");
+            Log::error("Error in auction:archive cron job - " . $e->getMessage());
 
             DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
                 'end_time' => Carbon::now(),
@@ -98,8 +99,8 @@ class ArchiveExpiredAuctions extends Command
 
             // Send email notification
             $cronJobName = 'process_auction_archive';
-            $adminEmails = explode(',', env('ADMIN_EMAIL'));
-            Mail::to($adminEmails)->send(new CronJobFailedMail($e->getMessage(), $cronJobName));
+            // $adminEmails = explode(',', env('ADMIN_EMAIL'));
+            // Mail::to($adminEmails)->send(new CronJobFailedMail($e->getMessage(), $cronJobName));
         }
     }
 }
