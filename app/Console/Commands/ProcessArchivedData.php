@@ -116,9 +116,14 @@ class ProcessArchivedData extends Command
                         Cache::store('redis')->put($cacheKey, $data, $expiresAt);
 
                         // Save cache details to database
-                        CacheKey::updateOrCreate(
+                        DB::connection('mysql')->table('cache_keys')->updateOrInsert(
                             ['cache_key' => $cacheKey],
-                            ['status' => 'pending', 'expires_at' => $expiresAt]
+                            [
+                                'status' => 'pending',
+                                'expires_at' => $expiresAt,
+                                'created_at' => Carbon::now(),
+                                'updated_at' => Carbon::now(),
+                            ]
                         );
 
                         if(config('app.env') !== 'production'){

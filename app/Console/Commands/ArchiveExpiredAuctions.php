@@ -50,7 +50,7 @@ class ArchiveExpiredAuctions extends Command
                 'updated_at' => now(),
             ]);
 
-            $batchSize = 100;
+            $batchSize = intval(config('app.batch_size'));
             // $expiredRecords = VehicleRecord::whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [now()])->get();
             $totalArchived = 0;
             DB::table('vehicle_records')

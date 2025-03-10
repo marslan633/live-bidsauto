@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\CacheKey;
 use App\Models\RemoteCacheKey;
+use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -80,7 +81,12 @@ class ProcessCachedDataJob implements ShouldQueue
 
             $RemoteCacheModel->updateOrInsert(
                 ['cache_key' => $cacheKey],
-                ['status' => 'pending', 'expires_at' => $expiresAt]
+                [
+                    'status' => 'pending',
+                    'expires_at' => $expiresAt,
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now(),
+                ]
             );
 
             // Remove cache key from DB and Redis
