@@ -53,7 +53,10 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
               if ($archivedRecord) {
                   // If it exists, update the existing record
                     // Log::info("Archived Expired Updating Record: ", ['record' => json_encode($archivedRecord)]);
-                  $archivedRecord->update($record);
+                    DB::connection('mysql')
+                    ->table('vehicle_record_archiveds')
+                    ->where('id', $archivedRecord->id)
+                    ->update($record);
               } else {
                   // If it doesn't exist, create a new one
                 //   Log::info("Archived Expired Creating Record: ", ['record' => json_encode($record)]);
