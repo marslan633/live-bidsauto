@@ -83,12 +83,14 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
 
     private function prepareArchivedData(array $car)
     {
-        return [
+        $data = [
             'lot_id' => $car['lot'],
             'status_id' => $car['status']['id'],
             'bid' => $car['bid'],
             'final_bid_updated_at' => $car['final_bid_updated_at'],
         ];
+        Log::info('Prepared Archived Data', ['data' => json_encode($data)]);
+        return $data;
     }
 
     /**
