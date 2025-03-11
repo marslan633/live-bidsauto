@@ -53,7 +53,7 @@ if(config('app.app_kvm_three') === true){
     /**
      * Cron Job - Move expired auctions from VehicleRecord to VehicleRecordArchived table.
     */
-    app(Schedule::class)->command('process:expired-auction-archive')->hourly()->withoutOverlapping();
+    // app(Schedule::class)->command('process:expired-auction-archive')->hourly()->withoutOverlapping();
 
 
     /**
