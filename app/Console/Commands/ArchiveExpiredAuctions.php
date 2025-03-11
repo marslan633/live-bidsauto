@@ -55,9 +55,9 @@ class ArchiveExpiredAuctions extends Command
             $totalArchived = 0;
             DB::table('vehicle_records')
             ->whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [now()])
+            ->orderBy('created_at') // Required for Laravel 11 chunking
             ->chunk($batchSize, function ($expiredRecords) use (&$totalArchived) {
                 foreach ($expiredRecords as $record) {
-                    // Log::info('Archived Expired Acution Job Running For: ' . $record->id);
                     ArchiveExpiredAuctionsJob::dispatch($record->id);
                 }
                 $totalArchived += count($expiredRecords);

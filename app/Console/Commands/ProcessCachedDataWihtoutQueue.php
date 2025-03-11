@@ -72,7 +72,7 @@ class ProcessCachedDataWihtoutQueue extends Command
             $cacheKeys = $CacheModel->where('cache_key', 'like', 'vehicle_api_data_%')
                 ->where('status', 'pending')
                 ->orderBy('created_at', 'asc')
-                ->take(30)
+                ->take(15)
                 ->get();
 
             if ($cacheKeys->isEmpty()) {
@@ -143,7 +143,12 @@ class ProcessCachedDataWihtoutQueue extends Command
 
                 $RemoteCacheModel->updateOrInsert(
                     ['cache_key' => $cacheKey],
-                    ['status' => 'pending', 'expires_at' => $expiresAt]
+                    [
+                    'status' => 'pending',
+                    'expires_at' => $expiresAt,
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now()
+                    ]
                 );
 
                 // Remove cache key from DB and Redis

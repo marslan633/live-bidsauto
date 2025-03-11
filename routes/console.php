@@ -27,8 +27,9 @@ if(config('app.app_kvm_one') === true){
     //     Log::error('process:api-data failed.');
     // });
     // app(Schedule::class)->command('process:api-data')->everyFiveMinutes()->withoutOverlapping();
-    app(Schedule::class)->command('process:api-data')->dailyAt('20:20')->withoutOverlapping();
-    app(Schedule::class)->command('process:cached-data')->everyFiveMinutes()->withoutOverlapping();
+    app(Schedule::class)->command('process:api-data')->dailyAt('12:45')->withoutOverlapping();
+    // app(Schedule::class)->command('process:cached-data')->everyFiveMinutes()->withoutOverlapping();
+    app(Schedule::class)->command('process:cached-data-without-queue')->everyFiveMinutes()->withoutOverlapping();
 
 }
 
