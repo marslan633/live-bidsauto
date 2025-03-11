@@ -26,8 +26,8 @@ if(config('app.app_kvm_one') === true){
     //     // Log the failure of process:api-data
     //     Log::error('process:api-data failed.');
     // });
-    // app(Schedule::class)->command('process:api-data')->everyFiveMinutes()->withoutOverlapping();
-    app(Schedule::class)->command('process:api-data')->dailyAt('12:45')->withoutOverlapping();
+    app(Schedule::class)->command('process:api-data')->everyFiveMinutes()->withoutOverlapping();
+    // app(Schedule::class)->command('process:api-data')->dailyAt('12:45')->withoutOverlapping();
     // app(Schedule::class)->command('process:cached-data')->everyFiveMinutes()->withoutOverlapping();
     app(Schedule::class)->command('process:cached-data-without-queue')->everyFiveMinutes()->withoutOverlapping();
 
@@ -37,7 +37,7 @@ if(config('app.app_kvm_two') === true){
         /**
      * Cron Job - Update the data (bid, final_bid_updated_at, status) of archived vehicle table on the base of third party api.
     */
-    app(Schedule::class)->command('process:archived-data')->everySixHours()->withoutOverlapping();
+    app(Schedule::class)->command('process:archived-data')->everyFifteenMinutes()->withoutOverlapping();
 }
 
 if(config('app.app_kvm_three') === true){
