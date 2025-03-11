@@ -13,6 +13,8 @@ class RemoteCacheKey extends Model
         'cache_key',
         'cache_value',
         'expires_at',
-        'status'
+        'status',
+        'created_at',
+        'updated_at'
     ];
 }
