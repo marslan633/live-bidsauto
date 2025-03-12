@@ -14,4 +14,8 @@ class CacheKey extends Model
         'created_at',
         'updated_at'
     ];
+
+    protected $casts = [
+        'cache_value' => 'array',
+    ];
 }

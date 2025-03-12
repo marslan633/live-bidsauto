@@ -4,10 +4,8 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
-use App\Models\{CacheKey};
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
 use Illuminate\Support\Facades\Log;
@@ -113,13 +111,13 @@ class ProcessArchivedData extends Command
                     $expiresAt = now()->addMinutes(intval(config('app.cache_key_expiry'))); // Store for 8 hours
 
                     if (count($data) > 0) {
-                        Cache::store('redis')->put($cacheKey, $data, $expiresAt);
 
                         // Save cache details to database
                         DB::connection('mysql')->table('cache_keys')->updateOrInsert(
                             ['cache_key' => $cacheKey],
                             [
                                 'status' => 'pending',
+                                'cache_value' => $data,
                                 'expires_at' => $expiresAt,
                                 'created_at' => Carbon::now(),
                                 'updated_at' => Carbon::now(),

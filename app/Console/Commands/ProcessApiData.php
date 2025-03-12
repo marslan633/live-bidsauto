@@ -2,24 +2,17 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Http;
-use App\Models\{
-    VehicleRecord, Manufacturer, VehicleModel, Generation, BodyType, Color,
-    Transmission, DriveWheel, Fuel, Condition, Status, VehicleType, Domain,
-    Engine, Seller, SellerType, Title, DetailedTitle, Damage, Image, Country,
-    State, City, Location, SellingBranch, Year, BuyNow, Odometer, CacheKey
-};
+use App\Models\CacheKey;
 use Carbon\Carbon;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\CronJobFailedMail;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class ProcessApiData extends Command
 {
     protected $signature = 'process:api-data';
+
     protected $description = 'Fetch data from API and push it to Redis';
 
     public function handle()
@@ -59,16 +52,16 @@ class ProcessApiData extends Command
         }
 
         if (config('app.env') !== 'production') {
-            $this->info("🚀 Process started at: " . $startDateTime);
-            Log::info("🚀 Process started at: " . $startDateTime);
+            $this->info('🚀 Process started at: '.$startDateTime);
+            Log::info('🚀 Process started at: '.$startDateTime);
             // \Log::info("🚀 Process started at: " . $startDateTime);
         }
 
         // **Store Cron Job Status**
         $cronRun = DB::table('cron_run_history')->insertGetId([
-            'cron_name'  => 'process_vehicle_data',
+            'cron_name' => 'process_vehicle_data',
             'start_time' => $startDateTime,
-            'status'     => 'running',
+            'status' => 'running',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -88,11 +81,11 @@ class ProcessApiData extends Command
                 $response = Http::withHeaders([
                     'x-api-key' => config('app.car_api_key'),
                 ])
-                ->timeout(120)
-                ->retry(3, 1000)
-                ->get($apiUrl);
+                    ->timeout(120)
+                    ->retry(3, 1000)
+                    ->get($apiUrl);
 
-                if (!$response->successful()) {
+                if (! $response->successful()) {
                     $this->error('❌ Failed to fetch API data.');
                     // \Log::error('❌ Failed to fetch API data.');
                     break;
@@ -100,64 +93,62 @@ class ProcessApiData extends Command
 
                 $data = $response->json()['data'] ?? null;
 
-                if (!empty($data)) {
+                if (! empty($data)) {
 
-                        // Save all data to cache with a unique cache key
-                    $cacheKey = 'vehicle_api_data_' . now()->format('Y_m_d_H_i_s');
+                    // Save all data to cache with a unique cache key
+                    $cacheKey = 'vehicle_api_data_'.now()->format('Y_m_d_H_i_s');
                     $expiresAt = now()->addMinutes(intval(config('app.cache_key_expiry'))); // Store for 20 Days
                     $this->info("cache key {$cacheKey}.");
                     $this->info("cache key {$cacheKey}.");
                     // \Log::info("cache key {$cacheKey}.");
 
                     if (count($data) > 0) {
-                    Cache::store('redis')->put($cacheKey, $data, $expiresAt);
+                        CacheKey::updateOrCreate(
+                            ['cache_key' => $cacheKey],
+                            [
+                                'status' => 'pending',
+                                'cache_value' => $data,
+                                'expires_at' => $expiresAt,
+                            ]);
 
-                    // Save cache details to database
-                    CacheKey::updateOrCreate(
-                   ['cache_key' => $cacheKey],
-                   [
-                    'status' => 'pending',
-                    'expires_at' => $expiresAt,
-                    ]);
-
-                   $this->info("Data saved in cache with key: {$cacheKey}");
-                                // \Log::info("Data saved in cache with key: {$cacheKey}");
+                        $this->info("Data saved in cache with key: {$cacheKey}");
+                        // \Log::info("Data saved in cache with key: {$cacheKey}");
                     } else {
                         $this->info("No data to cache. Skipping cache storage for key: {$cacheKey}");
                     }
 
                     if (config('app.env') !== 'production') {
-                        $this->info("🎉 Data pushed to Redis Stream.");
+                        $this->info('🎉 Data pushed to Redis Stream.');
                     }
                 } else {
                     if (config('app.env') !== 'production') {
-                        $this->info("⚠️ No new data available.");
+                        $this->info('⚠️ No new data available.');
                     }
                 }
 
                 // **Get 'next' page URL**
                 $nextUrl = $response->json()['links']['next'] ?? null;
-                $this->info("Next URL.", $nextUrl);
+                $this->info('Next URL.', $nextUrl);
                 $apiUrl = $nextUrl ?: null;
 
             } while ($nextUrl !== null);
 
             // **Mark Cron as Success**
             DB::table('cron_run_history')->where('id', $cronRun)->update([
-                'end_time'   => Carbon::now(),
-                'status'     => 'success',
+                'end_time' => Carbon::now(),
+                'status' => 'success',
                 'updated_at' => now(),
             ]);
 
         } catch (\Exception $e) {
-            $this->error("❌ Error: " . $e->getMessage());
+            $this->error('❌ Error: '.$e->getMessage());
             // \Log::error("❌ Error: " . $e->getMessage());
 
             DB::table('cron_run_history')->where('id', $cronRun)->update([
-                'end_time'      => Carbon::now(),
-                'status'        => 'failed',
+                'end_time' => Carbon::now(),
+                'status' => 'failed',
                 'error_message' => $e->getMessage(),
-                'updated_at'    => now(),
+                'updated_at' => now(),
             ]);
         }
     }

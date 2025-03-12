@@ -8,32 +8,21 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-
-use App\Models\{
-    VehicleRecord, Manufacturer, VehicleModel, Generation, BodyType, Color,
-    Transmission, DriveWheel, Fuel, Condition, Status, VehicleType, Domain,
-    Engine, Seller, SellerType, Title, DetailedTitle, Damage, Image, Country,
-    State, City, Location, SellingBranch, Year, BuyNow, Odometer, RemoteCacheKey,
-};
 use Carbon\Carbon;
-// use Illuminate\Bus\Batchable;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
 
 class ProcessCachedDataToDatabaseJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-    protected $cacheKeyId;
     protected $cacheKey;
-    // protected $queue = 'process_cached_data_to_database_job';
 
     /**
      * Create a new job instance.
      */
-    public function __construct($cacheKeyId, $cacheKey)
+    public function __construct($cacheKey)
     {
         $this->queue = 'process_cached_data_to_database_job';
-        $this->cacheKeyId = $cacheKeyId;
         $this->cacheKey = $cacheKey;
         Log::info('Log From Database Constructor');
     }
@@ -45,8 +34,8 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
     {
         // Log::info('Log From Database Hanlde');
           try {
-                $key = $this->cacheKey;
-                $data = json_decode(Cache::store('redis_cache')->get($key), true);
+                $key = $this->cacheKey->cache_key;
+                $data = $this->cacheKey->cache_value;
                 if (!$data) {
                     Log::warning("No data found for key: {$key}");
                     return;
@@ -455,7 +444,6 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
 
     }
 
-
       /**
      * ✅ Insert batch of processed data
      */
@@ -513,11 +501,11 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
             }
 
             DB::connection('mysql')->commit(); // ✅ Commit Successful Inserts
-            DB::connection('mysql_remote')->table('cache_keys')->where('id', $this->cacheKeyId)->delete();
+            DB::connection('mysql_remote')->table('cache_keys')->where('id', $this->cacheKey->id)->delete();
 
             DB::connection('mysql_remote')->commit(); // ✅ Commit Successful Inserts
 
-            Cache::store('redis_cache')->forget($this->cacheKey);
+            Cache::store('redis_cache')->forget($this->cacheKey->cache_key);
 
 
         } catch (\Exception $e) {
@@ -525,7 +513,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
             DB::connection('mysql_remote')->rollBack(); // ❌ Rollback only in case of a major failure
 
             // Mark cache as pending in case of failure
-            DB::connection('mysql_remote')->table('cache_keys')->where('id', $this->cacheKeyId)->update(['status' => 'pending']);
+            DB::connection('mysql_remote')->table('cache_keys')->where('id', $this->cacheKey->id)->update(['status' => 'pending']);
 
             Log::info("Batch insert failed: " . $e->getMessage());
         }

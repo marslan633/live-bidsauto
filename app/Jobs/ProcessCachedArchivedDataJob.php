@@ -2,14 +2,11 @@
 
 namespace App\Jobs;
 
-use App\Models\CacheKey;
-use App\Models\RemoteCacheKey;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -37,7 +34,7 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
         try {
             $key = $this->cacheKey->cache_key;
             // Retrieve data from cache
-            $data =  json_decode(Cache::store('redis_cache')->get($key), true);
+            $data =  $this->cacheKey->cache_value;
 
             if (!$data) {
                 Log::info("No data found in cache for key: {$key}");
@@ -70,8 +67,6 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
             // Delete the cache key from the table
             DB::connection('mysql_remote')->table('cache_keys')->where('cache_key', $key)->delete();
 
-            // Remove processed data from cache
-            Cache::store('redis_cache')->forget($key);
         } catch (\Exception $e) {
             // Log any errors encountered during processing
             Log::info("Error processing data for cache key {$key}: " . $e->getMessage());

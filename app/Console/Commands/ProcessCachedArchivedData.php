@@ -4,16 +4,8 @@ namespace App\Console\Commands;
 
 use App\Jobs\ProcessCachedArchivedDataJob;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Http;
-use App\Models\{
-    VehicleRecord, Manufacturer, VehicleModel, Generation, BodyType, Color,
-    Transmission, DriveWheel, Fuel, Condition, Status, VehicleType, Domain,
-    Engine, Seller, SellerType, Title, DetailedTitle, Damage, Image, Country,
-    State, City, Location, SellingBranch, Year, BuyNow, Odometer, CacheKey
-};
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
 use Illuminate\Support\Facades\Log;
@@ -64,7 +56,7 @@ class ProcessCachedArchivedData extends Command
 
             if ($cacheKeyIds->isNotEmpty()) {
                 // Update the status of the fetched records to 'progress'
-                DB::connection('mysql')->table('cache_keys')->whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
+                DB::connection('mysql_remote')->table('cache_keys')->whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
             }
         } catch (\Exception $e) {
             $this->error("Error fetching cache keys or updating status: " . $e->getMessage());

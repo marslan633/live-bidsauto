@@ -3,19 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Jobs\ProcessCachedDataJob;
-use App\Jobs\ProcessCachedDataJobKVMTWO;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Http;
-use App\Models\{
-    VehicleRecord, Manufacturer, VehicleModel, Generation, BodyType, Color,
-    Transmission, DriveWheel, Fuel, Condition, Status, VehicleType, Domain,
-    Engine, Seller, SellerType, Title, DetailedTitle, Damage, Image, Country,
-    State, City, Location, SellingBranch, Year, BuyNow, Odometer, CacheKey,
-    RemoteCacheKey
-};
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
 use Illuminate\Support\Facades\Log;
@@ -82,10 +72,11 @@ class ProcessCachedDataWihtoutQueue extends Command
 
         foreach ($cacheKeys as $cacheKey) {
             $this->info('Cache Key Running: ' . $cacheKey->cache_key);
+            // ProcessCachedDataJob::dispatch($cacheKey->cache_key);
             try{
 
                 $key = $cacheKey->cache_key;
-                $data = Cache::store('redis')->get($key);
+                $data = $cacheKey->cache_value;
 
                 if (!$data) {
                     Log::info('Data Not Found');
@@ -103,8 +94,6 @@ class ProcessCachedDataWihtoutQueue extends Command
                 $cacheKey = 'vehicle_process_data_' . now()->format('Y_m_d_H_i_s');
                 $expiresAt = now()->addMinutes(intval(config('app.cache_key_expiry')));
 
-                Cache::store('redis_cache')->put($cacheKey, json_encode($processDataForCache), $expiresAt);
-
                 // Save cache details to the database
                 $RemoteCacheModel = DB::connection('mysql_remote')->table('cache_keys');
 
@@ -112,6 +101,7 @@ class ProcessCachedDataWihtoutQueue extends Command
                     ['cache_key' => $cacheKey],
                     [
                         'status' => 'pending',
+                        'cache_value' => $processDataForCache,
                         'expires_at' => $expiresAt,
                         'created_at' => Carbon::now(),
                         'updated_at' => Carbon::now()
@@ -121,7 +111,6 @@ class ProcessCachedDataWihtoutQueue extends Command
                 // Remove cache key from DB and Redis
                 $CacheModel->where('cache_key', $key)->delete();
 
-                Cache::store('redis')->forget($key);
                 $this->info('Key Stored: '. $key);
 
             }catch(\Exception $e){

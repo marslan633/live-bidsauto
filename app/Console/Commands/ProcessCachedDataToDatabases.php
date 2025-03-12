@@ -47,8 +47,6 @@ class ProcessCachedDataToDatabases extends Command
 
         $cronRun = null;
 
-        DB::connection('mysql')->beginTransaction();
-        DB::connection('mysql_remote')->beginTransaction();
         try{
             $cronRun = DB::connection('mysql')->table('cron_run_history')->insertGetId([
                 'cron_name' => 'process_cached_data_to_database',
@@ -68,21 +66,15 @@ class ProcessCachedDataToDatabases extends Command
 
             if ($cacheKeys->isEmpty()) {
                 $this->info("No pending cache keys found.");
-                DB::connection('mysql')->commit();
-                DB::connection('mysql_remote')->commit();
                 return;
             }
 
             $cacheKeyIds = $cacheKeys->pluck('id')->toArray();
               // Update status in bulk
             DB::connection('mysql_remote')->table('cache_keys')->whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
-            DB::connection('mysql')->commit();
-            DB::connection('mysql_remote')->commit();
             Log::info('Database Commit Done');
 
         }catch(\Exception $e){
-            DB::connection('mysql')->rollBack();
-            DB::connection('mysql_remote')->rollBack();
             Log::info('Rolle Back From Process Cahed To Database');
             if($cronRun !== null){
                 $this->handleCronError($cronRun, "Error fetching cache keys: " . $e->getMessage());
@@ -96,7 +88,7 @@ class ProcessCachedDataToDatabases extends Command
         foreach ($cacheKeys as $cacheKey) {
             // TestJob::dispatch($cacheKey->id, $cacheKey->cache_key);
             $this->info('Data Starting Handover To Job Done ' . $cacheKey->cache_key);
-            ProcessCachedDataToDatabaseJob::dispatch($cacheKey->id, $cacheKey->cache_key);
+            ProcessCachedDataToDatabaseJob::dispatch($cacheKey);
             $this->info('Data End Handover To Job Done ' . $cacheKey->cache_key);
         }
 
