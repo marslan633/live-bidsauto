@@ -76,7 +76,7 @@ class ProcessCachedDataWihtoutQueue extends Command
             try{
 
                 $key = $cacheKey->cache_key;
-                $data = $cacheKey->cache_value;
+                $data = json_decode($cacheKey->cache_value, true);
 
                 if (!$data) {
                     Log::info('Data Not Found');
