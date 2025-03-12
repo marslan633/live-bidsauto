@@ -101,6 +101,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
 
 
             } catch (\Exception $e) {
+                DB::connection('mysql')->table('cache_keys')->where('id', $cacheKey->id)->update(['status' => 'pending']);
                 Log::error("Error processing key {$key}: " . $e->getMessage());
             }
         }
