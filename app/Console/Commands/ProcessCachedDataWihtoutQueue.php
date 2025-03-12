@@ -101,7 +101,7 @@ class ProcessCachedDataWihtoutQueue extends Command
                     ['cache_key' => $cacheKey],
                     [
                         'status' => 'pending',
-                        'cache_value' => $processDataForCache,
+                        'cache_value' => json_encode($processDataForCache),
                         'expires_at' => $expiresAt,
                         'created_at' => Carbon::now(),
                         'updated_at' => Carbon::now()

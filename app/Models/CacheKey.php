@@ -15,7 +15,4 @@ class CacheKey extends Model
         'updated_at'
     ];
 
-    protected $casts = [
-        'cache_value' => 'array',
-    ];
 }
