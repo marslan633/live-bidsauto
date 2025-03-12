@@ -113,7 +113,7 @@ class ProcessArchivedData extends Command
                     if (count($data) > 0) {
 
                         // Save cache details to database
-                        DB::connection('mysql')->table('cache_keys')->updateOrInsert(
+                        DB::connection('mysql_remote')->table('cache_keys')->updateOrInsert(
                             ['cache_key' => $cacheKey],
                             [
                                 'status' => 'pending',
