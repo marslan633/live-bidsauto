@@ -61,10 +61,11 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
             }
 
             if ($cacheKeys->isEmpty()) {
+                $oneHourAgo = Carbon::now()->subHour();
                 $cacheKeys = DB::connection('mysql')->table('cache_keys')->where('cache_key', 'like', 'vehicle_process_data%')
                 ->where('status', 'progress')
+                ->where('created_at', '<', $oneHourAgo)
                 ->orderBy('created_at', 'asc')
-                // ->lockForUpdate()
                 ->take(20)
                 ->get();
             }
@@ -85,18 +86,8 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                 $key = $cacheKey->cache_key;
                 $data = json_decode($cacheKey->cache_value, true);
                 if (!$data) {
-                    $progressData =  DB::connection('mysql')
-                    ->table('cache_keys')
-                    ->where('cache_key', $cacheKey->cache_key)
-                    ->where('status', 'progress')
-                    ->first();
-
-                    if($progressData){
-                        $data = json_decode($progressData->cache_value, true);
-                    }else{
-                        Log::warning("No data found for key: {$key}");
-                        return;
-                    }
+                    Log::warning("No data found for key: {$key}");
+                    return;
                 }
 
                 $batchData = [];
