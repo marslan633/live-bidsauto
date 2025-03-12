@@ -151,7 +151,6 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
     }
 
 
-
     private function processCachedArchivedData($car)
     {
         try {

@@ -21,6 +21,7 @@ class StatusSeeder extends Seeder
             ['name' => 'new_auction', 'status_api_id' => 5],
             ['name' => 'sold', 'status_api_id' => 6],
             ['name' => 'expired', 'status_api_id' => 7],
+            ['name' => 'not_sold', 'status_api_id' => 8],
         ];
 
         foreach ($statuses as $status) {
