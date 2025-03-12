@@ -117,7 +117,7 @@ class ProcessArchivedData extends Command
                             ['cache_key' => $cacheKey],
                             [
                                 'status' => 'pending',
-                                'cache_value' => $data,
+                                'cache_value' => json_encode($data),
                                 'expires_at' => $expiresAt,
                                 'created_at' => Carbon::now(),
                                 'updated_at' => Carbon::now(),
