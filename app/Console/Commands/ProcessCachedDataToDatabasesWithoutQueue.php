@@ -53,15 +53,22 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
             ->take(20)
             ->get();
 
-            if ($cacheKeys->isEmpty()) {
-                $this->info("No pending cache keys found.");
-                return;
+            if (!$cacheKeys->isEmpty()) {
+                $cacheKeyIds = $cacheKeys->pluck('id')->toArray();
+                // Update status in bulk
+                DB::connection('mysql')->table('cache_keys')->whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
+                Log::info('Database Commit Done');
             }
 
-            $cacheKeyIds = $cacheKeys->pluck('id')->toArray();
-              // Update status in bulk
-            DB::connection('mysql')->table('cache_keys')->whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
-            Log::info('Database Commit Done');
+            if ($cacheKeys->isEmpty()) {
+                $cacheKeys = DB::connection('mysql')->table('cache_keys')->where('cache_key', 'like', 'vehicle_process_data%')
+                ->where('status', 'progress')
+                ->orderBy('created_at', 'asc')
+                // ->lockForUpdate()
+                ->take(20)
+                ->get();
+            }
+
 
         }catch(\Exception $e){
             if($cronRun !== null){
