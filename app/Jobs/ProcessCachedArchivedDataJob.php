@@ -34,7 +34,7 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
         try {
             $key = $this->cacheKey->cache_key;
             // Retrieve data from cache
-            $data =  $this->cacheKey->cache_value;
+            $data = json_decode( $this->cacheKey->cache_value, true);
 
             if (!$data) {
                 Log::info("No data found in cache for key: {$key}");
@@ -65,7 +65,7 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
             Log::info("Data for cache key '{$key}' processed successfully.");
 
             // Delete the cache key from the table
-            DB::connection('mysql_remote')->table('cache_keys')->where('cache_key', $key)->delete();
+            DB::connection('mysql')->table('cache_keys')->where('cache_key', $key)->delete();
 
         } catch (\Exception $e) {
             // Log any errors encountered during processing
