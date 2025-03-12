@@ -98,7 +98,7 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
                 return;
             }
 
-            DB::connection('mysql')->beginTransaction();
+            // DB::connection('mysql')->beginTransaction();
 
             // Extract lot IDs
             $lotIds = array_column($batchData, 'lot_id');
@@ -141,11 +141,11 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
                 DB::connection('mysql')->table('vehicle_record_archiveds')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
             }
 
-            DB::connection('mysql')->commit();
+            // DB::connection('mysql')->commit();
 
             Log::info("Batch processed successfully with " . count($newRecords) . " new and " . count($updatedRecords) . " updated records.");
         } catch (\Exception $e) {
-            DB::connection('mysql')->rollBack();
+            // DB::connection('mysql')->rollBack();
             Log::error("Batch processing failed: " . $e->getMessage());
         }
     }
