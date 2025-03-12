@@ -45,7 +45,7 @@ class ProcessCachedArchivedData extends Command
             ]);
 
             // Get all cache keys for API data
-            $cacheKeys = DB::connection('mysql_remote')->table('cache_keys')->where('cache_key', 'like', 'vehicle_archived_data%')
+            $cacheKeys = DB::connection('mysql')->table('cache_keys')->where('cache_key', 'like', 'vehicle_archived_data%')
                 ->where('status', 'pending')
                 ->orderBy('created_at', 'asc')
                 ->take(50)
@@ -56,7 +56,7 @@ class ProcessCachedArchivedData extends Command
 
             if ($cacheKeyIds->isNotEmpty()) {
                 // Update the status of the fetched records to 'progress'
-                DB::connection('mysql_remote')->table('cache_keys')->whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
+                DB::connection('mysql')->table('cache_keys')->whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
             }
         } catch (\Exception $e) {
             $this->error("Error fetching cache keys or updating status: " . $e->getMessage());
