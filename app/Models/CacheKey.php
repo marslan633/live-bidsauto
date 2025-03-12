@@ -15,4 +15,5 @@ class CacheKey extends Model
         'updated_at'
     ];
 
+
 }
