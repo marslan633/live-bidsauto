@@ -33,7 +33,6 @@ if(config('app.app_kvm_one') === true){
 
     app(Schedule::class)->command('process:archived-data')->everyFifteenMinutes()->withoutOverlapping();
 
-
 }
 
 if(config('app.app_kvm_two') === true){

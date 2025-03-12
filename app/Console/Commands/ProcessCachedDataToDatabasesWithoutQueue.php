@@ -3,20 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Jobs\ProcessCachedDataToDatabaseJob;
-use App\Jobs\TestJob;
 use Illuminate\Console\Command;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\{DB, Mail, Log, Bus};
+use Illuminate\Support\Facades\{DB, Mail, Log};
 use App\Mail\CronJobFailedMail;
-use Illuminate\Bus\Batch;
-use Throwable;
 
-use App\Models\{
-    VehicleRecord, Manufacturer, VehicleModel, Generation, BodyType, Color,
-    Transmission, DriveWheel, Fuel, Condition, Status, VehicleType, Domain,
-    Engine, Seller, SellerType, Title, DetailedTitle, Damage, Image, Country,
-    State, City, Location, SellingBranch, Year, BuyNow, Odometer, RemoteCacheKey,
-};
 
 class ProcessCachedDataToDatabasesWithoutQueue extends Command
 {
@@ -43,19 +34,8 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
         $this->info("Process started at: " . $startDateTime);
         Log::info("Process started at: " . $startDateTime);
 
-        try {
-            DB::connection('mysql')->getPdo(); // Check MySQL connection
-            DB::connection('mysql_remote')->getPdo(); // Check Remote DB connection
-        } catch (\Exception $e) {
-            $this->error('Database connection failed:');
-            Log::info("Database connection failed: ", ['exception' => json_encode($e->getMessage())]);
-            return;
-        }
-
         $cronRun = null;
 
-        // DB::connection('mysql')->beginTransaction();
-        // DB::connection('mysql_remote')->beginTransaction();
         try{
             $cronRun = DB::connection('mysql')->table('cron_run_history')->insertGetId([
                 'cron_name' => 'process_cached_data_to_database',
@@ -66,7 +46,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
             ]);
 
             // Lock the cache keys for update
-            $cacheKeys = DB::connection('mysql_remote')->table('cache_keys')->where('cache_key', 'like', 'vehicle_process_data%')
+            $cacheKeys = DB::connection('mysql')->table('cache_keys')->where('cache_key', 'like', 'vehicle_process_data%')
             ->where('status', 'pending')
             ->orderBy('created_at', 'asc')
             // ->lockForUpdate()
@@ -75,22 +55,15 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
 
             if ($cacheKeys->isEmpty()) {
                 $this->info("No pending cache keys found.");
-                DB::connection('mysql')->commit();
-                DB::connection('mysql_remote')->commit();
                 return;
             }
 
             $cacheKeyIds = $cacheKeys->pluck('id')->toArray();
               // Update status in bulk
-            DB::connection('mysql_remote')->table('cache_keys')->whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
-            // DB::connection('mysql')->commit();
-            // DB::connection('mysql_remote')->commit();
+            DB::connection('mysql')->table('cache_keys')->whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
             Log::info('Database Commit Done');
 
         }catch(\Exception $e){
-            // DB::connection('mysql')->rollBack();
-            // DB::connection('mysql_remote')->rollBack();
-            Log::info('Rolle Back From Process Cahed To Database');
             if($cronRun !== null){
                 $this->handleCronError($cronRun, "Error fetching cache keys: " . $e->getMessage());
             }
@@ -540,8 +513,6 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                 return;
             }
 
-            // DB::connection('mysql')->beginTransaction(); // ✅ Start Transaction
-            // DB::connection('mysql_remote')->beginTransaction(); // ✅ Start Transaction
 
             // Extract API IDs from batchData
             $apiIds = array_column($batchData, 'api_id');
@@ -585,19 +556,15 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                 DB::connection('mysql')->table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
             }
 
-            // DB::connection('mysql')->commit(); // ✅ Commit Successful Inserts
-            DB::connection('mysql_remote')->table('cache_keys')->where('id', $cacheKey->id)->delete();
+            DB::connection('mysql')->table('cache_keys')->where('id', $cacheKey->id)->delete();
 
-            // DB::connection('mysql_remote')->commit(); // ✅ Commit Successful Inserts
 
 
 
         } catch (\Exception $e) {
-            // DB::connection('mysql')->rollBack(); // ❌ Rollback only in case of a major failure
-            // DB::connection('mysql_remote')->rollBack(); // ❌ Rollback only in case of a major failure
 
             // Mark cache as pending in case of failure
-            DB::connection('mysql_remote')->table('cache_keys')->where('id', $cacheKey->id)->update(['status' => 'pending']);
+            DB::connection('mysql')->table('cache_keys')->where('id', $cacheKey->id)->update(['status' => 'pending']);
 
             Log::info("Batch insert failed: " . $e->getMessage());
         }
