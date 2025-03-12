@@ -70,13 +70,13 @@ class ProcessCachedDataWihtoutQueue extends Command
         }
 
 
-        foreach ($cacheKeys as $cacheKey) {
-            $this->info('Cache Key Running: ' . $cacheKey->cache_key);
-            // ProcessCachedDataJob::dispatch($cacheKey->cache_key);
+        foreach ($cacheKeys as $keyItem) {
+            $this->info('Cache Key Running: ' . $keyItem->cache_key);
+            // ProcessCachedDataJob::dispatch($keyItem->cache_key);
             try{
 
-                $key = $cacheKey->cache_key;
-                $data = json_decode($cacheKey->cache_value, true);
+                $key = $keyItem->cache_key;
+                $data = json_decode($keyItem->cache_value, true);
 
                 if (!$data) {
                     Log::info('Data Not Found');
@@ -114,9 +114,9 @@ class ProcessCachedDataWihtoutQueue extends Command
                 $this->info('Key Stored: '. $key);
 
             }catch(\Exception $e){
-                DB::connection('mysql')->table('cache_keys')->where('id',$cacheKey->id)->update(['status' => 'pending']);
-                $this->info("Error processing key {$cacheKey->cache_key}: ");
-                Log::info("Error processing key {$cacheKey->cache_key}: " . $e->getMessage());
+                DB::connection('mysql')->table('cache_keys')->where('id', $keyItem->id)->update(['status' => 'pending']);
+                $this->info("Error processing key {$keyItem->cache_key}: ");
+                Log::info("Error processing key {$keyItem->cache_key}: " . $e->getMessage());
             }
         }
 
