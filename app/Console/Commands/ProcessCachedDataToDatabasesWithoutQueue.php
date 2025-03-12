@@ -6,7 +6,7 @@ use App\Jobs\ProcessCachedDataToDatabaseJob;
 use App\Jobs\TestJob;
 use Illuminate\Console\Command;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\{DB, Mail, Log, Bus, Cache};
+use Illuminate\Support\Facades\{DB, Mail, Log, Bus};
 use App\Mail\CronJobFailedMail;
 use Illuminate\Bus\Batch;
 use Throwable;
@@ -103,7 +103,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
         foreach ($cacheKeys as $cacheKey) {
             try {
                 $key = $cacheKey->cache_key;
-                $data = json_decode(Cache::store('redis_cache')->get($key), true);
+                $data = json_decode($cacheKey->cache_value, true);
                 if (!$data) {
                     Log::warning("No data found for key: {$key}");
                     return;
@@ -590,7 +590,6 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
 
             // DB::connection('mysql_remote')->commit(); // ✅ Commit Successful Inserts
 
-            Cache::store('redis_cache')->forget($cacheKey->cache_key);
 
 
         } catch (\Exception $e) {
