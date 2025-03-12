@@ -78,9 +78,20 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                 $key = $cacheKey->cache_key;
                 $data = json_decode($cacheKey->cache_value, true);
                 if (!$data) {
-                    Log::warning("No data found for key: {$key}");
-                    return;
+                    $progressData =  DB::connection('mysql')
+                    ->table('cache_keys')
+                    ->where('cache_key', $cacheKey->cache_key)
+                    ->where('status', 'progress')
+                    ->first();
+
+                    if($progressData){
+                        $data = json_decode($progressData->cache_value, true);
+                    }else{
+                        Log::warning("No data found for key: {$key}");
+                        return;
+                    }
                 }
+
                 $batchData = [];
                 $batchSize = intval(config('app.batch_size'));
                 foreach ($data as $car) {
