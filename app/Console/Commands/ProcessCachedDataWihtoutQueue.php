@@ -50,7 +50,7 @@ class ProcessCachedDataWihtoutQueue extends Command
             $cacheKeys = $CacheModel->where('cache_key', 'like', 'vehicle_api_data_%')
                 ->where('status', 'pending')
                 ->orderBy('created_at', 'asc')
-                ->take(15)
+                ->take(50)
                 ->get();
 
             if ($cacheKeys->isEmpty()) {
@@ -69,7 +69,8 @@ class ProcessCachedDataWihtoutQueue extends Command
             return;
         }
 
-
+        $RemoteCacheModel = DB::connection('mysql_remote')->table('cache_keys');
+        $megaBatchData = [];
         foreach ($cacheKeys as $keyItem) {
             $this->info('Cache Key Running: ' . $keyItem->cache_key);
             // ProcessCachedDataJob::dispatch($keyItem->cache_key);
@@ -95,18 +96,14 @@ class ProcessCachedDataWihtoutQueue extends Command
                 $expiresAt = now()->addMinutes(intval(config('app.cache_key_expiry')));
 
                 // Save cache details to the database
-                $RemoteCacheModel = DB::connection('mysql_remote')->table('cache_keys');
-
-                $RemoteCacheModel->updateOrInsert(
-                    ['cache_key' => $cacheKey],
-                    [
-                        'status' => 'pending',
-                        'cache_value' => json_encode($processDataForCache),
-                        'expires_at' => $expiresAt,
-                        'created_at' => Carbon::now(),
-                        'updated_at' => Carbon::now()
-                    ]
-                );
+                $megaBatchData[] = [
+                    'cache_key' => $cacheKey,
+                    'status' => 'pending',
+                    'cache_value' => json_encode($processDataForCache),
+                    'expires_at' => $expiresAt,
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now()
+                ];
 
                 // Remove cache key from DB and Redis
                 $CacheModel->where('cache_key', $key)->delete();
@@ -118,6 +115,15 @@ class ProcessCachedDataWihtoutQueue extends Command
                 $this->info("Error processing key {$keyItem->cache_key}: ");
                 Log::info("Error processing key {$keyItem->cache_key}: " . $e->getMessage());
             }
+        }
+
+        if (!empty($megaBatchData)) {
+            $RemoteCacheModel->upsert(
+                $megaBatchData,
+                ['cache_key'], // Unique key for checking existing records
+                ['status', 'cache_value', 'expires_at', 'updated_at'] // Fields to update if exists
+            );
+            $this->info("Inserted/Updated " . count($megaBatchData) . " records.");
         }
 
         DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
