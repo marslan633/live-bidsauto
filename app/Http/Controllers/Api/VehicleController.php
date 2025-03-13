@@ -734,7 +734,7 @@ public function filterAttributes(Request $request)
             ->orderBy('created_at', 'asc')
             ->first(); // ✅ Use first() instead of get()
 
-        if ($cacheKey) {
+        if ($cacheKey && $cacheKey->cache_value) {
             return decompressJson($cacheKey->cache_value); // ✅ Access property directly
         }
 
