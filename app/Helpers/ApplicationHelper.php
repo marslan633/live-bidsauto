@@ -471,7 +471,7 @@ function processLotData($lot)
      */
     function compressJson(array $data): string
     {
-        return base64_encode(gzcompress(json_encode($data)));
+        return gzcompress(json_encode($data));
     }
 
     /**
@@ -486,7 +486,7 @@ function processLotData($lot)
             return null;
         }
 
-        $decompressed = gzuncompress(base64_decode($compressedData));
+        $decompressed = gzuncompress($compressedData);
 
         return $decompressed ? json_decode($decompressed, true) : null;
     }
