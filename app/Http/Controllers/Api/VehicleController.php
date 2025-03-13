@@ -735,7 +735,7 @@ public function filterAttributes(Request $request)
         ->get();
 
         if(count($cacheKeys) > 0){
-            return decompressJson($cacheKeys->cache_value);
+            return decompressJson($cacheKeys[0]->cache_value);
         }
         return [];
     }
