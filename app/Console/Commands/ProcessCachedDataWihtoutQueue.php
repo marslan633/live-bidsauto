@@ -50,7 +50,7 @@ class ProcessCachedDataWihtoutQueue extends Command
             $cacheKeys = $CacheModel->where('cache_key', 'like', 'vehicle_api_data_%')
                 ->where('status', 'pending')
                 ->orderBy('created_at', 'asc')
-                ->take(50)
+                ->take(20)
                 ->get();
 
             if ($cacheKeys->isEmpty()) {

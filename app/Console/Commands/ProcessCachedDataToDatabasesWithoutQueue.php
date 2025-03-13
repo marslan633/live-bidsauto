@@ -66,7 +66,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                 ->where('status', 'progress')
                 ->where('created_at', '<', $oneHourAgo)
                 ->orderBy('created_at', 'asc')
-                ->take(20)
+                ->take(10)
                 ->get();
             }
 

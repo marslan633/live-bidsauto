@@ -565,11 +565,17 @@ public function filterAttributes(Request $request)
     /**
      * Fetch Cache Key History Records API
      */
-    public function cacheKeyHistory()
+    public function cacheKeyHistory(Request $request)
     {
         try {
             // Fetch the latest record(s) from the cron_run_history table
-            $history = CacheKey::orderBy('id', 'desc')->get();
+           // $history = CacheKey::orderBy('id', 'desc')->get();
+           $perPage = request()->get('per_page', 10); // Default to 10 if 'per_page' is not provided
+           $page = request()->get('page', 1); // Default to page 1
+
+            $history = CacheKey::select(['id', 'cache_key', 'expires_at', 'status', 'created_at', 'updated_at']) // Excludes 'cache_value'
+            ->orderBy('id', 'desc')
+            ->paginate($perPage, ['*'], 'page', $page);
 
             return sendResponse(true, 200, 'Cache Keys fetched successfully!', $history, 200);
         } catch (\Exception $ex) {
