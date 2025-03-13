@@ -97,3 +97,16 @@ Route::get('get-jobs', function(Request $request){
 Route::get('get-redis-key', function(Request $request){
     return Cache::store($request->redis)->get($request->key);
 });
+
+Route::get('uncompressed-data', function(Request $request){
+    $cacheKeys = DB::connection('mysql')->table('cache_keys')->where('cache_key', 'like', $request->type.'%')
+    ->where('status', 'pending')
+    ->orderBy('created_at', 'asc')
+    ->take(1)
+    ->get();
+
+    if(count($cacheKeys) > 0){
+        return decompressJson($cacheKeys->cache_value);
+    }
+    return [];
+});
