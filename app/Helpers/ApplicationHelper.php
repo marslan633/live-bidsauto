@@ -480,7 +480,7 @@ function processLotData($lot)
      * @param string $compressedData
      * @return array|null
      */
-    function decompressJson(?string $compressedData): ?array
+    function decompressJson($compressedData)
     {
         if (!$compressedData) {
             return null;
@@ -488,5 +488,5 @@ function processLotData($lot)
 
         $decompressed = gzuncompress($compressedData);
 
-        return $decompressed ? json_decode($decompressed, true) : null;
+        return $decompressed ? json_decode($decompressed, true) : [];
     }
