@@ -729,16 +729,15 @@ public function filterAttributes(Request $request)
 
     public function getUncompressData(Request $request)
     {
-        $cacheKey = DB::connection('mysql')->table('cache_keys')
-            ->where('cache_key', 'like', $request->type.'%')
-            ->orderBy('created_at', 'asc')
-            ->first(); // ✅ Use first() instead of get()
+        $cacheKey = DB::table('cache_keys')->where('id', 333)->first();
 
         if ($cacheKey && $cacheKey->cache_value) {
-            return decompressJson($cacheKey->cache_value); // ✅ Access property directly
+            $decompressedData = decompressJson($cacheKey->cache_value);
+            dd($decompressedData); // Debugging output
+        } else {
+            dd("No data found");
         }
 
-        return [];
     }
 
 }
