@@ -463,23 +463,13 @@ function processLotData($lot)
 
 }
 
- /**
-     * Compress JSON data before storing it in the database.
-     *
-     * @param array $data
-     * @return string
-     */
+
     function compressJson(array $data): string
     {
         return gzcompress(json_encode($data));
     }
 
-    /**
-     * Decompress JSON data after retrieving it from the database.
-     *
-     * @param string $compressedData
-     * @return array|null
-     */
+
     function decompressJson(?string $compressedData): ?array
     {
         if (!$compressedData) {
