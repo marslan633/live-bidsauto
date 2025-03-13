@@ -77,7 +77,7 @@ class ProcessCachedDataWihtoutQueue extends Command
             try{
 
                 $key = $keyItem->cache_key;
-                $data = decompressJson($keyItem->cache_value);
+                $data = json_decode($keyItem->cache_value, true);
 
                 if (!$data) {
                     Log::info('Data Not Found');
@@ -99,7 +99,7 @@ class ProcessCachedDataWihtoutQueue extends Command
                 $megaBatchData[] = [
                     'cache_key' => $cacheKey,
                     'status' => 'pending',
-                    'cache_value' => compressJson($processDataForCache),
+                    'cache_value' => json_encode($processDataForCache),
                     'expires_at' => $expiresAt,
                     'created_at' => Carbon::now(),
                     'updated_at' => Carbon::now()

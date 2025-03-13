@@ -14,14 +14,14 @@ return new class extends Migration
     {
         Schema::create('cache_keys', function (Blueprint $table) {
             $table->id();
-            $table->string('cache_key')->unique(); // Unique cache key
-
+            $table->string('cache_key')->unique();
+            $table->longText('cache_value')->nullable();
             $table->timestamp('expires_at')->nullable();
             $table->enum('status', ['progress', 'pending'])->default('pending')->nullable();
             $table->timestamps();
         });
 
-        DB::statement("ALTER TABLE cache_keys ADD cache_value LONGBLOB NULL");
+        // DB::statement("ALTER TABLE cache_keys ADD cache_value LONGBLOB NULL");
     }
 
     /**

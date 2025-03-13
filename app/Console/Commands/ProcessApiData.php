@@ -107,7 +107,7 @@ class ProcessApiData extends Command
                             ['cache_key' => $cacheKey],
                             [
                                 'status' => 'pending',
-                                'cache_value' => compressJson($data),
+                                'cache_value' => json_encode($data),
                                 'expires_at' => $expiresAt,
                             ]);
 
