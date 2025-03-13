@@ -480,7 +480,7 @@ function processLotData($lot)
      * @param string $compressedData
      * @return array|null
      */
-    function decompressJson($compressedData)
+    function decompressJson(?string $compressedData): ?array
     {
         if (!$compressedData) {
             return null;
