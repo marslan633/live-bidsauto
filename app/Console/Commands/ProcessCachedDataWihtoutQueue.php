@@ -99,7 +99,7 @@ class ProcessCachedDataWihtoutQueue extends Command
                 $megaBatchData[] = [
                     'cache_key' => $cacheKey,
                     'status' => 'pending',
-                    'cache_value' => json_encode($processDataForCache),
+                    'cache_value' => compressJson($processDataForCache),
                     'expires_at' => $expiresAt,
                     'created_at' => Carbon::now(),
                     'updated_at' => Carbon::now()
