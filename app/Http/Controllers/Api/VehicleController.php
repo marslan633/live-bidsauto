@@ -726,4 +726,18 @@ public function filterAttributes(Request $request)
             ->get();
         return $expiredRecords;
     }
+
+    public function getUncompressData(Request $request){
+        $cacheKeys = DB::connection('mysql')->table('cache_keys')->where('cache_key', 'like', $request->type.'%')
+        // ->where('status', 'pending')
+        // ->orderBy('created_at', 'asc')
+        ->take(1)
+        ->get();
+
+        if(count($cacheKeys) > 0){
+            return decompressJson($cacheKeys->cache_value);
+        }
+        return [];
+    }
+
 }
