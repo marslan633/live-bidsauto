@@ -101,7 +101,7 @@ class ProcessApiData extends Command
                     $this->info("cache key {$cacheKey}.");
                     $this->info("cache key {$cacheKey}.");
                     // \Log::info("cache key {$cacheKey}.");
-
+                    Log::info('Stroing Cached Data', ['cache_value' => json_encode($data)]);
                     if (count($data) > 0) {
                         CacheKey::updateOrCreate(
                             ['cache_key' => $cacheKey],
