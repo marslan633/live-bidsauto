@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('detailed_titles', function (Blueprint $table) {
+        Schema::connection('mysql')->create('detailed_titles', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('detailed_title_api_id')->unique();
             $table->string('code')->nullable();

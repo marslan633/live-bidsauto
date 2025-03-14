@@ -11,19 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('images', function (Blueprint $table) {
-            $table->id(); 
+        Schema::connection('mysql')->create('images', function (Blueprint $table) {
+            $table->id();
             $table->unsignedBigInteger('image_api_id')->unique();
-            $table->json('small')->nullable(); 
-            $table->json('normal')->nullable(); 
+            $table->json('small')->nullable();
+            $table->json('normal')->nullable();
             $table->json('big')->nullable();
-            $table->json('downloaded')->nullable(); 
+            $table->json('downloaded')->nullable();
             $table->json('exterior')->nullable();
-            $table->json('interior')->nullable(); 
-            $table->text('video')->nullable(); 
-            $table->text('video_youtube_id')->nullable(); 
+            $table->json('interior')->nullable();
+            $table->text('video')->nullable();
+            $table->text('video_youtube_id')->nullable();
             $table->text('external_panorama_url')->nullable();
-            $table->timestamps(); 
+            $table->timestamps();
         });
     }
 

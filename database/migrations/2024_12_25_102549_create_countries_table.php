@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('countries', function (Blueprint $table) {
+        Schema::connection('mysql')->create('countries', function (Blueprint $table) {
             $table->id();
             $table->string('iso')->unique()->nullable();
             $table->string('name')->nullable();

@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('cron_run_history', function (Blueprint $table) {
+        Schema::connection('mysql')->create('cron_run_history', function (Blueprint $table) {
             $table->id();
             $table->string('cron_name')->nullable(); // Name of the cron job
             $table->timestamp('start_time')->nullable(); // When the cron started
             $table->timestamp('end_time')->nullable();   // When the cron ended
             $table->enum('status', ['running', 'success', 'failed']);
-            $table->text('error_message')->nullable(); 
+            $table->text('error_message')->nullable();
             $table->timestamps();
         });
     }

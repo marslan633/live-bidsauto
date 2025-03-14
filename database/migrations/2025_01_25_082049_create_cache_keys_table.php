@@ -12,7 +12,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('cache_keys', function (Blueprint $table) {
+        Schema::connection('mysql')->create('cache_keys', function (Blueprint $table) {
             $table->id();
             $table->string('cache_key')->unique();
             $table->longText('cache_value')->nullable();

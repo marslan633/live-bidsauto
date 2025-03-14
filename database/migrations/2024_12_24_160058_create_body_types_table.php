@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('body_types', function (Blueprint $table) {
+        Schema::connection('mysql')->create('body_types', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('body_type_api_id')->unique();
             $table->string('name')->nullable();

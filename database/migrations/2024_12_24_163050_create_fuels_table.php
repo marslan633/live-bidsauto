@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('fuels', function (Blueprint $table) {
+        Schema::connection('mysql')->create('fuels', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('fuel_api_id')->unique();
             $table->string('name')->nullable();

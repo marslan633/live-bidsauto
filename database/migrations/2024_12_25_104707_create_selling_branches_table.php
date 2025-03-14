@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('selling_branches', function (Blueprint $table) {
+        Schema::connection('mysql')->create('selling_branches', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('selling_branch_api_id')->nullable();
             $table->string('name')->nullable(); // Branch name

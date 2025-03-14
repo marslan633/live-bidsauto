@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('api_keys', function (Blueprint $table) {
+        Schema::connection('mysql')->create('api_keys', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('api_key')->unique();

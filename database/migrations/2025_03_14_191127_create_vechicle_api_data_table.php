@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('vechicle_api_data', function (Blueprint $collection) {
+        Schema::connection('mongodb')->create('vechicle_api_data', function (Blueprint $collection) {
             $collection->index('cache_value');
         });
     }
@@ -21,6 +21,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('vechicle_api_data');
+        Schema::connection('mongodb')->dropIfExists('vechicle_api_data');
     }
 };

@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('locations', function (Blueprint $table) {
+        Schema::connection('mysql')->create('locations', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('location_api_id')->unique();
             $table->foreignId('city_id')->constrained('cities')->cascadeOnDelete();

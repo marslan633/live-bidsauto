@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('drive_wheels', function (Blueprint $table) {
+        Schema::connection('mysql')->create('drive_wheels', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('drive_wheel_api_id')->unique();
             $table->string('name')->nullable();

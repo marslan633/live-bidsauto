@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('conditions', function (Blueprint $table) {
+        Schema::connection('mysql')->create('conditions', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('condition_api_id')->unique();
             $table->string('name')->nullable();

@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('domains', function (Blueprint $table) {
+        Schema::connection('mysql')->create('domains', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('domain_api_id')->unique();
             $table->string('name')->nullable();

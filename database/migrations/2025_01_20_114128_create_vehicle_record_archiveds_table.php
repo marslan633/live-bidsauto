@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('vehicle_record_archiveds', function (Blueprint $table) {
+        Schema::connection('mysql')->create('vehicle_record_archiveds', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('api_id')->nullable();
             $table->integer('year')->nullable();

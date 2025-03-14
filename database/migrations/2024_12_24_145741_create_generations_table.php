@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('generations', function (Blueprint $table) {
+        Schema::connection('mysql')->create('generations', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('generation_api_id')->unique();
             $table->string('name')->nullable();

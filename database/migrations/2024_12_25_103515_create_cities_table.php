@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('cities', function (Blueprint $table) {
+        Schema::connection('mysql')->create('cities', function (Blueprint $table) {
             $table->id();
             $table->foreignId('state_id')->constrained('states')->cascadeOnDelete();
             $table->unsignedBigInteger('city_api_id')->nullable();

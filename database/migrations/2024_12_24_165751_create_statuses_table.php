@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('statuses', function (Blueprint $table) {
+        Schema::connection('mysql')->create('statuses', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('status_api_id')->unique();
             $table->string('name')->nullable();
