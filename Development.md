@@ -17,3 +17,12 @@ Fetch Apis
 
 Convert/Process Apis
 1. Convert Cached Data To Database 
+
+
+Data Issues
+
+odomoter_id
+domain_id
+country_id
+state_id
+city_id
