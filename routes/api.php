@@ -15,9 +15,14 @@ Route::get('/user', function (Request $request) {
 
 Route::prefix('vehicles')->group(function () {
     Route::post('/', [VehicleController::class, 'vehicleInformations']);
-    Route::get('/fetch/by-minute', [VehicleController::class, 'vehicleInformations']);
     Route::get('/{id}', [VehicleController::class, 'searchVehicle']);
 });
+
+Route::prefix('vehicle/v1')->group(function () {
+    Route::get('/fetch', [VehicleController::class, 'vehicleDataByMinutes']);
+});
+
+
 Route::post('filter-attributes', [VehicleController::class, 'filterAttributes']);
 Route::get('filtered-records-count', [VehicleController::class, 'filteredRecordsCount'])->name('filtered.records.count');
 Route::post('/sendQuote', [VehicleController::class, 'sendQuote']);
