@@ -7,3 +7,13 @@
 5. do we need queues we are running on kvm4.2 
 6. Starting and Ending Time add before and after queue run
 8. Progress or Pending Condition => Continue
+
+
+Latest WOrk
+Fetch Apis
+1. Porcess Api Data Converted and Using mongodb
+2. Process Archived Data Converted and Using mongodb
+3. Process Vehicle Buy Now Data Converted and Using mongodb => Api retruning 403
+
+Convert/Process Apis
+1. Convert Cached Data To Database 

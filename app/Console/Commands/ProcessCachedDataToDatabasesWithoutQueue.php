@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\{DB, Mail, Log};
 use App\Mail\CronJobFailedMail;
-
+use App\Models\VehicleProcessCachedApiData;
 
 class ProcessCachedDataToDatabasesWithoutQueue extends Command
 {
@@ -44,30 +44,10 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+            $cacheKeys = VehicleProcessCachedApiData::orderBy('created_at', 'asc')->limit(100)->get();
 
-            // Lock the cache keys for update
-            $cacheKeys = DB::connection('mysql')->table('cache_keys')->where('cache_key', 'like', 'vehicle_process_data%')
-            ->where('status', 'pending')
-            ->orderBy('created_at', 'asc')
-            // ->lockForUpdate()
-            ->take(20)
-            ->get();
-
-            if (!$cacheKeys->isEmpty()) {
-                $cacheKeyIds = $cacheKeys->pluck('id')->toArray();
-                // Update status in bulk
-                DB::connection('mysql')->table('cache_keys')->whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
-                Log::info('Database Commit Done');
-            }
-
-            if ($cacheKeys->isEmpty()) {
-                $oneHourAgo = Carbon::now()->subHour();
-                $cacheKeys = DB::connection('mysql')->table('cache_keys')->where('cache_key', 'like', 'vehicle_process_data%')
-                ->where('status', 'progress')
-                ->where('created_at', '<', $oneHourAgo)
-                ->orderBy('created_at', 'asc')
-                ->take(10)
-                ->get();
+            if (count($cacheKeys) == 0) {
+                $this->info("No Data Pending to process");
             }
 
 
@@ -81,37 +61,29 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
         // **Batch processing setup**
         // Initialize an empty array to hold the jobs
         // Iterate over the cache keys and create jobs
-        foreach ($cacheKeys as $cacheKey) {
+        foreach ($cacheKeys as $itemKey) {
             try {
-                $key = $cacheKey->cache_key;
-                $data = json_decode($cacheKey->cache_value, true);
+                $data = $itemKey->cache_value;
                 if (!$data) {
-                    Log::warning("No data found for key: {$key}");
+                    Log::warning("No data found for key: {$itemKey->id}");
                     return;
                 }
 
                 $batchData = [];
-                $batchSize = intval(config('app.batch_size'));
                 foreach ($data as $car) {
-                    // Log::info('Starting Batch Insert');
-                    // **Process Data but Store in Batch**
                     $batchData[] = $this->prepareCarData((array) $car);
-                    Log::info('Batch Condiiton', ['batchData' => count($batchData), 'batchSize' => $batchSize]);
-                    // If batch reaches 1000, insert and reset
-                    if (count($batchData) >= $batchSize) {
-                        Log::info('Batch Inserted');
-                        $this->insertBatch($batchData, $cacheKey);
-                        $batchData = []; // Reset batch
-                    }else{
-                        Log::info('Batch Condition Not Meet');
-                    }
-
                 }
 
+                if (count($batchData) > 0) {
+                    Log::info('Batch Inserted');
+                    $this->insertBatch($batchData, $itemKey->id);
+                    $batchData = []; // Reset batch
+                }else{
+                    Log::info('Batch Condition Not Meet');
+                }
 
             } catch (\Exception $e) {
-                DB::connection('mysql')->table('cache_keys')->where('id', $cacheKey->id)->update(['status' => 'pending']);
-                Log::error("Error processing key {$key}: " . $e->getMessage());
+                Log::error("Error processing key {$itemKey->id}: " . $e->getMessage());
             }
         }
 
@@ -566,7 +538,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                 DB::connection('mysql')->table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
             }
 
-            DB::connection('mysql')->table('cache_keys')->where('id', $cacheKey->id)->delete();
+            VehicleProcessCachedApiData::where('id', $cacheKey)->delete();
 
 
 
@@ -574,7 +546,6 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
         } catch (\Exception $e) {
 
             // Mark cache as pending in case of failure
-            DB::connection('mysql')->table('cache_keys')->where('id', $cacheKey->id)->update(['status' => 'pending']);
 
             Log::info("Batch insert failed: " . $e->getMessage());
         }

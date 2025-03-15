@@ -33,7 +33,7 @@ class ProcessApiData extends Command
             ->latest('start_time')
             ->first();
 
-        $minutes = 400; // Default minutes value
+        $minutes = 60; // Default minutes value
 
         if ($lastCron && $lastCron->end_time) {
             $endTime = Carbon::parse($lastCron->end_time);
@@ -101,11 +101,11 @@ class ProcessApiData extends Command
                     // Chunk the collection into smaller collections of 200 items each
                     $dataCollection->chunk(200)->each(function ($chunk) {
                         // Prepare the chunk for insertion
-                        $insertData = $chunk->map(function ($item) {
-                            return [
-                                'cache_value' => $item,
-                            ];
-                        })->toArray();
+                        $insertData = [
+                            'cache_value' => $chunk->toArray(),
+                            'created_at' => now(),
+                            'expires_at' => Carbon::now()->addDays(7)
+                        ];
 
                         // Insert the chunk into the database
                         VehicleApiData::insert($insertData);

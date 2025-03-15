@@ -2,12 +2,13 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\ProcessCachedDataJob;
 use Illuminate\Console\Command;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
+use App\Models\VehicleApiData;
+use App\Models\VehicleProcessCachedApiData;
 use Illuminate\Support\Facades\Log;
 
 class ProcessCachedDataWihtoutQueue extends Command
@@ -34,8 +35,6 @@ class ProcessCachedDataWihtoutQueue extends Command
         $this->info("Process started at: " . $startDateTime);
         Log::info("Process started at: " . $startDateTime);
 
-        $CacheModel = DB::connection('mysql')->table('cache_keys');
-
         try {
 
             // Always Will Run On Default Server
@@ -47,37 +46,24 @@ class ProcessCachedDataWihtoutQueue extends Command
                 'updated_at' => now(),
             ]);
 
-            $cacheKeys = $CacheModel->where('cache_key', 'like', 'vehicle_api_data_%')
-                ->where('status', 'pending')
-                ->orderBy('created_at', 'asc')
-                ->take(20)
-                ->get();
 
-            if ($cacheKeys->isEmpty()) {
+            $cacheKeys = VehicleApiData::orderBy('created_at', 'asc')->limit(100)->get();
+            if (count($cacheKeys) == 0) {
                 $this->info("No pending cache keys found.");
-                DB::connection('mysql')->commit();
                 return;
             }
 
-            $cacheKeyIds = $cacheKeys->pluck('id')->toArray();
-
-            // Update status in bulk
-            $CacheModel->whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
         } catch (\Exception $e) {
             Log::info("Error fetching cache keys: ", ['data' => json_encode($e->getMessage())]);
             $this->handleCronError($cronRun, "Error fetching cache keys: " . $e->getMessage());
             return;
         }
 
-        $RemoteCacheModel = DB::connection('mysql_remote')->table('cache_keys');
-        $megaBatchData = [];
         foreach ($cacheKeys as $keyItem) {
-            $this->info('Cache Key Running: ' . $keyItem->cache_key);
-            // ProcessCachedDataJob::dispatch($keyItem->cache_key);
+            $this->info('ruuning loop');
             try{
-
-                $key = $keyItem->cache_key;
-                $data = json_decode($keyItem->cache_value, true);
+                $data = $keyItem->cache_value;
+                $this->info(gettype($data));
                 Log::info('Reading Cached Data', ['cache_value' => json_encode($data)]);
 
                 if (!$data) {
@@ -92,40 +78,23 @@ class ProcessCachedDataWihtoutQueue extends Command
                     $processDataForCache[] = $processedCar;
                 }
 
-                // Store processed data in Redis
-                $cacheKey = 'vehicle_process_data_' . now()->format('Y_m_d_H_i_s');
-                $expiresAt = now()->addMinutes(intval(config('app.cache_key_expiry')));
-
-                // Save cache details to the database
-                $megaBatchData[] = [
-                    'cache_key' => $cacheKey,
-                    'status' => 'pending',
-                    'cache_value' => json_encode($processDataForCache),
-                    'expires_at' => $expiresAt,
-                    'created_at' => Carbon::now(),
-                    'updated_at' => Carbon::now()
-                ];
+                VehicleProcessCachedApiData::insert([
+                    'cache_value' => $processDataForCache,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'expires_at' => Carbon::now()->addDays(7)
+                ]);
 
                 // Remove cache key from DB and Redis
-                $CacheModel->where('cache_key', $key)->delete();
-
-                $this->info('Key Stored: '. $key);
+                VehicleApiData::where('id', $keyItem->id)->delete();
+                $this->info('Key Stored: '. $keyItem->id);
 
             }catch(\Exception $e){
-                DB::connection('mysql')->table('cache_keys')->where('id', $keyItem->id)->update(['status' => 'pending']);
                 $this->info("Error processing key {$keyItem->cache_key}: ");
                 Log::info("Error processing key {$keyItem->cache_key}: " . $e->getMessage());
             }
         }
 
-        if (!empty($megaBatchData)) {
-            $RemoteCacheModel->upsert(
-                $megaBatchData,
-                ['cache_key'], // Unique key for checking existing records
-                ['status', 'cache_value', 'expires_at', 'updated_at'] // Fields to update if exists
-            );
-            $this->info("Inserted/Updated " . count($megaBatchData) . " records.");
-        }
 
         DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
             'end_time' => Carbon::now(),

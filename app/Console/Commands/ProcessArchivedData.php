@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
+use App\Models\VehicleArchivedApiData;
 use Illuminate\Support\Facades\Log;
 
 class ProcessArchivedData extends Command
@@ -107,30 +108,33 @@ class ProcessArchivedData extends Command
                 }
                 if ($response->successful()) {
                     $data = $response->json()['data'] ?? [];
-                    $cacheKey = 'vehicle_archived_data_' . now()->format('Y_m_d_H_i_s');
-                    $expiresAt = now()->addMinutes(intval(config('app.cache_key_expiry'))); // Store for 8 hours
 
-                    if (count($data) > 0) {
+                    if (!empty($data)) {
+                        // Convert the data array into a collection
+                        $dataCollection = collect($data);
 
-                        // Save cache details to database
-                        DB::connection('mysql_remote')->table('cache_keys')->updateOrInsert(
-                            ['cache_key' => $cacheKey],
-                            [
-                                'status' => 'pending',
-                                'cache_value' => json_encode($data),
-                                'expires_at' => $expiresAt,
-                                'created_at' => Carbon::now(),
-                                'updated_at' => Carbon::now(),
-                            ]
-                        );
+                        // Chunk the collection into smaller collections of 200 items each
+                        $dataCollection->chunk(200)->each(function ($chunk) {
+                            // Prepare the chunk for insertion
+                            $insertData = [
+                                'cache_value' => $chunk->toArray(),
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                                'expires_at' => Carbon::now()->addDays(7)
+                            ];
 
-                        if(config('app.env') !== 'production'){
-                            $this->info("Data saved in cache with key: {$cacheKey}");
-                            Log::info("Data saved in cache with key: {$cacheKey}");
+                            // Insert the chunk into the database
+                            VehicleArchivedApiData::insert($insertData);
+                        });
+
+                        Log::info('Stored Cached Data', ['total_records' => count($data)]);
+
+                        if (config('app.env') !== 'production') {
+                            $this->info('🎉 Data successfully stored in the database.');
                         }
                     } else {
-                        if(config('app.env') !== 'production'){
-                            Log::info("No data to cache. Skipping cache storage for key: {$cacheKey}");
+                        if (config('app.env') !== 'production') {
+                            $this->info('⚠️ No new data available.');
                         }
                     }
                 } else {

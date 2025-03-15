@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 use App\Models\CacheKey;
 use App\Mail\CronJobFailedMail;
+use App\Models\VehicleBuyNowApiData;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\FacadesLog;
 
 class BuyNowDataProcessing extends Command
 {
@@ -18,7 +21,7 @@ class BuyNowDataProcessing extends Command
      *
      * @var string
      */
-    protected $signature = 'cron:process-buy-now';
+    protected $signature = 'process:buy-now-data';
 
     /**
      * The console command description.
@@ -36,7 +39,7 @@ class BuyNowDataProcessing extends Command
         $startTime = microtime(true);
         $startDateTime = Carbon::now();
         $this->info("Process started at: " . $startDateTime);
-        \Log::info("Process started at: " . $startDateTime);
+        Log::info("Process started at: " . $startDateTime);
 
         // Get the last cron job status
         $lastCron = DB::table('cron_run_history')
@@ -50,12 +53,12 @@ class BuyNowDataProcessing extends Command
         if ($lastCron && $lastCron->end_time) {
             // Convert end_time to Carbon instance
             $endTime = Carbon::parse($lastCron->end_time);
-            
+
             // Get the difference in minutes (ensure it's a non-negative integer)
             $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
             $this->info("Time Difference: {$timeDifference}");
-            \Log::info("Time Difference: {$timeDifference}");
-            
+            Log::info("Time Difference: {$timeDifference}");
+
             // Apply the new conditions
             if ($timeDifference > 20) {
                 $minutes = $timeDifference + 10;
@@ -65,8 +68,8 @@ class BuyNowDataProcessing extends Command
         }
 
         $this->info("Minutes Parameter After Checking: {$minutes}");
-        \Log::info("Minutes Parameter After Checking: {$minutes}");
-        
+        Log::info("Minutes Parameter After Checking: {$minutes}");
+
         // Create an entry in cron_run_history
         $cronRun = DB::table('cron_run_history')->insertGetId([
             'cron_name' => 'process_buy_now_data',
@@ -76,8 +79,8 @@ class BuyNowDataProcessing extends Command
             'updated_at' => now(),
         ]);
 
-        
-        $perPage = 5000;
+
+        $perPage = 1000;
         $baseUrl = 'https://carstat.dev/api/fast-prices';
         $apiUrl = "{$baseUrl}?minutes={$minutes}&per_page={$perPage}&page=1";
 
@@ -93,26 +96,44 @@ class BuyNowDataProcessing extends Command
 
                     if ($response->successful()) {
                         $data = $response->json()['data'] ?? [];
-                        $cacheKey = 'buy_now_data_' . now()->format('Y_m_d_H_i_s');
-                        $expiresAt = now()->addMinutes(300);
 
-                        if (count($data) > 0) {
-                            Cache::put($cacheKey, $data, $expiresAt);
-                            CacheKey::updateOrCreate(['cache_key' => $cacheKey], ['status' => 'pending', 'expires_at' => $expiresAt]);
-                            $this->info("Data saved in cache with key: {$cacheKey}");
-                            \Log::info("Data saved in cache with key: {$cacheKey}");
+                        if (!empty($data)) {
+                            // Convert the data array into a collection
+                            $dataCollection = collect($data);
+
+                            // Chunk the collection into smaller collections of 200 items each
+                            $dataCollection->chunk(200)->each(function ($chunk) {
+                                // Prepare the chunk for insertion
+                                $insertData = [
+                                    'cache_value' => $chunk->toArray(),
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                    'expires_at' => Carbon::now()->addDays(7)
+                                ];
+
+                                // Insert the chunk into the database
+                                VehicleBuyNowApiData::insert($insertData);
+                            });
+
+                            Log::info('Stored Cached Data', ['total_records' => count($data)]);
+
+                            if (config('app.env') !== 'production') {
+                                $this->info('🎉 Data successfully stored in the database.');
+                            }
                         } else {
-                            \Log::info("No data to cache. Skipping cache storage for key: {$cacheKey}");
+                            if (config('app.env') !== 'production') {
+                                $this->info('⚠️ No new data available.');
+                            }
                         }
                     } else {
                         $this->error('Failed to fetch API data.');
-                        \Log::info('Failed to fetch API data.');
+                        Log::info('Failed to fetch API data.');
                         break;
                     }
 
 
                 $this->info('Data processed successfully.');
-                \Log::info('Data processed successfully.');
+                Log::info('Data processed successfully.');
 
                 // Get 'next' page URL
                 $nextUrl = $response->json()['links']['next'] ?? null;
@@ -127,14 +148,14 @@ class BuyNowDataProcessing extends Command
                     ]);
 
                     $this->info('No more pages to fetch.');
-                    \Log::info('No more pages to fetch.');
+                    Log::info('No more pages to fetch.');
                 }
 
             } while ($nextUrl !== null);
 
         } catch (\Exception $e) {
             $this->error("Error: " . $e->getMessage());
-            \Log::error("Error: " . $e->getMessage());
+            Log::error("Error: " . $e->getMessage());
 
             DB::table('cron_run_history')->where('id', $cronRun)->update([
                 'end_time' => Carbon::now(),
@@ -152,9 +173,9 @@ class BuyNowDataProcessing extends Command
         $executionTime = round($endTime - $startTime, 2);
 
         $this->info("Total execution time: {$executionTime} seconds");
-        \Log::info("Total execution time: {$executionTime} seconds");
+        Log::info("Total execution time: {$executionTime} seconds");
 
         $this->info('Data processing completed.');
-        \Log::info('Data processing completed.');
+        Log::info('Data processing completed.');
     }
 }
