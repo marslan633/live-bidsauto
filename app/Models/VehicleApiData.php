@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
-class VechicleApiData extends Model
+class VehicleApiData extends Model
 {
     protected $connection = 'mongodb';
     protected $collection = 'vehicle_api_data';
@@ -19,5 +19,10 @@ class VechicleApiData extends Model
             $model->expires_at = Carbon::now()->addDays(intval(config('app.ttl_expiry'))); // Set TTL (7 days)
         });
     }
+
+    protected $casts = [
+        'cache_value' => 'array',
+    ];
+
 
 }

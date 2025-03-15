@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\CacheKey;
+use App\Models\VehicleApiData;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -91,34 +92,27 @@ class ProcessApiData extends Command
                     break;
                 }
 
-                $data = $response->json()['data'] ?? null;
+                if (!empty($data)) {
+                    // Convert the data array into a collection
+                    $dataCollection = collect($data);
 
-                if (! empty($data)) {
+                    // Chunk the collection into smaller collections of 200 items each
+                    $dataCollection->chunk(200)->each(function ($chunk) {
+                        // Prepare the chunk for insertion
+                        $insertData = $chunk->map(function ($item) {
+                            return [
+                                'cache_value' => $item,
+                            ];
+                        })->toArray();
 
-                    // Save all data to cache with a unique cache key
-                    $cacheKey = 'vehicle_api_data_'.now()->format('Y_m_d_H_i_s');
-                    $expiresAt = now()->addMinutes(intval(config('app.cache_key_expiry'))); // Store for 20 Days
-                    $this->info("cache key {$cacheKey}.");
-                    $this->info("cache key {$cacheKey}.");
-                    // \Log::info("cache key {$cacheKey}.");
-                    Log::info('Stroing Cached Data', ['cache_value' => json_encode($data)]);
-                    if (count($data) > 0) {
-                        CacheKey::updateOrCreate(
-                            ['cache_key' => $cacheKey],
-                            [
-                                'status' => 'pending',
-                                'cache_value' => json_encode($data),
-                                'expires_at' => $expiresAt,
-                            ]);
+                        // Insert the chunk into the database
+                        VehicleApiData::insert($insertData);
+                    });
 
-                        $this->info("Data saved in cache with key: {$cacheKey}");
-                        // \Log::info("Data saved in cache with key: {$cacheKey}");
-                    } else {
-                        $this->info("No data to cache. Skipping cache storage for key: {$cacheKey}");
-                    }
+                    Log::info('Stored Cached Data', ['total_records' => count($data)]);
 
                     if (config('app.env') !== 'production') {
-                        $this->info('🎉 Data pushed to Redis Stream.');
+                        $this->info('🎉 Data successfully stored in the database.');
                     }
                 } else {
                     if (config('app.env') !== 'production') {
