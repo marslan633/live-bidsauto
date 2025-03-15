@@ -18,7 +18,13 @@ return new class extends Migration
 
         // **Create TTL Index (Auto-delete records after 7 days)**
         Schema::connection('mongodb')->table('vehicle_api_data', function (Blueprint $collection) {
-            $collection->index('expires_at', ['expireAfterSeconds' => 604800]); // 7 days TTL
+            // Define the TTL index with the correct syntax
+            $collection->index(
+                ['expires_at' => 1],
+                null,
+                null,
+                ['expireAfterSeconds' => 604800] // 7 days TTL
+            );
         });
 
         // **Index created_at for sorting**
