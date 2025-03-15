@@ -92,6 +92,8 @@ class ProcessApiData extends Command
                     break;
                 }
 
+                $data = $response->json()['data'] ?? null;
+
                 if (!empty($data)) {
                     // Convert the data array into a collection
                     $dataCollection = collect($data);
