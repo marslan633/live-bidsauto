@@ -79,7 +79,7 @@ class ProcessCachedArchivedDataWithoutQueue extends Command
                     return;
                 }
 
-                collect($data)->chunk(100)->each(function ($chunk) {
+                collect($data)->chunk(200)->each(function ($chunk) {
                     $batchData = $chunk->map(function ($car) {
                         return $this->prepareArchivedData((array) $car);
                     })->toArray();
