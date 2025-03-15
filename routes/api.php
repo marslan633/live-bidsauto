@@ -15,6 +15,7 @@ Route::get('/user', function (Request $request) {
 
 Route::prefix('vehicles')->group(function () {
     Route::post('/', [VehicleController::class, 'vehicleInformations']);
+    Route::get('/fetch', [VehicleController::class, 'vehicleDataByMinutes']);
     Route::get('/{id}', [VehicleController::class, 'searchVehicle']);
 });
 Route::post('filter-attributes', [VehicleController::class, 'filterAttributes']);

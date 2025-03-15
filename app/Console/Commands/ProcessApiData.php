@@ -39,11 +39,10 @@ class ProcessApiData extends Command
             $endTime = Carbon::parse($lastCron->end_time);
             $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
 
-            if (config('app.env') !== 'production') {
-                $this->info("⏳ Time Difference: {$timeDifference}");
-                Log::info("⏳ Time Difference: {$timeDifference}");
-                // \Log::info("⏳ Time Difference: {$timeDifference}");
-            }
+            // if (config('app.env') !== 'production') {
+            //     $this->info("⏳ Time Difference: {$timeDifference}");
+            //     Log::info("⏳ Time Difference: {$timeDifference}");
+            // }
 
             if ($timeDifference > 20) {
                 $minutes = $timeDifference + 10;
@@ -52,11 +51,10 @@ class ProcessApiData extends Command
             }
         }
 
-        if (config('app.env') !== 'production') {
-            $this->info('🚀 Process started at: '.$startDateTime);
-            Log::info('🚀 Process started at: '.$startDateTime);
-            // \Log::info("🚀 Process started at: " . $startDateTime);
-        }
+        // if (config('app.env') !== 'production') {
+        //     $this->info('🚀 Process started at: '.$startDateTime);
+        //     Log::info('🚀 Process started at: '.$startDateTime);
+        // }
 
         // **Store Cron Job Status**
         $cronRun = DB::table('cron_run_history')->insertGetId([
@@ -111,15 +109,15 @@ class ProcessApiData extends Command
                         VehicleApiData::insert($insertData);
                     });
 
-                    Log::info('Stored Cached Data', ['total_records' => count($data)]);
+                    // Log::info('Stored Cached Data', ['total_records' => count($data)]);
 
-                    if (config('app.env') !== 'production') {
-                        $this->info('🎉 Data successfully stored in the database.');
-                    }
+                    // if (config('app.env') !== 'production') {
+                    //     $this->info('🎉 Data successfully stored in the database.');
+                    // }
                 } else {
-                    if (config('app.env') !== 'production') {
-                        $this->info('⚠️ No new data available.');
-                    }
+                    // if (config('app.env') !== 'production') {
+                    //     $this->info('⚠️ No new data available.');
+                    // }
                 }
 
                 // **Get 'next' page URL**

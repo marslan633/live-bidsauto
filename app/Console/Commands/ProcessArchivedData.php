@@ -39,10 +39,10 @@ class ProcessArchivedData extends Command
         $startTime = microtime(true);
         $startDateTime = Carbon::now();
 
-        if(config('app.env') !== 'production'){
-            $this->info("Process started at: " . $startDateTime);
-            Log::info("Process started at: " . $startDateTime);
-        }
+        // if(config('app.env') !== 'production'){
+        //     $this->info("Process started at: " . $startDateTime);
+        //     Log::info("Process started at: " . $startDateTime);
+        // }
 
         // Get the last cron job status
         $lastCron = DB::connection('mysql')->table('cron_run_history')
@@ -59,10 +59,10 @@ class ProcessArchivedData extends Command
 
             // Get the difference in minutes (ensure it's a non-negative integer)
             $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
-        if(config('app.env') !== 'production'){
-            $this->info("Time Difference: {$timeDifference}");
-            Log::info("Time Difference: {$timeDifference}");
-        }
+        // if(config('app.env') !== 'production'){
+        //     $this->info("Time Difference: {$timeDifference}");
+        //     Log::info("Time Difference: {$timeDifference}");
+        // }
 
             // Apply the new conditions
             if ($timeDifference > 20) {
@@ -72,10 +72,10 @@ class ProcessArchivedData extends Command
             }
         }
 
-        if(config('app.env') !== 'production'){
-        $this->info("Minutes Parameter After Checking: {$minutes}");
-        Log::info("Minutes Parameter After Checking: {$minutes}");
-        }
+        // if(config('app.env') !== 'production'){
+        // $this->info("Minutes Parameter After Checking: {$minutes}");
+        // Log::info("Minutes Parameter After Checking: {$minutes}");
+        // }
         $cronRun = DB::connection('mysql')->table('cron_run_history')->insertGetId([
             'cron_name' => 'process_archived_vehicle_data',
             'start_time' => $startDateTime,
@@ -90,9 +90,9 @@ class ProcessArchivedData extends Command
 
         $apiUrl = "{$baseUrl}?per_page={$perPage}&minutes={$minutes}&simple_paginate=1&page=1";
 
-        if(config('app.env') !== 'production'){
-        Log::info("API: {$apiUrl}");
-        }
+        // if(config('app.env') !== 'production'){
+        // Log::info("API: {$apiUrl}");
+        // }
 
         try {
             do {
@@ -127,28 +127,28 @@ class ProcessArchivedData extends Command
                             VehicleArchivedApiData::insert($insertData);
                         });
 
-                        Log::info('Stored Cached Data', ['total_records' => count($data)]);
+                        // Log::info('Stored Cached Data', ['total_records' => count($data)]);
 
-                        if (config('app.env') !== 'production') {
-                            $this->info('🎉 Data successfully stored in the database.');
-                        }
+                        // if (config('app.env') !== 'production') {
+                        //     $this->info('🎉 Data successfully stored in the database.');
+                        // }
                     } else {
-                        if (config('app.env') !== 'production') {
-                            $this->info('⚠️ No new data available.');
-                        }
+                        // if (config('app.env') !== 'production') {
+                        //     $this->info('⚠️ No new data available.');
+                        // }
                     }
                 } else {
-                    if(config('app.env') !== 'production'){
-                        $this->error('Failed to fetch API data.');
-                        Log::info('Failed to fetch API data.');
-                    }
+                    // if(config('app.env') !== 'production'){
+                    //     $this->error('Failed to fetch API data.');
+                    //     Log::info('Failed to fetch API data.');
+                    // }
                     break;
                 }
 
-                if(config('app.env') !== 'production'){
-                    $this->info('Data processed successfully.');
-                    Log::info('Data processed successfully.');
-                }
+                // if(config('app.env') !== 'production'){
+                //     $this->info('Data processed successfully.');
+                //     Log::info('Data processed successfully.');
+                // }
                 // Get 'next' page URL
                 $nextUrl = $response->json()['links']['next'] ?? null;
                 if ($nextUrl) {
@@ -181,10 +181,10 @@ class ProcessArchivedData extends Command
                         'updated_at' => now(),
                     ]);
 
-                    if(config('app.env') !== 'production'){
-                        $this->info('No more pages to fetch.');
-                        Log::info('No more pages to fetch.');
-                    }
+                    // if(config('app.env') !== 'production'){
+                    //     $this->info('No more pages to fetch.');
+                    //     Log::info('No more pages to fetch.');
+                    // }
                 }
             } while ($nextUrl !== null);
         } catch (\Exception $e) {

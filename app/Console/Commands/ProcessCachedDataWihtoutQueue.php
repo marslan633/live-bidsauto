@@ -32,8 +32,8 @@ class ProcessCachedDataWihtoutQueue extends Command
     public function handle()
     {
         $startDateTime = Carbon::now();
-        $this->info("Process started at: " . $startDateTime);
-        Log::info("Process started at: " . $startDateTime);
+        // $this->info("Process started at: " . $startDateTime);
+        // Log::info("Process started at: " . $startDateTime);
 
         try {
 
@@ -64,10 +64,10 @@ class ProcessCachedDataWihtoutQueue extends Command
             try{
                 $data = $keyItem->cache_value;
                 $this->info(gettype($data));
-                Log::info('Reading Cached Data', ['cache_value' => json_encode($data)]);
+                // Log::info('Reading Cached Data', ['cache_value' => json_encode($data)]);
 
                 if (!$data) {
-                    Log::info('Data Not Found');
+                    // Log::info('Data Not Found');
                     $this->info('Data not found');
                     return;
                 }
@@ -87,10 +87,10 @@ class ProcessCachedDataWihtoutQueue extends Command
 
                 // Remove cache key from DB and Redis
                 VehicleApiData::where('id', $keyItem->id)->delete();
-                $this->info('Key Stored: '. $keyItem->id);
+                // $this->info('Key Stored: '. $keyItem->id);
 
             }catch(\Exception $e){
-                $this->info("Error processing key {$keyItem->cache_key}: ");
+                // $this->info("Error processing key {$keyItem->cache_key}: ");
                 Log::info("Error processing key {$keyItem->cache_key}: " . $e->getMessage());
             }
         }
