@@ -3,9 +3,15 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\CronRunHistory;
+use App\Models\VehicleProcessCachedApiData;
 
 class CronRunHistoryController extends Controller
 {
+
+    public function index(){
+       return VehicleProcessCachedApiData::orderBy('created_at', 'asc')->limit(100)->get();
+    }
+
     /**
      * Store a new cron run history.
      */
