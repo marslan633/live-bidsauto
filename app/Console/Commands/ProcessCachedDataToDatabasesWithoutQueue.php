@@ -31,9 +31,10 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
      */
     public function handle()
     {
-        $apiUrl = config('app.cron_history_api_url') . '/cron-run-histories';
         $startDateTime = Carbon::now();
         $this->info("Process started at: " . $startDateTime);
+        $this->info("API URL " . config('app.cron_history_api_url'));
+        $apiUrl = config('app.cron_history_api_url') . '/api/cron-run-histories';
         Log::info("Process started at: " . $startDateTime);
 
         $cronRun = null;
@@ -46,7 +47,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                 'start_time' => now(),
                 'status' => 'running',
             ]);
-
+            Log::info('Testing Create History Response', ['responseCreateCronHistory' => json_encode($responseCreateCronHistory)]);
             if ($responseCreateCronHistory->successful()) {
                 $cronRun = $responseCreateCronHistory->json('id'); // Get inserted ID
                 $this->info("Cron Run ID: " . $cronRun);
@@ -121,7 +122,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
     private function handleCronError($cronRun, $errorMessage)
     {
         Log::error($errorMessage);
-        $apiUrl = config('app.cron_history_api_url') . '/cron-run-histories';
+        $apiUrl = config('app.cron_history_api_url') . '/api/cron-run-histories';
 
         DB::table('cron_run_history')->where('id', $cronRun)->update([
             'end_time' => Carbon::now(),
@@ -153,7 +154,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
         if (!isset($car['year'])) {
             $year = DB::connection('mysql_remote')->table('years')->insertGetId(['name' => $car['year']]);
         }
-        Log::info('Year', ['data' => $year]);
+        // Log::info('Year', ['data' => $year]);
 
         $car['vehicle_record'] = (array) $car['vehicle_record'];
         $model_id = DB::connection('mysql_remote')->table('vehicle_models')
@@ -163,7 +164,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                     'vehicle_model_api_id' => $car['model']['vehicle_model_api_id'],
                     'name' => $car['model']['name'],
                 ]);
-        Log::info('Model', ['data' => $model_id]);
+        // Log::info('Model', ['data' => $model_id]);
 
 
         $imageRecord = $car['vehicle_record']['imageRecord'] ?? [];
@@ -208,7 +209,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                 ]);
             });
         }
-        Log::info('Image', ['data' => $imageId]);
+        // Log::info('Image', ['data' => $imageId]);
 
 
         $manufacturer_id =  DB::connection('mysql_remote')->table('manufacturers')
@@ -218,7 +219,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                     'manufacturer_api_id' => $car['manufacturer']['manufacturer_api_id'],
                     'name' => $car['manufacturer']['name'],
                 ]);
-        Log::info('Manufacturer', ['data' => $manufacturer_id]);
+        // Log::info('Manufacturer', ['data' => $manufacturer_id]);
 
         $generation_id = DB::connection('mysql_remote')->table('generations')
         ->where('generation_api_id', $car['generation']['generation_api_id'])
@@ -228,7 +229,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                 'model_id' => $model_id,
             ]);
 
-        Log::info('Generation', ['data' => $generation_id]);
+        // Log::info('Generation', ['data' => $generation_id]);
 
         $body_type_id = DB::connection('mysql_remote')->table('body_types')
                 ->where('body_type_api_id', $car['body_type']['body_type_api_id'])
@@ -238,7 +239,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                     'name' => $car['body_type']['name'],
                 ]);
 
-        Log::info('Body Type', ['data' => $body_type_id]);
+        // Log::info('Body Type', ['data' => $body_type_id]);
 
         $color_id =  DB::connection('mysql_remote')->table('colors')
                 ->where('color_api_id', $car['color']['color_api_id'])
@@ -247,7 +248,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                     'color_api_id' => $car['color']['color_api_id'],
                     'name' => $car['color']['name'],
                 ]);
-        Log::info('Color', ['data' => $color_id]);
+        // Log::info('Color', ['data' => $color_id]);
         $engine_id =  DB::connection('mysql_remote')->table('engines')
                 ->where('engine_api_id', $car['engine']['engine_api_id'])
                 ->value('id')
@@ -255,7 +256,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                     'engine_api_id' => $car['engine']['engine_api_id'],
                     'name' => $car['engine']['name'],
                 ]);
-                Log::info('Engine', ['data' => $engine_id]);
+                // Log::info('Engine', ['data' => $engine_id]);
 
         $transmission_id =  DB::connection('mysql_remote')->table('transmissions')
                 ->where('transmission_api_id', $car['transmission']['transmission_api_id'])
@@ -264,7 +265,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                     'transmission_api_id' => $car['transmission']['transmission_api_id'],
                     'name' => $car['transmission']['name'],
                 ]);
-                Log::info('Transmission', ['data' => $transmission_id]);
+                // Log::info('Transmission', ['data' => $transmission_id]);
 
         $drive_wheel_id =  DB::connection('mysql_remote')->table('drive_wheels')
                 ->where('drive_wheel_api_id', $car['drive_wheel']['drive_wheel_api_id'])
@@ -273,7 +274,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                     'drive_wheel_api_id' => $car['drive_wheel']['drive_wheel_api_id'],
                     'name' => $car['drive_wheel']['name'],
                 ]);
-                Log::info('Driver Wheel', ['data' => $drive_wheel_id]);
+                // Log::info('Driver Wheel', ['data' => $drive_wheel_id]);
 
         $vehicle_type_id = DB::connection('mysql_remote')->table('vehicle_types')
                 ->where('vehicle_type_api_id', $car['vehicle_type']['vehicle_type_api_id'])
@@ -282,7 +283,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                     'vehicle_type_api_id' => $car['vehicle_type']['vehicle_type_api_id'],
                     'name' => $car['vehicle_type']['name'],
                 ]);
-                Log::info('Vehicle Type', ['data' => $vehicle_type_id]);
+                // Log::info('Vehicle Type', ['data' => $vehicle_type_id]);
 
         $fuel_id =  DB::connection('mysql_remote')->table('fuels')
                 ->where('fuel_api_id', $car['fuel']['fuel_api_id'])
@@ -291,7 +292,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                     'fuel_api_id' => $car['fuel']['fuel_api_id'],
                     'name' => $car['fuel']['name'],
                 ]);
-                Log::info('Fuel', ['data' => $fuel_id]);
+                // Log::info('Fuel', ['data' => $fuel_id]);
 
         $domain_id = isset($car['vehicle_record']['domain'])
         ?  DB::connection('mysql_remote')->table('domains')
@@ -302,7 +303,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                     'name' => $car['vehicle_record']['domain']['name'],
                 ])
         : null;
-                Log::info('Domain', ['data' => $domain_id]);
+                // Log::info('Domain', ['data' => $domain_id]);
 
         $selling_branch_id = isset($car['vehicle_record']['selling_branch'])
         ?  DB::connection('mysql_remote')->table('selling_branches')
@@ -316,13 +317,13 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                     'domain_id' => $domain_id, // Use the computed domain_id
                 ])
         : null;
-        Log::info('Seller Branch', ['data' => $selling_branch_id]);
+        // Log::info('Seller Branch', ['data' => $selling_branch_id]);
 
         $odometer_id = DB::connection('mysql_remote')->table('odometers')
             ->where('name', $car['vehicle_record']['odometer']['name'])
             ->value('id')
             ?? DB::connection('mysql_remote')->table('odometers')->insertGetId(['name' => $car['vehicle_record']['odometer']['name']]);
-        Log::info('Odometer', ['data' => $odometer_id]);
+        // Log::info('Odometer', ['data' => $odometer_id]);
 
         $seller_id = DB::connection('mysql_remote')->table('sellers')
             ->where('seller_api_id', $car['vehicle_record']['seller']['seller_api_id'])
@@ -331,7 +332,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                 'seller_api_id' => $car['vehicle_record']['seller']['seller_api_id'],
                 'name' => $car['vehicle_record']['seller']['name']
             ]);
-            Log::info('Seller', ['data' => $seller_id]);
+            // Log::info('Seller', ['data' => $seller_id]);
 
         $seller_type_id = DB::connection('mysql_remote')->table('seller_types')
             ->where('seller_type_api_id', $car['vehicle_record']['seller_type']['seller_type_api_id'])
@@ -340,7 +341,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                 'seller_type_api_id' => $car['vehicle_record']['seller_type']['seller_type_api_id'],
                 'name' => $car['vehicle_record']['seller_type']['name']
             ]);
-            Log::info('Seller Type', ['data' => $seller_type_id]);
+            // Log::info('Seller Type', ['data' => $seller_type_id]);
 
         $condition_id = DB::connection('mysql_remote')->table('conditions')
             ->where('condition_api_id', $car['vehicle_record']['condition']['condition_api_id'])
@@ -349,7 +350,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                 'condition_api_id' => $car['vehicle_record']['condition']['condition_api_id'],
                 'name' => $car['vehicle_record']['condition']['name']
             ]);
-            Log::info('Condition', ['data' => $condition_id]);
+            // Log::info('Condition', ['data' => $condition_id]);
 
         $status_id = DB::connection('mysql_remote')->table('statuses')
             ->where('status_api_id', $car['vehicle_record']['status']['status_api_id'])
@@ -358,7 +359,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                 'status_api_id' => $car['vehicle_record']['status']['status_api_id'],
                 'name' => $car['vehicle_record']['status']['name']
             ]);
-            Log::info('Status', ['data' => $status_id]);
+            // Log::info('Status', ['data' => $status_id]);
 
         $title_id = !empty($car['vehicle_record']['title_title'])
             ? DB::connection('mysql_remote')->table('titles')
@@ -369,7 +370,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                     'name' => $car['vehicle_record']['title_title']['name']
                 ])
             : null;
-            Log::info('Title', ['data' => $title_id]);
+            // Log::info('Title', ['data' => $title_id]);
 
         $detailed_title_id = DB::connection('mysql_remote')->table('detailed_titles')
             ->where('detailed_title_api_id', $car['vehicle_record']['detailed_title']['detailed_title_api_id'])
@@ -378,7 +379,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                 'detailed_title_api_id' => $car['vehicle_record']['detailed_title']['detailed_title_api_id'],
                 'name' => $car['vehicle_record']['detailed_title']['name']
             ]);
-            Log::info('Detailed Title', ['data' => $detailed_title_id]);
+            // Log::info('Detailed Title', ['data' => $detailed_title_id]);
 
         $damage_id = !empty($car['vehicle_record']['damageMain'])
             ? DB::connection('mysql_remote')->table('damages')
@@ -389,7 +390,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                     'name' => $car['vehicle_record']['damageMain']['name']
                 ])
             : null;
-            Log::info('Damage', ['data' => $damage_id]);
+            // Log::info('Damage', ['data' => $damage_id]);
 
         $damage_second = !empty($car['vehicle_record']['damageSecond'])
             ? DB::connection('mysql_remote')->table('damages')
@@ -400,7 +401,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                     'name' => $car['vehicle_record']['damageSecond']['name']
                 ])
             : null;
-            Log::info('Damage Second', ['data' => $damage_second]);
+            // Log::info('Damage Second', ['data' => $damage_second]);
 
         $country_id = DB::connection('mysql_remote')->table('countries')
             ->where('iso', $car['vehicle_record']['country']['iso'])
@@ -409,7 +410,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                 'iso' => $car['vehicle_record']['country']['iso'],
                 'name' => $car['vehicle_record']['country']['name']
             ]);
-            Log::info('Country', ['data' => $country_id]);
+            // Log::info('Country', ['data' => $country_id]);
 
         $state_id = !empty($car['vehicle_record']['state'])
             ? DB::connection('mysql_remote')->table('states')
@@ -422,7 +423,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                     'name' => $car['vehicle_record']['state']['name']
                 ])
             : null;
-            Log::info('State', ['data' => $state_id]);
+            // Log::info('State', ['data' => $state_id]);
 
         $city_id = !empty($car['vehicle_record']['city'])
             ? DB::connection('mysql_remote')->table('cities')
@@ -434,7 +435,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                     'name' => $car['vehicle_record']['city']['name']
                 ])
             : null;
-            Log::info('City', ['data' => $city_id]);
+            // Log::info('City', ['data' => $city_id]);
 
         $location_id = !empty($car['vehicle_record']['locationRecord']['location_api_id'])
             ? DB::connection('mysql_remote')->table('locations')
@@ -451,7 +452,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                     'raw' => $car['vehicle_record']['locationRecord']['raw'] ?? '{}'
                 ])
             : null;
-            Log::info('Location', ['data' => $location_id]);
+            // Log::info('Location', ['data' => $location_id]);
 
         $data = [
             'manufacturer_id' => $manufacturer_id,
