@@ -24,6 +24,7 @@ return [
     'batch_size' => env('BATCH_SIZE', 1000),
     'cache_key_expiry' => env('CACHE_KEY_EXPIRY', 1000),
     'TTL_EXPIRY' => env('ttl_expiry', 7),
+    'CRON_HISTORY_API_URL' => env('cron_history_api_url', ''),
 
     /*
     |--------------------------------------------------------------------------

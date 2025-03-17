@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
+use App\Models\CronRunHistory;
 use App\Models\VehicleArchivedApiData;
 use App\Models\VehicleProcessCachedArchivedApiData;
 use Illuminate\Support\Facades\Log;
@@ -37,13 +38,14 @@ class ProcessCachedArchivedDataWithoutQueue extends Command
         Log::info("Process started at: " . $startDateTime);
 
         try {
-            $cronRun = DB::connection('mysql')->table('cron_run_history')->insertGetId([
+            $cronRun = CronRunHistory::create([
                 'cron_name' => 'process_cached_archived_data',
                 'start_time' => $startDateTime,
                 'status' => 'running',
                 'created_at' => now(),
                 'updated_at' => now(),
-            ]);
+            ])->_id;
+
 
             // Get all cache keys for API data
             $cacheKeys = VehicleArchivedApiData::orderBy('created_at', 'asc')->limit(100)->get();
@@ -55,8 +57,9 @@ class ProcessCachedArchivedDataWithoutQueue extends Command
             }
         } catch (\Exception $e) {
             $this->error("Error fetching cache keys or updating status: " . $e->getMessage());
-            DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
-                'end_time' => Carbon::now(),
+
+            CronRunHistory::where('_id', $cronRun)->update([
+                'end_time' => now(),
                 'status' => 'failed',
                 'error_message' => $e->getMessage(),
                 'updated_at' => now(),
@@ -106,8 +109,8 @@ class ProcessCachedArchivedDataWithoutQueue extends Command
         }
 
         // Mark cron as successful
-        DB::table('cron_run_history')->where('id', $cronRun)->update([
-            'end_time' => Carbon::now(),
+        CronRunHistory::where('_id', $cronRun)->update([
+            'end_time' => now(),
             'status' => 'success',
             'updated_at' => now(),
         ]);

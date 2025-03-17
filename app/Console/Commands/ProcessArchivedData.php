@@ -8,8 +8,10 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
+use App\Models\CronRunHistory;
 use App\Models\VehicleArchivedApiData;
 use Illuminate\Support\Facades\Log;
+use MongoDB\Laravel\Eloquent\Casts\ObjectId;
 
 class ProcessArchivedData extends Command
 {
@@ -45,11 +47,11 @@ class ProcessArchivedData extends Command
         // }
 
         // Get the last cron job status
-        $lastCron = DB::connection('mysql')->table('cron_run_history')
-            ->where('cron_name', 'process_archived_vehicle_data')
-            ->where('status', 'success')
-            ->latest('start_time')
-            ->first();
+        $lastCron = CronRunHistory::where('cron_name', 'process_archived_vehicle_data')
+        ->where('status', 'success')
+        ->orderBy('start_time', 'desc')
+        ->first();
+
 
         $minutes = 2500; // Default minutes value
 
@@ -76,14 +78,15 @@ class ProcessArchivedData extends Command
         // $this->info("Minutes Parameter After Checking: {$minutes}");
         // Log::info("Minutes Parameter After Checking: {$minutes}");
         // }
-        $cronRun = DB::connection('mysql')->table('cron_run_history')->insertGetId([
+        $cronRun = CronRunHistory::create([
             'cron_name' => 'process_archived_vehicle_data',
             'start_time' => $startDateTime,
             'status' => 'running',
             'minutes' => $minutes,
             'created_at' => now(),
             'updated_at' => now(),
-        ]);
+        ])->_id;
+
 
         $perPage = 1000;
         $baseUrl = 'http://carstat.dev/api/archived-lots';
@@ -175,11 +178,12 @@ class ProcessArchivedData extends Command
                     $apiUrl = $nextUrl;
                 } else {
                     // Update cron_run_history with success status
-                    DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
-                        'end_time' => Carbon::now(),
+                    CronRunHistory::where('_id', $cronRun)->update([
+                        'end_time' => now(),
                         'status' => 'success',
                         'updated_at' => now(),
                     ]);
+
 
                     // if(config('app.env') !== 'production'){
                     //     $this->info('No more pages to fetch.');
@@ -192,12 +196,13 @@ class ProcessArchivedData extends Command
                 $this->error("Error: " . $e->getMessage());
                 Log::error("Error: " . $e->getMessage());
             }
-            DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
-                'end_time' => Carbon::now(),
+            CronRunHistory::where('_id', $cronRun)->update([
+                'end_time' => now(),
                 'status' => 'failed',
                 'error_message' => $e->getMessage(),
                 'updated_at' => now(),
             ]);
+
 
             // Send email notification
             $cronJobName = 'process_archived_vehicle_data';

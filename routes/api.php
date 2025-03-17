@@ -4,6 +4,7 @@ use App\Console\Commands\ProcessCachedDataToDatabases;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\VehicleController;
+use App\Http\Controllers\CronRunHistoryController;
 use App\Models\CacheKey;
 use App\Models\RemoteCacheKey;
 use Illuminate\Support\Facades\Cache;
@@ -106,3 +107,5 @@ Route::get('get-redis-key', function(Request $request){
 
 Route::get('uncompressed-data',[VehicleController::class, 'getUncompressData']);
 
+Route::post('/cron-run-histories', [CronRunHistoryController::class, 'store']);
+Route::put('/cron-run-histories/{id}', [CronRunHistoryController::class, 'update']);

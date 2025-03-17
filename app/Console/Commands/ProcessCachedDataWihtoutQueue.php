@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
+use App\Models\CronRunHistory;
 use App\Models\VehicleApiData;
 use App\Models\VehicleProcessCachedApiData;
 use Illuminate\Support\Facades\Log;
@@ -38,13 +39,14 @@ class ProcessCachedDataWihtoutQueue extends Command
         try {
 
             // Always Will Run On Default Server
-            $cronRun = DB::connection('mysql')->table('cron_run_history')->insertGetId([
+            $cronRun = CronRunHistory::create([
                 'cron_name' => 'process_cached_data',
                 'start_time' => $startDateTime,
                 'status' => 'running',
                 'created_at' => now(),
                 'updated_at' => now(),
-            ]);
+            ])->_id;
+
 
 
             $cacheKeys = VehicleApiData::orderBy('created_at', 'asc')->limit(100)->get();
@@ -96,11 +98,12 @@ class ProcessCachedDataWihtoutQueue extends Command
         }
 
 
-        DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
-            'end_time' => Carbon::now(),
+        CronRunHistory::where('_id', $cronRun)->update([
+            'end_time' => now(),
             'status' => 'success',
             'updated_at' => now(),
         ]);
+
     }
 
     /**
@@ -110,8 +113,8 @@ class ProcessCachedDataWihtoutQueue extends Command
     {
         Log::error($errorMessage);
         // Always Run on Defautl Server
-        DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
-            'end_time' => Carbon::now(),
+        CronRunHistory::where('_id', $cronRun)->update([
+            'end_time' => now(),
             'status' => 'failed',
             'error_message' => $errorMessage,
             'updated_at' => now(),

@@ -3,13 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Jobs\ProcessCachedDataToDatabaseJob;
-use App\Jobs\TestJob;
 use Illuminate\Console\Command;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\{DB, Mail, Log, Bus};
+use Illuminate\Support\Facades\{DB, Http, Mail, Log};
 use App\Mail\CronJobFailedMail;
-use Illuminate\Bus\Batch;
-use Throwable;
+use App\Models\VehicleProcessCachedApiData;
 
 class ProcessCachedDataToDatabases extends Command
 {
@@ -27,6 +25,8 @@ class ProcessCachedDataToDatabases extends Command
      */
     protected $description = 'Process cached data into database';
 
+    protected $apiUrl = 'https://your-first-server.com/api/cron-run-histories';
+
     /**
      * Execute the console command.
      */
@@ -36,46 +36,32 @@ class ProcessCachedDataToDatabases extends Command
         $this->info("Process started at: " . $startDateTime);
         Log::info("Process started at: " . $startDateTime);
 
-        try {
-            DB::connection('mysql')->getPdo(); // Check MySQL connection
-            DB::connection('mysql_remote')->getPdo(); // Check Remote DB connection
-        } catch (\Exception $e) {
-            $this->error('Database connection failed:');
-            Log::info("Database connection failed: ", ['exception' => json_encode($e->getMessage())]);
-            return;
-        }
-
         $cronRun = null;
 
         try{
-            $cronRun = DB::connection('mysql')->table('cron_run_history')->insertGetId([
+            // Remote Connection to KVM4.1
+
+            $responseCreateCronHistory = Http::post($this->apiUrl, [
                 'cron_name' => 'process_cached_data_to_database',
-                'start_time' => $startDateTime,
+                'start_time' => now(),
                 'status' => 'running',
-                'created_at' => now(),
-                'updated_at' => now(),
             ]);
 
-            // Lock the cache keys for update
-            $cacheKeys = DB::connection('mysql_remote')->table('cache_keys')->where('cache_key', 'like', 'vehicle_process_data%')
-            ->where('status', 'pending')
-            ->orderBy('created_at', 'asc')
-            // ->lockForUpdate()
-            ->take(20)
-            ->get();
-
-            if ($cacheKeys->isEmpty()) {
-                $this->info("No pending cache keys found.");
-                return;
+            if ($responseCreateCronHistory->successful()) {
+                $cronRun = $responseCreateCronHistory->json('id'); // Get inserted ID
+                $this->info("Cron Run ID: " . $cronRun);
+            } else {
+                $this->info("Failed to store cron run history.");
             }
 
-            $cacheKeyIds = $cacheKeys->pluck('id')->toArray();
-              // Update status in bulk
-            DB::connection('mysql_remote')->table('cache_keys')->whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
-            Log::info('Database Commit Done');
+            $cacheKeys = VehicleProcessCachedApiData::orderBy('created_at', 'asc')->limit(100)->get();
+
+            if (count($cacheKeys) == 0) {
+                $this->info("No Data Pending to process");
+            }
+
 
         }catch(\Exception $e){
-            Log::info('Rolle Back From Process Cahed To Database');
             if($cronRun !== null){
                 $this->handleCronError($cronRun, "Error fetching cache keys: " . $e->getMessage());
             }
@@ -85,19 +71,23 @@ class ProcessCachedDataToDatabases extends Command
         // **Batch processing setup**
         // Initialize an empty array to hold the jobs
         // Iterate over the cache keys and create jobs
-        foreach ($cacheKeys as $cacheKey) {
-            // TestJob::dispatch($cacheKey->id, $cacheKey->cache_key);
-            $this->info('Data Starting Handover To Job Done ' . $cacheKey->cache_key);
-            ProcessCachedDataToDatabaseJob::dispatch($cacheKey);
-            $this->info('Data End Handover To Job Done ' . $cacheKey->cache_key);
+        foreach ($cacheKeys as $itemKey) {
+            ProcessCachedDataToDatabaseJob::dispatch($itemKey);
         }
 
         if($cronRun){
-            DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
+
+            $responseUpdateCronRunHistory = Http::put($this->apiUrl."/$cronRun", [
                 'end_time' => Carbon::now(),
                 'status' => 'success',
                 'updated_at' => now(),
             ]);
+
+            if ($responseUpdateCronRunHistory->successful()) {
+                $this->info("Cron Run Updated Successfully.");
+            } else {
+                $this->info("Failed to update cron run history.");
+            }
         }
 
 
@@ -112,11 +102,25 @@ class ProcessCachedDataToDatabases extends Command
         DB::table('cron_run_history')->where('id', $cronRun)->update([
             'end_time' => Carbon::now(),
             'status' => 'failed',
+            'updated_at' => now(),
+        ]);
+
+        $responseUpdateCronRunHistory = Http::put($this->apiUrl."/$cronRun", [
+            'end_time' => Carbon::now(),
+            'status' => 'failed',
             'error_message' => $errorMessage,
             'updated_at' => now(),
         ]);
 
+        if ($responseUpdateCronRunHistory->successful()) {
+            $this->info("Cron Run Updated Successfully.");
+        } else {
+            $this->info("Failed to update cron run history.");
+        }
+
         $adminEmails = explode(',', env('ADMIN_EMAIL'));
         Mail::to($adminEmails)->send(new CronJobFailedMail($errorMessage, 'process_cached_data'));
     }
+
+
 }

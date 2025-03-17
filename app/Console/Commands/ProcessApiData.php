@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\CacheKey;
+use App\Models\CronRunHistory;
 use App\Models\VehicleApiData;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -27,8 +28,7 @@ class ProcessApiData extends Command
         // }
 
         // **Get Last Successful Cron Job Status**
-        $lastCron = DB::table('cron_run_history')
-            ->where('cron_name', 'process_vehicle_data')
+        $lastCron = CronRunHistory::where('cron_name', 'process_vehicle_data')
             ->where('status', 'success')
             ->latest('start_time')
             ->first();
@@ -57,13 +57,13 @@ class ProcessApiData extends Command
         // }
 
         // **Store Cron Job Status**
-        $cronRun = DB::table('cron_run_history')->insertGetId([
+        $cronRun = CronRunHistory::create([
             'cron_name' => 'process_vehicle_data',
             'start_time' => $startDateTime,
             'status' => 'running',
             'created_at' => now(),
             'updated_at' => now(),
-        ]);
+        ])->id;
 
         $perPage = 1000;
         $baseUrl = 'http://carstat.dev/api/cars';
@@ -128,22 +128,24 @@ class ProcessApiData extends Command
             } while ($nextUrl !== null);
 
             // **Mark Cron as Success**
-            DB::table('cron_run_history')->where('id', $cronRun)->update([
-                'end_time' => Carbon::now(),
+            CronRunHistory::where('_id', $cronRun)->update([
+                'end_time' => now(),
                 'status' => 'success',
                 'updated_at' => now(),
             ]);
+
 
         } catch (\Exception $e) {
             $this->error('❌ Error: '.$e->getMessage());
             // \Log::error("❌ Error: " . $e->getMessage());
 
-            DB::table('cron_run_history')->where('id', $cronRun)->update([
-                'end_time' => Carbon::now(),
+            CronRunHistory::where('_id', $cronRun)->update([
+                'end_time' => now(),
                 'status' => 'failed',
                 'error_message' => $e->getMessage(),
                 'updated_at' => now(),
             ]);
+
         }
     }
 }
