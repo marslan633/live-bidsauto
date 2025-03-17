@@ -63,9 +63,9 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
 
 
         }catch(\Exception $e){
-            if($cronRun !== null){
+            // if($cronRun !== null){
                 $this->handleCronError($cronRun, "Error fetching cache keys: " . $e->getMessage());
-            }
+            // }
             return;
         }
 
