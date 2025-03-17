@@ -10,6 +10,8 @@ use App\Models\RemoteCacheKey;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
+Route::get('/get-vehicle-data-for-database', [CronRunHistoryController::class, 'getRecords']);
+
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -107,6 +109,5 @@ Route::get('get-redis-key', function(Request $request){
 
 Route::get('uncompressed-data',[VehicleController::class, 'getUncompressData']);
 
-Route::get('/get-vehicle-data-for-database', [CronRunHistoryController::class, 'getRecords']);
 Route::post('/cron-run-histories', [CronRunHistoryController::class, 'store']);
 Route::put('/cron-run-histories/{id}', [CronRunHistoryController::class, 'update']);
