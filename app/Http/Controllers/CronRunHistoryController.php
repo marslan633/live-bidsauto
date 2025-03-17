@@ -9,7 +9,7 @@ class CronRunHistoryController extends Controller
 {
 
     public function getRecords(){
-       return VehicleProcessCachedApiData::orderBy('created_at', 'asc')->limit(100)->get();
+       return response()->json(VehicleProcessCachedApiData::orderBy('created_at', 'asc')->limit(100)->get());
     }
 
     /**
