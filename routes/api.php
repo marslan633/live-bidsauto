@@ -7,10 +7,10 @@ use App\Http\Controllers\Api\VehicleController;
 use App\Http\Controllers\CronRunHistoryController;
 use App\Models\CacheKey;
 use App\Models\RemoteCacheKey;
+use App\Models\VehicleProcessCachedApiData;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
-Route::get('/get-vehicle-data-for-database', [CronRunHistoryController::class, 'getRecords']);
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -111,3 +111,7 @@ Route::get('uncompressed-data',[VehicleController::class, 'getUncompressData']);
 
 Route::post('/cron-run-histories', [CronRunHistoryController::class, 'store']);
 Route::put('/cron-run-histories/{id}', [CronRunHistoryController::class, 'update']);
+
+Route::get('/get-vehicles-for-database', function(){
+    return response()->json(VehicleProcessCachedApiData::orderBy('created_at', 'asc')->limit(100)->get());
+});
