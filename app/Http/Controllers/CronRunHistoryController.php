@@ -8,7 +8,7 @@ use App\Models\VehicleProcessCachedApiData;
 class CronRunHistoryController extends Controller
 {
 
-    public function index(){
+    public function getRecords(){
        return VehicleProcessCachedApiData::orderBy('created_at', 'asc')->limit(100)->get();
     }
 
