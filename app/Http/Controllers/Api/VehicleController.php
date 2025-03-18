@@ -8,7 +8,7 @@ use App\Models\{
     VehicleRecord, Manufacturer, VehicleModel, Generation, BodyType, Color,
     Transmission, DriveWheel, Fuel, Condition, Status, VehicleType, Domain,
     Engine, Seller, SellerType, Title, DetailedTitle, Damage, Image, Country,
-    State, City, Location, SellingBranch, Year, BuyNow, Odometer, CacheKey, VehicleRecordArchived
+    State, City, Location, SellingBranch, Year, BuyNow, Odometer, CacheKey, CronRunHistory, VehicleRecordArchived
 };
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -588,7 +588,7 @@ public function filterAttributes(Request $request)
             $size = $request->input('size', 10);
 
             // Fetch the latest record(s) from the cron_run_history table
-            $history = DB::table('cron_run_history')->orderBy('id', 'desc')
+            $history = CronRunHistory::orderBy('id', 'desc')
                     ->skip(($page - 1) * $size)->take($size)->get();
 
             return sendResponse(true, 200, 'Filtered records fetched successfully!', $history, 200);

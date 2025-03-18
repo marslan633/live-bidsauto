@@ -85,7 +85,7 @@ return [
         'mongodb' => [
             'driver'   => 'mongodb',
             'dsn'      => env('MONGO_DB_DSN', 'mongodb://127.0.0.1:27017'),
-            'database' => env('MONGO_DB_DATABASE', 'mainscraper_db'),
+            'database' => env('MONGO_DB_DATABASE', ''),
             'options'  => [
                 'connectTimeoutMS'          => 300000, // ⏳ 5 minutes
                 'socketTimeoutMS'           => 300000, // ⏳ 5 minutes
