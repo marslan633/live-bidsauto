@@ -1,8 +1,7 @@
 <?php
 
-use App\Console\Commands\ProcessCachedDataToDatabases;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 use App\Http\Controllers\Api\VehicleController;
 use App\Http\Controllers\CronRunHistoryController;
 use App\Models\CacheKey;
@@ -10,6 +9,7 @@ use App\Models\RemoteCacheKey;
 use App\Models\VehicleProcessCachedApiData;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use App\Console\Commands\ProcessCachedDataToDatabases;
 
 
 Route::get('/user', function (Request $request) {
