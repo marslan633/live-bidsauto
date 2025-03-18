@@ -7,7 +7,6 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Foundation\Queue\Queueable;
@@ -63,19 +62,19 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
         // Log::info('Car Dara', ['CarData' => json_encode($car)]);
         $year = null;
         if (!isset($car['year'])) {
-            $year = DB::connection('mysql')->table('years')->insertGetId(['name' => $car['year']]);
+            $year = DB::table('years')->insertGetId(['name' => $car['year']]);
         }
-        Log::info('Year', ['data' => $year]);
+        // Log::info('Year', ['data' => $year]);
 
         $car['vehicle_record'] = (array) $car['vehicle_record'];
-        $model_id = DB::connection('mysql')->table('vehicle_models')
+        $model_id = DB::table('vehicle_models')
                 ->where('vehicle_model_api_id', $car['model']['vehicle_model_api_id'])
                 ->value('id') // Fetch only the 'id' column for efficiency
-                ?? DB::connection('mysql')->table('vehicle_models')->insertGetId([
+                ?? DB::table('vehicle_models')->insertGetId([
                     'vehicle_model_api_id' => $car['model']['vehicle_model_api_id'],
                     'name' => $car['model']['name'],
                 ]);
-        Log::info('Model', ['data' => $model_id]);
+        // Log::info('Model', ['data' => $model_id]);
 
 
         $imageRecord = $car['vehicle_record']['imageRecord'] ?? [];
@@ -84,12 +83,12 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
             $imageId = null;
         } else {
             $imageId = DB::transaction(function () use ($imageRecord) {
-                $existingImage = DB::connection('mysql')->table('images')
+                $existingImage = DB::table('images')
                     ->where('image_api_id', $imageRecord['image_api_id'])
                     ->first(['id']);
 
                 if ($existingImage) {
-                    DB::connection('mysql')->table('images')
+                    DB::table('images')
                         ->where('id', $existingImage->id)
                         ->update([
                             'small' => $imageRecord['small'] ?? [],
@@ -106,7 +105,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     return $existingImage->id;
                 }
 
-                return DB::connection('mysql')->table('images')->insertGetId([
+                return DB::table('images')->insertGetId([
                     'image_api_id' => $imageRecord['image_api_id'],
                     'small' => $imageRecord['small'] ?? [],
                     'normal' => $imageRecord['normal'] ?? [],
@@ -120,107 +119,107 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                 ]);
             });
         }
-        Log::info('Image', ['data' => $imageId]);
+        // Log::info('Image', ['data' => $imageId]);
 
 
-        $manufacturer_id =  DB::connection('mysql')->table('manufacturers')
+        $manufacturer_id =  DB::table('manufacturers')
                 ->where('manufacturer_api_id', $car['manufacturer']['manufacturer_api_id'])
                 ->value('id')
-                ?? DB::connection('mysql')->table('manufacturers')->insertGetId([
+                ?? DB::table('manufacturers')->insertGetId([
                     'manufacturer_api_id' => $car['manufacturer']['manufacturer_api_id'],
                     'name' => $car['manufacturer']['name'],
                 ]);
-        Log::info('Manufacturer', ['data' => $manufacturer_id]);
+        // Log::info('Manufacturer', ['data' => $manufacturer_id]);
 
-        $generation_id = DB::connection('mysql')->table('generations')
+        $generation_id = DB::table('generations')
         ->where('generation_api_id', $car['generation']['generation_api_id'])
-        ->value('id') ?? DB::connection('mysql')->table('generations')->insertGetId([
+        ->value('id') ?? DB::table('generations')->insertGetId([
                 'generation_api_id' => $car['generation']['generation_api_id'],
                 'name' => $car['generation']['name'],
                 'model_id' => $model_id,
             ]);
 
-        Log::info('Generation', ['data' => $generation_id]);
+        // Log::info('Generation', ['data' => $generation_id]);
 
-        $body_type_id = DB::connection('mysql')->table('body_types')
+        $body_type_id = DB::table('body_types')
                 ->where('body_type_api_id', $car['body_type']['body_type_api_id'])
                 ->value('id')
-                ?? DB::connection('mysql')->table('body_types')->insertGetId([
+                ?? DB::table('body_types')->insertGetId([
                     'body_type_api_id' => $car['body_type']['body_type_api_id'],
                     'name' => $car['body_type']['name'],
                 ]);
 
-        Log::info('Body Type', ['data' => $body_type_id]);
+        // Log::info('Body Type', ['data' => $body_type_id]);
 
-        $color_id =  DB::connection('mysql')->table('colors')
+        $color_id =  DB::table('colors')
                 ->where('color_api_id', $car['color']['color_api_id'])
                 ->value('id')
-                ?? DB::connection('mysql')->table('colors')->insertGetId([
+                ?? DB::table('colors')->insertGetId([
                     'color_api_id' => $car['color']['color_api_id'],
                     'name' => $car['color']['name'],
                 ]);
-        Log::info('Color', ['data' => $color_id]);
-        $engine_id =  DB::connection('mysql')->table('engines')
+        // Log::info('Color', ['data' => $color_id]);
+        $engine_id =  DB::table('engines')
                 ->where('engine_api_id', $car['engine']['engine_api_id'])
                 ->value('id')
-                ?? DB::connection('mysql')->table('engines')->insertGetId([
+                ?? DB::table('engines')->insertGetId([
                     'engine_api_id' => $car['engine']['engine_api_id'],
                     'name' => $car['engine']['name'],
                 ]);
-                Log::info('Engine', ['data' => $engine_id]);
+                // Log::info('Engine', ['data' => $engine_id]);
 
-        $transmission_id =  DB::connection('mysql')->table('transmissions')
+        $transmission_id =  DB::table('transmissions')
                 ->where('transmission_api_id', $car['transmission']['transmission_api_id'])
                 ->value('id')
-                ?? DB::connection('mysql')->table('transmissions')->insertGetId([
+                ?? DB::table('transmissions')->insertGetId([
                     'transmission_api_id' => $car['transmission']['transmission_api_id'],
                     'name' => $car['transmission']['name'],
                 ]);
-                Log::info('Transmission', ['data' => $transmission_id]);
+                // Log::info('Transmission', ['data' => $transmission_id]);
 
-        $drive_wheel_id =  DB::connection('mysql')->table('drive_wheels')
+        $drive_wheel_id =  DB::table('drive_wheels')
                 ->where('drive_wheel_api_id', $car['drive_wheel']['drive_wheel_api_id'])
                 ->value('id')
-                ?? DB::connection('mysql')->table('drive_wheels')->insertGetId([
+                ?? DB::table('drive_wheels')->insertGetId([
                     'drive_wheel_api_id' => $car['drive_wheel']['drive_wheel_api_id'],
                     'name' => $car['drive_wheel']['name'],
                 ]);
-                Log::info('Driver Wheel', ['data' => $drive_wheel_id]);
+                // Log::info('Driver Wheel', ['data' => $drive_wheel_id]);
 
-        $vehicle_type_id = DB::connection('mysql')->table('vehicle_types')
+        $vehicle_type_id = DB::table('vehicle_types')
                 ->where('vehicle_type_api_id', $car['vehicle_type']['vehicle_type_api_id'])
                 ->value('id')
-                ?? DB::connection('mysql')->table('vehicle_types')->insertGetId([
+                ?? DB::table('vehicle_types')->insertGetId([
                     'vehicle_type_api_id' => $car['vehicle_type']['vehicle_type_api_id'],
                     'name' => $car['vehicle_type']['name'],
                 ]);
-                Log::info('Vehicle Type', ['data' => $vehicle_type_id]);
+                // Log::info('Vehicle Type', ['data' => $vehicle_type_id]);
 
-        $fuel_id =  DB::connection('mysql')->table('fuels')
+        $fuel_id =  DB::table('fuels')
                 ->where('fuel_api_id', $car['fuel']['fuel_api_id'])
                 ->value('id')
-                ?? DB::connection('mysql')->table('fuels')->insertGetId([
+                ?? DB::table('fuels')->insertGetId([
                     'fuel_api_id' => $car['fuel']['fuel_api_id'],
                     'name' => $car['fuel']['name'],
                 ]);
-                Log::info('Fuel', ['data' => $fuel_id]);
+                // Log::info('Fuel', ['data' => $fuel_id]);
 
         $domain_id = isset($car['vehicle_record']['domain'])
-        ?  DB::connection('mysql')->table('domains')
+        ?  DB::table('domains')
                 ->where('domain_api_id', $car['vehicle_record']['domain']['domain_api_id'])
                 ->value('id')
-                ?? DB::connection('mysql')->table('domains')->insertGetId([
+                ?? DB::table('domains')->insertGetId([
                     'domain_api_id' => $car['vehicle_record']['domain']['domain_api_id'],
                     'name' => $car['vehicle_record']['domain']['name'],
                 ])
         : null;
-                Log::info('Domain', ['data' => $domain_id]);
+                // Log::info('Domain', ['data' => $domain_id]);
 
         $selling_branch_id = isset($car['vehicle_record']['selling_branch'])
-        ?  DB::connection('mysql')->table('selling_branches')
+        ?  DB::table('selling_branches')
                 ->where('selling_branch_api_id', $car['vehicle_record']['selling_branch']['selling_branch_api_id'])
                 ->value('id')
-                ?? DB::connection('mysql')->table('selling_branches')->insertGetId([
+                ?? DB::table('selling_branches')->insertGetId([
                     'selling_branch_api_id' => $car['vehicle_record']['selling_branch']['selling_branch_api_id'],
                     'name' => $car['vehicle_record']['selling_branch']['name'],
                     'link' => $car['vehicle_record']['selling_branch']['link'],
@@ -228,131 +227,131 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     'domain_id' => $domain_id, // Use the computed domain_id
                 ])
         : null;
-        Log::info('Seller Branch', ['data' => $selling_branch_id]);
+        // Log::info('Seller Branch', ['data' => $selling_branch_id]);
 
-        $odometer_id = DB::connection('mysql')->table('odometers')
+        $odometer_id = DB::table('odometers')
             ->where('name', $car['vehicle_record']['odometer']['name'])
             ->value('id')
-            ?? DB::connection('mysql')->table('odometers')->insertGetId(['name' => $car['vehicle_record']['odometer']['name']]);
-        Log::info('Odometer', ['data' => $odometer_id]);
+            ?? DB::table('odometers')->insertGetId(['name' => $car['vehicle_record']['odometer']['name']]);
+        // Log::info('Odometer', ['data' => $odometer_id]);
 
-        $seller_id = DB::connection('mysql')->table('sellers')
+        $seller_id = DB::table('sellers')
             ->where('seller_api_id', $car['vehicle_record']['seller']['seller_api_id'])
             ->value('id')
-            ?? DB::connection('mysql')->table('sellers')->insertGetId([
+            ?? DB::table('sellers')->insertGetId([
                 'seller_api_id' => $car['vehicle_record']['seller']['seller_api_id'],
                 'name' => $car['vehicle_record']['seller']['name']
             ]);
-            Log::info('Seller', ['data' => $seller_id]);
+            // Log::info('Seller', ['data' => $seller_id]);
 
-        $seller_type_id = DB::connection('mysql')->table('seller_types')
+        $seller_type_id = DB::table('seller_types')
             ->where('seller_type_api_id', $car['vehicle_record']['seller_type']['seller_type_api_id'])
             ->value('id')
-            ?? DB::connection('mysql')->table('seller_types')->insertGetId([
+            ?? DB::table('seller_types')->insertGetId([
                 'seller_type_api_id' => $car['vehicle_record']['seller_type']['seller_type_api_id'],
                 'name' => $car['vehicle_record']['seller_type']['name']
             ]);
-            Log::info('Seller Type', ['data' => $seller_type_id]);
+            // Log::info('Seller Type', ['data' => $seller_type_id]);
 
-        $condition_id = DB::connection('mysql')->table('conditions')
+        $condition_id = DB::table('conditions')
             ->where('condition_api_id', $car['vehicle_record']['condition']['condition_api_id'])
             ->value('id')
-            ?? DB::connection('mysql')->table('conditions')->insertGetId([
+            ?? DB::table('conditions')->insertGetId([
                 'condition_api_id' => $car['vehicle_record']['condition']['condition_api_id'],
                 'name' => $car['vehicle_record']['condition']['name']
             ]);
-            Log::info('Condition', ['data' => $condition_id]);
+            // Log::info('Condition', ['data' => $condition_id]);
 
-        $status_id = DB::connection('mysql')->table('statuses')
+        $status_id = DB::table('statuses')
             ->where('status_api_id', $car['vehicle_record']['status']['status_api_id'])
             ->value('id')
-            ?? DB::connection('mysql')->table('statuses')->insertGetId([
+            ?? DB::table('statuses')->insertGetId([
                 'status_api_id' => $car['vehicle_record']['status']['status_api_id'],
                 'name' => $car['vehicle_record']['status']['name']
             ]);
-            Log::info('Status', ['data' => $status_id]);
+            // Log::info('Status', ['data' => $status_id]);
 
         $title_id = !empty($car['vehicle_record']['title_title'])
-            ? DB::connection('mysql')->table('titles')
+            ? DB::table('titles')
                 ->where('title_api_id', $car['vehicle_record']['title_title']['title_api_id'])
                 ->value('id')
-                ?? DB::connection('mysql')->table('titles')->insertGetId([
+                ?? DB::table('titles')->insertGetId([
                     'title_api_id' => $car['vehicle_record']['title_title']['title_api_id'],
                     'name' => $car['vehicle_record']['title_title']['name']
                 ])
             : null;
-            Log::info('Title', ['data' => $title_id]);
+            // Log::info('Title', ['data' => $title_id]);
 
-        $detailed_title_id = DB::connection('mysql')->table('detailed_titles')
+        $detailed_title_id = DB::table('detailed_titles')
             ->where('detailed_title_api_id', $car['vehicle_record']['detailed_title']['detailed_title_api_id'])
             ->value('id')
-            ?? DB::connection('mysql')->table('detailed_titles')->insertGetId([
+            ?? DB::table('detailed_titles')->insertGetId([
                 'detailed_title_api_id' => $car['vehicle_record']['detailed_title']['detailed_title_api_id'],
                 'name' => $car['vehicle_record']['detailed_title']['name']
             ]);
-            Log::info('Detailed Title', ['data' => $detailed_title_id]);
+            // Log::info('Detailed Title', ['data' => $detailed_title_id]);
 
         $damage_id = !empty($car['vehicle_record']['damageMain'])
-            ? DB::connection('mysql')->table('damages')
+            ? DB::table('damages')
                 ->where('damage_api_id', $car['vehicle_record']['damageMain']['damage_api_id'])
                 ->value('id')
-                ?? DB::connection('mysql')->table('damages')->insertGetId([
+                ?? DB::table('damages')->insertGetId([
                     'damage_api_id' => $car['vehicle_record']['damageMain']['damage_api_id'],
                     'name' => $car['vehicle_record']['damageMain']['name']
                 ])
             : null;
-            Log::info('Damage', ['data' => $damage_id]);
+            // Log::info('Damage', ['data' => $damage_id]);
 
         $damage_second = !empty($car['vehicle_record']['damageSecond'])
-            ? DB::connection('mysql')->table('damages')
+            ? DB::table('damages')
                 ->where('damage_api_id', $car['vehicle_record']['damageSecond']['damage_api_id'])
                 ->value('id')
-                ?? DB::connection('mysql')->table('damages')->insertGetId([
+                ?? DB::table('damages')->insertGetId([
                     'damage_api_id' => $car['vehicle_record']['damageSecond']['damage_api_id'],
                     'name' => $car['vehicle_record']['damageSecond']['name']
                 ])
             : null;
-            Log::info('Damage Second', ['data' => $damage_second]);
+            // Log::info('Damage Second', ['data' => $damage_second]);
 
-        $country_id = DB::connection('mysql')->table('countries')
+        $country_id = DB::table('countries')
             ->where('iso', $car['vehicle_record']['country']['iso'])
             ->value('id')
-            ?? DB::connection('mysql')->table('countries')->insertGetId([
+            ?? DB::table('countries')->insertGetId([
                 'iso' => $car['vehicle_record']['country']['iso'],
                 'name' => $car['vehicle_record']['country']['name']
             ]);
-            Log::info('Country', ['data' => $country_id]);
+            // Log::info('Country', ['data' => $country_id]);
 
         $state_id = !empty($car['vehicle_record']['state'])
-            ? DB::connection('mysql')->table('states')
+            ? DB::table('states')
                 ->where('state_api_id', $car['vehicle_record']['state']['state_api_id'])
                 ->value('id')
-                ?? DB::connection('mysql')->table('states')->insertGetId([
+                ?? DB::table('states')->insertGetId([
                     'state_api_id' => $car['vehicle_record']['state']['state_api_id'],
                     'country_id' => $country_id,
                     'code' => $car['vehicle_record']['state']['code'],
                     'name' => $car['vehicle_record']['state']['name']
                 ])
             : null;
-            Log::info('State', ['data' => $state_id]);
+            // Log::info('State', ['data' => $state_id]);
 
         $city_id = !empty($car['vehicle_record']['city'])
-            ? DB::connection('mysql')->table('cities')
+            ? DB::table('cities')
                 ->where('city_api_id', $car['vehicle_record']['city']['city_api_id'])
                 ->value('id')
-                ?? DB::connection('mysql')->table('cities')->insertGetId([
+                ?? DB::table('cities')->insertGetId([
                     'city_api_id' => $car['vehicle_record']['city']['city_api_id'],
                     'state_id' => $state_id,
                     'name' => $car['vehicle_record']['city']['name']
                 ])
             : null;
-            Log::info('City', ['data' => $city_id]);
+            // Log::info('City', ['data' => $city_id]);
 
         $location_id = !empty($car['vehicle_record']['locationRecord']['location_api_id'])
-            ? DB::connection('mysql')->table('locations')
+            ? DB::table('locations')
                 ->where('location_api_id', $car['vehicle_record']['locationRecord']['location_api_id'])
                 ->value('id')
-                ?? DB::connection('mysql')->table('locations')->insertGetId([
+                ?? DB::table('locations')->insertGetId([
                     'location_api_id' => $car['vehicle_record']['locationRecord']['location_api_id'],
                     'city_id' => $city_id,
                     'name' => trim($car['vehicle_record']['locationRecord']['name']) ?: 'Unnamed Location',
@@ -363,7 +362,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                     'raw' => $car['vehicle_record']['locationRecord']['raw'] ?? '{}'
                 ])
             : null;
-            Log::info('Location', ['data' => $location_id]);
+            // Log::info('Location', ['data' => $location_id]);
 
         $data = [
             'manufacturer_id' => $manufacturer_id,
@@ -416,7 +415,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
             'damage_id' => $damage_id,
             'damage_main' => $damage_id,
             'damage_second' => $damage_second,
-            'buy_now_id' => DB::connection('mysql')->table('buy_nows')->where('name', $car['vehicle_record']['buy_now'])->value('id') ?? null,
+            'buy_now_id' => DB::table('buy_nows')->where('name', $car['vehicle_record']['buy_now'])->value('id') ?? null,
             'details' => $car['vehicle_record']['details'] ?? null,
             'location_id' => $location_id,
             'image_id' => $imageId,
@@ -443,7 +442,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
             $apiIds = array_column($batchData, 'api_id');
 
             // Fetch existing records by API ID
-            $existingRecords = DB::connection('mysql')->table('vehicle_records')->whereIn('api_id', $apiIds)->pluck('id', 'api_id');
+            $existingRecords = DB::table('vehicle_records')->whereIn('api_id', $apiIds)->pluck('id', 'api_id');
 
             // Lists for new and updated records
             $newRecords = [];
@@ -473,12 +472,12 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
 
             // ✅ Bulk Insert New Records
             if (!empty($newRecords)) {
-                DB::connection('mysql')->table('vehicle_records')->insert($newRecords);
+                DB::table('vehicle_records')->insert($newRecords);
             }
 
             // ✅ Bulk Update Existing Records
             if (!empty($updatedRecords)) {
-                DB::connection('mysql')->table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
+                DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
             }
 
             VehicleProcessCachedApiData::where('id', $cacheKey)->delete();

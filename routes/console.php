@@ -29,8 +29,8 @@ if(config('app.app_kvm_one') === true){
     app(Schedule::class)->command('process:api-data')->dailyAt('18:45')->withoutOverlapping();
     app(Schedule::class)->command('process:cached-data-without-queue')->everyTenMinutes()->withoutOverlapping();
 
-   // app(Schedule::class)->command('process:archived-data')->everyFifteenMinutes()->withoutOverlapping();
-   // app(Schedule::class)->command('process:cached-archived-data-wihtout-queue')->everyFifteenMinutes()->withoutOverlapping();
+   app(Schedule::class)->command('process:archived-data')->everyFifteenMinutes()->withoutOverlapping();
+   app(Schedule::class)->command('process:cached-archived-data-wihtout-queue')->everyFifteenMinutes()->withoutOverlapping();
 
 }
 
@@ -40,13 +40,13 @@ if(config('app.app_kvm_three') === true){
     /**
      * Cron Job - Process Vehicle Data from kvm4.2 redis cache and populate it into kvm4.3 Mysql.
     */
-    // app(Schedule::class)->command('process:process-cached-data-to-databases')->everyTenMinutes()->withoutOverlapping();
-    app(Schedule::class)->command('process:process-cached-data-to-databases-without-queue')->everyTenMinutes()->withoutOverlapping();
+    app(Schedule::class)->command('process:process-cached-data-to-databases')->everyTenMinutes()->withoutOverlapping();
+    // app(Schedule::class)->command('process:process-cached-data-to-databases-without-queue')->everyTenMinutes()->withoutOverlapping();
 
      /**
      * Cron Job - Update the data (bid, final_bid_updated_at, status) of archived vehicle table on the base of third party api.
     */
-    //app(Schedule::class)->command('process:cached-archived-data')->everyTenMinutes()->withoutOverlapping();
+    //app(Schedule::class)->command('process:cached-archived-data-to-database-wihtout-queue')->everyTenMinutes()->withoutOverlapping();
 
     /**
      * Cron Job - Move expired auctions from VehicleRecord to VehicleRecordArchived table.

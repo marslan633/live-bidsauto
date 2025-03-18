@@ -8,6 +8,7 @@ class VehicleProcessCachedArchivedApiData extends Model
 {
     protected $connection = 'mongodb';
     protected $collection = 'vehicle_process_cached_archived_api_data';
+    protected $dates = ['expires_at'];
     protected $fillable = ['cache_value', 'created_at', 'updated_at', 'expires_at'];
 
 }
