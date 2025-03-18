@@ -113,5 +113,5 @@ Route::post('/cron-run-histories', [CronRunHistoryController::class, 'store']);
 Route::put('/cron-run-histories/{id}', [CronRunHistoryController::class, 'update']);
 
 Route::get('/get-vehicles-for-database', function(Request $request){
-    return response()->json(VehicleProcessCachedApiData::orderBy('created_at', 'asc')->limit(100)->get());
+    return response()->json(VehicleProcessCachedApiData::orderBy('created_at', 'asc')->paginate(10));
 });
