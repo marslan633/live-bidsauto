@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
 class ProcessCachedDataToDatabaseJob implements ShouldQueue
 {
@@ -480,9 +481,18 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                 DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
             }
 
-            VehicleProcessCachedApiData::where('id', $cacheKey)->delete();
+            $url = config('app.cron_history_api_url') . "/vehicle-record/$cacheKey";
+            $cronRunUpdateResponse = Http::delete($url, [
+                'end_time' => Carbon::now(),
+                'status' => 'success',
+                'updated_at' => now(),
+            ]);
 
-
+            if ($cronRunUpdateResponse->successful()) {
+                Log::info('Vehicle Process Cached Api Data Delete');
+            } else {
+                Log::info('ERROR: Vehicle Process Cached Api Data Delete');
+            }
 
 
         } catch (\Exception $e) {

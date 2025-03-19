@@ -20,6 +20,15 @@ use Illuminate\Support\Facades\Http;
 
 class VehicleController extends Controller
 {
+
+    public function destroy($id){
+        try{
+            VehicleProcessCachedApiData::where('_id', $id)->delete();
+        }catch (\Exception $ex) {
+            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+        }
+    }
+
     public function getVechiclesForDatabase(){
         try{
             $data = VehicleProcessCachedApiData::orderBy('created_at', 'asc')->paginate(100);

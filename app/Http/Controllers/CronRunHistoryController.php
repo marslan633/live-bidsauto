@@ -58,4 +58,18 @@ class CronRunHistoryController extends Controller
             return response()->json(['message' => 'Cron run history not found'], 404);
         }
     }
+
+    /**
+     * Update an existing cron run history.
+     */
+    public function destroy($id)
+    {
+        $cronRun = CronRunHistory::where('_id', $id)->delete();
+
+        if ($cronRun) {
+            return response()->json(['message' => 'Cron run history updated']);
+        } else {
+            return response()->json(['message' => 'Cron run history not found'], 404);
+        }
+    }
 }

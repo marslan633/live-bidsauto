@@ -109,5 +109,6 @@ Route::post('/cron-run-histories', [CronRunHistoryController::class, 'store']);
 Route::put('/cron-run-histories/{id}', [CronRunHistoryController::class, 'update']);
 
 
+Route::delete('/vehicle-record/{id}', [VehicleController::class, 'destroy']);
 Route::get('/get-vehicles-for-database', [VehicleController::class, 'getVechiclesForDatabase']);
 Route::get('/get-archived-vehicles-for-database', [VehicleController::class, 'getArchivedVechiclesForDatabase']);
