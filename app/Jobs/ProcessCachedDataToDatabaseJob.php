@@ -482,7 +482,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
             }
 
             $url = config('app.cron_history_api_url') . "/vehicle-record/$cacheKey";
-            $cronRunUpdateResponse = Http::delete($url, [
+            $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->delete($url, [
                 'end_time' => Carbon::now(),
                 'status' => 'success',
                 'updated_at' => now(),

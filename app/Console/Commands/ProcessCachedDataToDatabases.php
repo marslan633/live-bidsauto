@@ -45,7 +45,7 @@ class ProcessCachedDataToDatabases extends Command
 
         try{
             // Remote Connection to KVM4.1
-            $cronRunResponse = Http::post($url, [
+            $cronRunResponse = Http::timeout(120)->retry(3, 1000)->post($url, [
                 'cron_name' => 'process_cached_data_to_database',
                 'start_time' => now(),
                 'status' => 'running',
@@ -99,7 +99,7 @@ class ProcessCachedDataToDatabases extends Command
 
             $updateUrl = $url . "/$cronRun";
              // Remote Connection to KVM4.1
-             $cronRunUpdateResponse = Http::post($updateUrl, [
+             $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->post($updateUrl, [
                 'end_time' => Carbon::now(),
                 'status' => 'success',
                 'updated_at' => now(),
@@ -127,7 +127,7 @@ class ProcessCachedDataToDatabases extends Command
         $url = config('app.cron_history_api_url') . '/cron-run-histories';
         $updateUrl = $url . "/$cronRun";
              // Remote Connection to KVM4.1
-             $cronRunUpdateResponse = Http::post($updateUrl, [
+             $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->post($updateUrl, [
                 'end_time' => Carbon::now(),
                 'status' => 'failed',
                 'updated_at' => now(),
