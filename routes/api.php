@@ -110,3 +110,4 @@ Route::put('/cron-run-histories/{id}', [CronRunHistoryController::class, 'update
 
 
 Route::get('/get-vehicles-for-database', [VehicleController::class, 'getVechiclesForDatabase']);
+Route::get('/get-archived-vehicles-for-database', [VehicleController::class, 'getArchivedVechiclesForDatabase']);

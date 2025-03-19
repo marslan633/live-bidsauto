@@ -1,9 +1,8 @@
-process_cached_archived_data
-
-db.createUser({
-  user: "illian",
-  pwd: "ADmGodi98098hjhj768ighsgdkhgasttysGreat123",
-  roles: [
-    { role: "readWrite", db: "temp_bids_storage" }
-  ]
-})
+<!-- 
+1. Compress Whole Data Flow
+2. CRON Run History Create or Update
+3. CRON RUN HISTORY STATUS UPDATE ISSUES
+4. Restructure => process:expired-auction-archive
+5. process:cached-archived-data-to-database-wihtout-queue => Sale History VN
+6. Delete Records Api using Batch
+ -->

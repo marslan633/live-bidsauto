@@ -33,7 +33,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
     public function handle(): void
     {
         try {
-            $data = $this->cacheKey->cache_value;
+            $data = unCompressData($this->cacheKey->cache_value);
             if (!$data) {
                 Log::warning("No data found for key: {$this->cacheKey->id}");
                 return;

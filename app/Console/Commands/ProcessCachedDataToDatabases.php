@@ -52,11 +52,12 @@ class ProcessCachedDataToDatabases extends Command
             ]);
 
             if ($cronRunResponse->successful()) {
+                Log::info('PROCESS CACHED DATA TO DATABASE CREATED');
                 // Handle the successful API cronRunResponse
                 $cronRun = $cronRunResponse->json()['id'] ?? null; // You can process the data as needed
                 // Optionally, you can update the cron record with the API response or status
             } else {
-                Log::info('Create Cron Run History Not Working');
+                Log::info('Error: PROCESS CACHED DATA TO DATABASE CREATED');
             }
 
 
@@ -67,14 +68,14 @@ class ProcessCachedDataToDatabases extends Command
 
             if (!$response->successful()) {
                 $this->info("Error In Fetch Data Api Call");
-                $this->info("Error In Fetch Data Api Call");
+                Log::info('Error: PROCESS CACHED DATA TO DATABASE CREATED FETCH API');
                 return;
             }
             $data = $response->json()['data']['data'] ?? [];
 
             if (count($data)) {
                 $this->info("No Data Pending to process");
-                $this->info("No Data Pending to process");
+                Log::info('NOT DATA:PROCESS CACHED DATA TO DATABASE CREATED');
                 return;
             }
 
@@ -87,7 +88,7 @@ class ProcessCachedDataToDatabases extends Command
 
         // **Batch processing setup**
         // Initialize an empty array to hold the jobs
-        collect($data)->chunk(10)->each(function ($chunk) {
+        collect($data)->chunk(100)->each(function ($chunk) {
             foreach ($chunk as $item) {
                 // Dispatch a job for each item in the chunk
                 ProcessCachedDataToDatabaseJob::dispatch($item);
@@ -105,9 +106,11 @@ class ProcessCachedDataToDatabases extends Command
             ]);
 
             if ($cronRunUpdateResponse->successful()) {
-                Log::info('Cron Run History Updating Successfully!');
+                Log::info('PROCESS CACHED DATA TO DATABASE UPDATED');
             } else {
-                Log::info('Update Cron Run History Not Working');
+                Log::info('ERROR: PROCESS CACHED DATA TO DATABASE UPDATED');
+
+
             }
 
         }
@@ -131,9 +134,9 @@ class ProcessCachedDataToDatabases extends Command
             ]);
 
             if ($cronRunUpdateResponse->successful()) {
-                Log::info('Cron Run History Updating Successfully!');
+                Log::info('PROCESS CACHED DATA TO DATABASE UPDATED FAILED');
             } else {
-                Log::info('Update Cron Run History Not Working');
+                Log::info('ERROR: PROCESS CACHED DATA TO DATABASE UPDATED FAILED');
             }
 
 

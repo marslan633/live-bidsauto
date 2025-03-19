@@ -8,7 +8,7 @@ use App\Models\{
     VehicleRecord, Manufacturer, VehicleModel, Generation, BodyType, Color,
     Transmission, DriveWheel, Fuel, Condition, Status, VehicleType, Domain,
     Engine, Seller, SellerType, Title, DetailedTitle, Damage, Image, Country,
-    State, City, Location, SellingBranch, Year, BuyNow, Odometer, CacheKey, CronRunHistory, VehicleProcessCachedApiData, VehicleRecordArchived
+    State, City, Location, SellingBranch, Year, BuyNow, Odometer, CacheKey, CronRunHistory, VehicleArchivedApiData, VehicleProcessCachedApiData, VehicleRecordArchived
 };
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +23,17 @@ class VehicleController extends Controller
     public function getVechiclesForDatabase(){
         try{
             $data = VehicleProcessCachedApiData::orderBy('created_at', 'asc')->paginate(100);
-            return sendResponse(true, 200, 'Car Detail Fetched Successfully!', $data, 200);
+            return sendResponse(true, 200, 'Vehicles Detail Fetched Successfully!', $data, 200);
+
+        } catch (\Exception $ex) {
+            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+        }
+    }
+
+    public function getArchivedVechiclesForDatabase(){
+        try{
+            $data = VehicleArchivedApiData::orderBy('created_at', 'asc')->paginate(100);
+            return sendResponse(true, 200, 'Archived Vehicles Detail Fetched Successfully!', $data, 200);
 
         } catch (\Exception $ex) {
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);

@@ -64,7 +64,7 @@ class ProcessCachedDataWihtoutQueue extends Command
         foreach ($cacheKeys as $keyItem) {
             $this->info('ruuning loop');
             try{
-                $data = $keyItem->cache_value;
+                $data = unCompressData($keyItem->cache_value);
                 $this->info(gettype($data));
                 // Log::info('Reading Cached Data', ['cache_value' => json_encode($data)]);
 
@@ -81,7 +81,7 @@ class ProcessCachedDataWihtoutQueue extends Command
                 }
 
                 VehicleProcessCachedApiData::insert([
-                    'cache_value' => $processDataForCache,
+                    'cache_value' => compressData($processDataForCache),
                     'created_at' => now(),
                     'updated_at' => now(),
                     'expires_at' => Carbon::now()->addDays(7)

@@ -480,3 +480,16 @@ function processLotData($lot)
 
         return $decompressed ? json_decode($decompressed, true) : [];
     }
+
+
+function compressData($data){
+    $compressedData = gzencode(json_encode($data), 9);
+    $base64Encoded = base64_encode($compressedData);
+    return $base64Encoded;
+}
+
+function unCompressData($data){
+    $decoded = base64_decode($data);
+    $decompressed = gzdecode($decoded);
+    return json_decode($decompressed, true);
+}

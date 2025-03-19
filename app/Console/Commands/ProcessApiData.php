@@ -97,10 +97,10 @@ class ProcessApiData extends Command
                     $dataCollection = collect($data);
 
                     // Chunk the collection into smaller collections of 200 items each
-                    $dataCollection->chunk(200)->each(function ($chunk) {
+                    $dataCollection->chunk(500)->each(function ($chunk) {
                         // Prepare the chunk for insertion
                         $insertData = [
-                            'cache_value' => $chunk->toArray(),
+                            'cache_value' => compressData($chunk->toArray()),
                             'created_at' => now(),
                             'expires_at' => Carbon::now()->addDays(7)
                         ];
