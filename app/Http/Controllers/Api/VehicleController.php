@@ -31,7 +31,7 @@ class VehicleController extends Controller
 
     public function getVechiclesForDatabase(){
         try{
-            $data = VehicleProcessCachedApiData::orderBy('created_at', 'asc')->paginate(2);
+            $data = VehicleProcessCachedApiData::orderBy('created_at', 'asc')->paginate(1);
             return sendResponse(true, 200, 'Vehicles Detail Fetched Successfully!', $data, 200);
 
         } catch (\Exception $ex) {
