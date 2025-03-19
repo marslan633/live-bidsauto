@@ -21,10 +21,6 @@ Route::prefix('vehicles')->group(function () {
     Route::get('/{id}', [VehicleController::class, 'searchVehicle']);
 });
 
-Route::prefix('vehicle/v1')->group(function () {
-    Route::get('/fetch', [VehicleController::class, 'vehicleDataByMinutes']);
-});
-
 
 Route::post('filter-attributes', [VehicleController::class, 'filterAttributes']);
 Route::get('filtered-records-count', [VehicleController::class, 'filteredRecordsCount'])->name('filtered.records.count');
@@ -112,6 +108,4 @@ Route::get('uncompressed-data',[VehicleController::class, 'getUncompressData']);
 Route::post('/cron-run-histories', [CronRunHistoryController::class, 'store']);
 Route::put('/cron-run-histories/{id}', [CronRunHistoryController::class, 'update']);
 
-Route::get('/get-vehicles-for-database', function(Request $request){
-    return response()->json(VehicleProcessCachedApiData::orderBy('created_at', 'asc')->paginate(100));
-});
+Route::get('/get-vehicles-for-database', [VehicleController::class, 'getVechiclesForDatabase']);

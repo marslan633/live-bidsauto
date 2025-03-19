@@ -8,7 +8,7 @@ use App\Models\{
     VehicleRecord, Manufacturer, VehicleModel, Generation, BodyType, Color,
     Transmission, DriveWheel, Fuel, Condition, Status, VehicleType, Domain,
     Engine, Seller, SellerType, Title, DetailedTitle, Damage, Image, Country,
-    State, City, Location, SellingBranch, Year, BuyNow, Odometer, CacheKey, CronRunHistory, VehicleRecordArchived
+    State, City, Location, SellingBranch, Year, BuyNow, Odometer, CacheKey, CronRunHistory, VehicleProcessCachedApiData, VehicleRecordArchived
 };
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -20,37 +20,11 @@ use Illuminate\Support\Facades\Http;
 
 class VehicleController extends Controller
 {
-    public function vehicleDataByMinutes(Request $request)
-    {
-        try {
-            $model = VehicleRecord::class;
+    public function getVechiclesForDatabase(){
+        try{
+            $data = VehicleProcessCachedApiData::orderBy('created_at', 'asc')->paginate(100);
+            return sendResponse(true, 200, 'Car Detail Fetched Successfully!', $data, 200);
 
-            $query = $model::query();
-
-            $query = $model::with([
-                'manufacturer', 'vehicleModel', 'generation', 'bodyType', 'color', 'engine',
-                'transmission', 'driveWheel', 'vehicleType', 'fuel', 'status', 'seller',
-                'sellerType', 'titleRelation', 'detailedTitle', 'damageMain', 'damageSecond',
-                'condition', 'image', 'country', 'state', 'city', 'location', 'sellingBranch', 'buyNowRelation'
-            ]);
-
-            // Optional: Filter records from the last X minutes
-            if ($request->has('minutes')) {
-                $minutes = (int) $request->input('minutes');
-                $query->where('created_at', '>=', now()->subMinutes($minutes));
-            }
-
-            // Pagination
-            $page = (int) $request->input('page', 1);
-            $size = (int) $request->input('size', 10);
-
-            $vehicleInformations = $query->skip(($page - 1) * $size)->take($size)->get();
-
-            $response = [
-                'data' => $vehicleInformations
-            ];
-
-            return sendResponse(true, 200, 'Vehicle Records Fetched Successfully!', $response, 200);
         } catch (\Exception $ex) {
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }

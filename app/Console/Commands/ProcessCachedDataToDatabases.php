@@ -70,7 +70,7 @@ class ProcessCachedDataToDatabases extends Command
                 $this->info("Error In Fetch Data Api Call");
                 return;
             }
-            $data = $response->json()['data'] ?? [];
+            $data = $response->json()['data']['data'] ?? [];
 
             if (count($data)) {
                 $this->info("No Data Pending to process");
