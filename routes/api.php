@@ -108,4 +108,5 @@ Route::get('uncompressed-data',[VehicleController::class, 'getUncompressData']);
 Route::post('/cron-run-histories', [CronRunHistoryController::class, 'store']);
 Route::put('/cron-run-histories/{id}', [CronRunHistoryController::class, 'update']);
 
+
 Route::get('/get-vehicles-for-database', [VehicleController::class, 'getVechiclesForDatabase']);
