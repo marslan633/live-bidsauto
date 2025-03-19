@@ -22,10 +22,12 @@ class VehicleController extends Controller
 {
     public function getVechiclesForDatabase(){
         try{
-            $data = VehicleProcessCachedApiData::all();
+            Log::info('Calling Api');
+            $data = DB::connection('mongodb')->table('vehicle_process_cached_api_data')->get();
             return sendResponse(true, 200, 'Car Detail Fetched Successfully!', $data, 200);
 
         } catch (\Exception $ex) {
+            Log::info('Error Calling Api');
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }
     }
