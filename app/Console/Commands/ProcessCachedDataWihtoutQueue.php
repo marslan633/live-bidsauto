@@ -49,7 +49,7 @@ class ProcessCachedDataWihtoutQueue extends Command
 
 
 
-            $cacheKeys = VehicleApiData::orderBy('created_at', 'asc')->limit(100)->get();
+            $cacheKeys = VehicleApiData::orderBy('created_at', 'desc')->limit(100)->get();
             if (count($cacheKeys) == 0) {
                 $this->info("No pending cache keys found.");
                 return;
