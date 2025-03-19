@@ -17,19 +17,15 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\SendQuoteMail;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 class VehicleController extends Controller
 {
     public function getVechiclesForDatabase(){
         try{
-            return 'succcess';
-            // Log::info('Calling Api');
-            // $data = DB::connection('mongodb')->table('vehicle_process_cached_api_data')->get();
-            // return sendResponse(true, 200, 'Car Detail Fetched Successfully!', $data, 200);
+            $data = VehicleProcessCachedApiData::orderBy('created_at', 'asc')->paginate(100);
+            return sendResponse(true, 200, 'Car Detail Fetched Successfully!', $data, 200);
 
         } catch (\Exception $ex) {
-            Log::info('Error Calling Api');
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }
     }
