@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Log;
 class VehicleController extends Controller
 {
 
-    public function destroy($id){
+    public function deleteMyVehicle($id){
         try{
             $deleted = VehicleProcessCachedApiData::where('_id', $id)->delete();
             if ($deleted) {
@@ -62,7 +62,7 @@ class VehicleController extends Controller
 
     public function getArchivedVechiclesForDatabase(){
         try{
-            $data = VehicleArchivedApiData::orderBy('created_at', 'asc')->paginate(intval(config('app.per_page_archived_data')));
+            $data = VehicleArchivedApiData::orderBy('created_at', 'desc')->paginate(intval(config('app.per_page_archived_data')));
             return sendResponse(true, 200, 'Archived Vehicles Detail Fetched Successfully!', $data, 200);
 
         } catch (\Exception $ex) {
