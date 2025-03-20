@@ -18,14 +18,13 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\SendQuoteMail;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use MongoDB\Laravel\Eloquent\Casts\ObjectId;
 
 class VehicleController extends Controller
 {
 
     public function destroy($id){
         try{
-            $deleted = VehicleProcessCachedApiData::where('_id', new ObjectId($id))->delete();
+            $deleted = VehicleProcessCachedApiData::where('_id', $id)->delete();
             if ($deleted) {
                 return sendResponse(true, 200, 'Record Deleted Successfully', null, 200);
             } else {
@@ -39,9 +38,9 @@ class VehicleController extends Controller
 
     public function destroy_archived($id){
         try{
-            $deleted = VehicleProcessCachedArchivedApiData::where('_id', new ObjectId($id))->update(['status' => 'Complete', 'cache_key' => 'Empty']);
+            $deleted = VehicleProcessCachedArchivedApiData::where('_id', $id)->delete();
             if ($deleted) {
-                return sendResponse(true, 200, 'Record Deleted Successfully', VehicleProcessCachedArchivedApiData::where('_id', new ObjectId($id))->first(), 200);
+                return sendResponse(true, 200, 'Record Deleted Successfully', null, 200);
             } else {
                 return sendResponse(false, 404, 'Record Not Found', null, 404);
             }
