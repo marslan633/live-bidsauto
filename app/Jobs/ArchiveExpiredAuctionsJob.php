@@ -93,7 +93,7 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
               ]);
 
 
-              DB::where('id', $this->recordId)->delete();
+              DB::connection('mysql')->table('vehicle_records')->where('id', $this->recordId)->delete();
             //   Log::info('Vehicle Record Deleted ' . $this->recordId);
         } catch (\Exception $e) {
             Log::error("Error processing auction record VIN: {$record['vin']} - " . $e->getMessage());
