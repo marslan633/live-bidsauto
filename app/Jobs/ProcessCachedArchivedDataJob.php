@@ -37,7 +37,7 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
             // Retrieve data from cache
             $data = unCompressData($this->cacheKey->cache_value);
             if (!$data) {
-                Log::warning("No archived data found for key: {$this->cacheKey->_id}");
+                Log::warning("No archived data found for key: {$this->cacheKey->id}");
                 return;
             }
 
@@ -57,12 +57,12 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
             }
 
             // Log success and remove cache
-            Log::info("Data for cache key '{$this->cacheKey->_id}' processed successfully.");
+            Log::info("Data for cache key '{$this->cacheKey->id}' processed successfully.");
 
 
         } catch (\Exception $e) {
             // Log any errors encountered during processing
-            Log::info("Error processing data for cache key {$this->cacheKey->_id}: " . $e->getMessage());
+            Log::info("Error processing data for cache key {$this->cacheKey->id}: " . $e->getMessage());
 
         }
     }
@@ -119,7 +119,7 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
             }
 
             // DB::commit();
-            $url = config('app.cron_history_api_url') . "/delete/vehicle-archived-record/$this->cacheKey->_id";
+            $url = config('app.cron_history_api_url') . "/delete/vehicle-archived-record/$this->cacheKey->id";
             $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->delete($url, [
                 'end_time' => Carbon::now(),
                 'status' => 'success',
