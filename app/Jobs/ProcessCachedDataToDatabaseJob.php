@@ -430,76 +430,119 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
       /**
      * ✅ Insert batch of processed data
      */
+    // public function insertBatch(array $batchData, $cacheKey)
+    // {
+    //     Log::info('Starting Batch Insertion');
+    //     try {
+    //         if (empty($batchData)) {
+    //             return;
+    //         }
+
+
+    //         // Extract API IDs from batchData
+    //         $apiIds = array_column($batchData, 'api_id');
+
+    //         // Fetch existing records by API ID
+    //         $existingRecords = DB::table('vehicle_records')->whereIn('api_id', $apiIds)->pluck('id', 'api_id');
+
+    //         // Lists for new and updated records
+    //         $newRecords = [];
+    //         $updatedRecords = [];
+    //         $failedRecords = []; // ❌ Store records that failed
+
+    //         foreach ($batchData as $record) {
+    //             try {
+    //                 if (isset($existingRecords[$record['api_id']])) {
+    //                     // Existing record - update full data
+    //                     $record['id'] = $existingRecords[$record['api_id']]; // Add ID for update
+    //                     $record['processed_at'] = Carbon::now();
+    //                     $record['updated_at'] = Carbon::now();
+    //                     $updatedRecords[] = $record;
+    //                 } else {
+    //                     // New record - insert
+    //                     $record['is_new'] = true;
+    //                     $record['processed_at'] = Carbon::now();
+    //                     $record['created_at'] = Carbon::now();
+    //                     $newRecords[] = $record;
+    //                 }
+    //             } catch (\Exception $e) {
+    //                 $failedRecords[] = $record;
+    //                 Log::info("Skipping record due to error: " . $e->getMessage());
+    //             }
+    //         }
+
+    //         // ✅ Bulk Insert New Records
+    //         if (!empty($newRecords)) {
+    //             DB::table('vehicle_records')->insert($newRecords);
+    //         }
+
+    //         // ✅ Bulk Update Existing Records
+    //         if (!empty($updatedRecords)) {
+    //             DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
+    //         }
+
+    //         $url = config('app.cron_history_api_url') . "/delete-my-vehicle/$cacheKey";
+    //         $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->post($url, [
+    //             'end_time' => Carbon::now(),
+    //             'status' => 'success',
+    //             'updated_at' => now(),
+    //         ]);
+
+    //         if ($cronRunUpdateResponse->successful()) {
+    //             Log::info('Vehicle Process Cached Api Data Delete');
+    //         } else {
+    //             Log::info('ERROR: Vehicle Process Cached Api Data Delete');
+    //         }
+
+
+    //     } catch (\Exception $e) {
+
+    //         // Mark cache as pending in case of failure
+
+    //         Log::info("Batch insert failed: " . $e->getMessage());
+    //     }
+    // }
+
     public function insertBatch(array $batchData, $cacheKey)
     {
         Log::info('Starting Batch Insertion');
+
         try {
             if (empty($batchData)) {
                 return;
             }
 
-
-            // Extract API IDs from batchData
-            $apiIds = array_column($batchData, 'api_id');
-
-            // Fetch existing records by API ID
-            $existingRecords = DB::table('vehicle_records')->whereIn('api_id', $apiIds)->pluck('id', 'api_id');
-
-            // Lists for new and updated records
-            $newRecords = [];
-            $updatedRecords = [];
-            $failedRecords = []; // ❌ Store records that failed
-
-            foreach ($batchData as $record) {
-                try {
-                    if (isset($existingRecords[$record['api_id']])) {
-                        // Existing record - update full data
-                        $record['id'] = $existingRecords[$record['api_id']]; // Add ID for update
-                        $record['processed_at'] = Carbon::now();
-                        $record['updated_at'] = Carbon::now();
-                        $updatedRecords[] = $record;
-                    } else {
-                        // New record - insert
-                        $record['is_new'] = true;
-                        $record['processed_at'] = Carbon::now();
-                        $record['created_at'] = Carbon::now();
-                        $newRecords[] = $record;
-                    }
-                } catch (\Exception $e) {
-                    $failedRecords[] = $record;
-                    Log::info("Skipping record due to error: " . $e->getMessage());
+            // Add timestamps safely without modifying the original array reference
+            $now = Carbon::now();
+            $batchData = array_map(function ($record) use ($now) {
+                $record['processed_at'] = $now;
+                $record['updated_at'] = $now;
+                if (!isset($record['id'])) {
+                    $record['created_at'] = $now;
                 }
-            }
+                return $record;
+            }, $batchData);
 
-            // ✅ Bulk Insert New Records
-            if (!empty($newRecords)) {
-                DB::table('vehicle_records')->insert($newRecords);
-            }
+            // ✅ Bulk Upsert (Handles both Insert & Update)
+            DB::table('vehicle_records')->upsert($batchData, ['api_id'], array_keys($batchData[0]));
 
-            // ✅ Bulk Update Existing Records
-            if (!empty($updatedRecords)) {
-                DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
-            }
-
+            // ✅ Remove Cache Key after Success
             $url = config('app.cron_history_api_url') . "/delete-my-vehicle/$cacheKey";
             $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->post($url, [
-                'end_time' => Carbon::now(),
+                'end_time' => $now,
                 'status' => 'success',
-                'updated_at' => now(),
+                'updated_at' => $now,
             ]);
 
             if ($cronRunUpdateResponse->successful()) {
-                Log::info('Vehicle Process Cached Api Data Delete');
+                Log::info('✅ Vehicle Process Cached Api Data Deleted Successfully');
             } else {
-                Log::info('ERROR: Vehicle Process Cached Api Data Delete');
+                Log::error('❌ ERROR: Failed to delete Vehicle Process Cached Api Data');
             }
 
-
         } catch (\Exception $e) {
-
-            // Mark cache as pending in case of failure
-
-            Log::info("Batch insert failed: " . $e->getMessage());
+            Log::error("❌ Batch insert failed: " . $e->getMessage());
         }
     }
+
 }
