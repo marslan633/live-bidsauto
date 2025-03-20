@@ -7,3 +7,10 @@
 5. process:cached-archived-data-to-database-wihtout-queue => Sale History VN
 6. Delete Records Api using Batch
  -->
+
+
+KVM4.1
+1. process:archived-data => data compressed
+KVM4.3
+2. process:cached-archived-data-to-database => Api created + Apis Integrated + Job created
+

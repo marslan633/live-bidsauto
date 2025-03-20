@@ -8,7 +8,7 @@ use App\Models\{
     VehicleRecord, Manufacturer, VehicleModel, Generation, BodyType, Color,
     Transmission, DriveWheel, Fuel, Condition, Status, VehicleType, Domain,
     Engine, Seller, SellerType, Title, DetailedTitle, Damage, Image, Country,
-    State, City, Location, SellingBranch, Year, BuyNow, Odometer, CacheKey, CronRunHistory, VehicleArchivedApiData, VehicleProcessCachedApiData, VehicleRecordArchived
+    State, City, Location, SellingBranch, Year, BuyNow, Odometer, CacheKey, CronRunHistory, VehicleArchivedApiData, VehicleProcessCachedApiData, VehicleProcessCachedArchivedApiData, VehicleRecordArchived
 };
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +24,14 @@ class VehicleController extends Controller
     public function destroy($id){
         try{
             VehicleProcessCachedApiData::where('_id', $id)->delete();
+        }catch (\Exception $ex) {
+            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+        }
+    }
+
+    public function destroy_archived($id){
+        try{
+            VehicleProcessCachedArchivedApiData::where('_id', $id)->delete();
         }catch (\Exception $ex) {
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }

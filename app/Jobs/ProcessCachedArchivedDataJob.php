@@ -2,12 +2,14 @@
 
 namespace App\Jobs;
 
+use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class ProcessCachedArchivedDataJob implements ShouldQueue
@@ -32,65 +34,49 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
         Log::info('Process Cached Archived Data Job Handle Calling');
 
         try {
-            $key = $this->cacheKey->cache_key;
             // Retrieve data from cache
-            $data = json_decode( $this->cacheKey->cache_value, true);
-
+            $data = unCompressData($this->cacheKey->cache_value);
             if (!$data) {
-                Log::info("No data found in cache for key: {$key}");
+                Log::warning("No archived data found for key: {$this->cacheKey->_id}");
                 return;
             }
 
             $batchData = [];
-            $batchSize = intval(config('app.batch_size')); // Default batch size 100
 
             foreach ($data as $car) {
                 $batchData[] = $this->prepareArchivedData((array) $car);
 
-                // Process batch when the limit is reached
-                if (count($batchData) >= $batchSize) {
-                    Log::info('Batch Start Insert');
-                    $this->insertBatch($batchData);
-                    Log::info('Batch End Insert');
-                    $batchData = []; // Reset batch
-                }
             }
 
-            // Process remaining batch if any
-            if (!empty($batchData)) {
+             // Process batch when the limit is reached
+             if (count($batchData) > 0) {
+                Log::info('Batch Start Insert');
                 $this->insertBatch($batchData);
+                Log::info('Batch End Insert');
+                $batchData = []; // Reset batch
             }
 
             // Log success and remove cache
-            Log::info("Data for cache key '{$key}' processed successfully.");
+            Log::info("Data for cache key '{$this->cacheKey->_id}' processed successfully.");
 
-            // Delete the cache key from the table
-            DB::connection('mysql')->table('cache_keys')->where('cache_key', $key)->delete();
 
         } catch (\Exception $e) {
             // Log any errors encountered during processing
-            Log::info("Error processing data for cache key {$key}: " . $e->getMessage());
-
-            $this->cacheKey->update(['status' => 'pending']);
+            Log::info("Error processing data for cache key {$this->cacheKey->_id}: " . $e->getMessage());
 
         }
     }
 
     private function prepareArchivedData(array $car)
     {
-        $data = [
+        return [
             'lot_id' => $car['lot'],
             'status_id' => $car['status']['id'],
             'bid' => $car['bid'],
             'final_bid_updated_at' => $car['final_bid_updated_at'],
         ];
-        Log::info('Prepared Archived Data', ['data' => json_encode($data)]);
-        return $data;
     }
 
-    /**
-     * ✅ Insert batch of processed data
-     */
     private function insertBatch(array $batchData)
     {
         try {
@@ -98,18 +84,18 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
                 return;
             }
 
-            // DB::connection('mysql')->beginTransaction();
+            // DB::beginTransaction();
 
             // Extract lot IDs
             $lotIds = array_column($batchData, 'lot_id');
 
             // Fetch existing archived records by lot_id
-            $existingRecords = DB::connection('mysql')->table('vehicle_record_archiveds')
+            $existingRecords = DB::table('vehicle_record_archiveds')
                 ->whereIn('lot_id', $lotIds)
                 ->pluck('id', 'lot_id');
 
             // Separate new and update data
-            $newRecords = [];
+
             $updatedRecords = [];
             $failedRecords = []; // ❌ Store records that failed
 
@@ -120,10 +106,6 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
                         $record['id'] = $existingRecords[$record['lot_id']];
                         $record['updated_at'] = now();
                         $updatedRecords[] = $record;
-                    } else {
-                        // New record - insert
-                        $record['created_at'] = now();
-                        $newRecords[] = $record;
                     }
                 }catch (\Exception $e) {
                     $failedRecords[] = $record;
@@ -131,66 +113,28 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
                 }
             }
 
-            // ✅ Bulk Insert New Records
-            if (!empty($newRecords)) {
-                DB::connection('mysql')->table('vehicle_record_archiveds')->insert($newRecords);
-            }
-
             // ✅ Bulk Update Existing Records
             if (!empty($updatedRecords)) {
-                DB::connection('mysql')->table('vehicle_record_archiveds')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
+                DB::table('vehicle_record_archiveds')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
             }
 
-            // DB::connection('mysql')->commit();
+            // DB::commit();
+            $url = config('app.cron_history_api_url') . "/delete/vehicle-archived-record/$this->cacheKey->_id";
+            $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->delete($url, [
+                'end_time' => Carbon::now(),
+                'status' => 'success',
+                'updated_at' => now(),
+            ]);
 
-            Log::info("Batch processed successfully with " . count($newRecords) . " new and " . count($updatedRecords) . " updated records.");
+            if ($cronRunUpdateResponse->successful()) {
+                Log::info('Vehicle Process Cached Api Data Delete');
+            } else {
+                Log::info('ERROR: Vehicle Process Cached Api Data Delete');
+            }
+            Log::info("Batch processed successfully with " . count($updatedRecords) . " updated records.");
         } catch (\Exception $e) {
-            // DB::connection('mysql')->rollBack();
+            // DB::rollBack();
             Log::error("Batch processing failed: " . $e->getMessage());
         }
     }
-
-
-    private function processCachedArchivedData($car)
-    {
-        try {
-            $lotId = $car['lot'];
-            $status_id = $car['status']['id'];
-            $bid = $car['bid'];
-            $finalBidUpdatedAt = $car['final_bid_updated_at'];
-
-            $archivedRecord =  DB::connection('mysql')->table('vehicle_record_archiveds')->where('lot_id', $lotId)->first();
-
-            if ($archivedRecord) {
-                $archivedRecord->update([
-                    'status_id' => $status_id,
-                    'bid' => $bid,
-                    'final_bid_updated_at' => $finalBidUpdatedAt,
-                ]);
-
-                Log::info("Updated archived record for lot_id: {$lotId}");
-                // Get the latest SaleAuctionHistory for this lot_id
-                $latestSaleHistory = DB::connection('mysql')->table('sale_auction_histories')->where('lot_id', $lotId)
-                    ->orderByDesc('sale_date') // Assuming sale_date is used to determine the latest entry
-                    ->first();
-
-                if ($latestSaleHistory) {
-                    // Update the latest SaleAuctionHistory record
-                    $latestSaleHistory->update([
-                        'status_id' => $status_id,
-                        'bid' => $bid,
-                    ]);
-
-                    Log::info("Updated latest sale history for lot_id: {$lotId}");
-                } else {
-                    Log::info("No sale history found for lot_id: {$lotId}");
-                }
-            } else {
-                Log::info("Archived record not found for lot_id: {$lotId}");
-            }
-        } catch (\Exception $e) {
-            Log::info("Error updating archived record for lot_id: {$lotId} - " . $e->getMessage());
-        }
-    }
-
 }
