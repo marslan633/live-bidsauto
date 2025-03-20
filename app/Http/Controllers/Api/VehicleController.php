@@ -39,9 +39,9 @@ class VehicleController extends Controller
 
     public function destroy_archived($id){
         try{
-            $deleted = VehicleProcessCachedArchivedApiData::where('_id', new ObjectId($id))->delete();
+            $deleted = VehicleProcessCachedArchivedApiData::where('_id', new ObjectId($id))->update(['status' => 'Complete', 'cache_key' => 'Empty']);
             if ($deleted) {
-                return sendResponse(true, 200, 'Record Deleted Successfully', null, 200);
+                return sendResponse(true, 200, 'Record Deleted Successfully', VehicleProcessCachedArchivedApiData::where('_id', new ObjectId($id))->first(), 200);
             } else {
                 return sendResponse(false, 404, 'Record Not Found', null, 404);
             }
