@@ -72,7 +72,7 @@ class ProcessCachedArchivedDataToDatabase extends Command
             }
             $data = $response->json()['data']['data'] ?? [];
 
-            if (count($data)) {
+            if (count($data) == 0) {
                 $this->info("No Data Archived Pending to process");
                 Log::info('NOT DATA:PROCESS CACHED ARCHIVED DATA TO DATABASE CREATED');
                 return;
