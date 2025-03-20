@@ -36,6 +36,7 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
         try {
             // Retrieve data from cache
             $data = unCompressData($this->cacheKey->cache_value);
+            Log::info('Uncompressed Log', ['data', json_encode($data)]);
             if (!$data) {
                 Log::warning("No archived data found for key: {$this->cacheKey->id}");
                 return;
