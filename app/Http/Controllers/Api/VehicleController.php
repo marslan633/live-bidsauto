@@ -49,7 +49,7 @@ class VehicleController extends Controller
 
     public function getArchivedVechiclesForDatabase(){
         try{
-            $data = VehicleArchivedApiData::orderBy('created_at', 'asc')->paginate(100);
+            $data = VehicleArchivedApiData::orderBy('created_at', 'asc')->paginate(1);
             return sendResponse(true, 200, 'Archived Vehicles Detail Fetched Successfully!', $data, 200);
 
         } catch (\Exception $ex) {
