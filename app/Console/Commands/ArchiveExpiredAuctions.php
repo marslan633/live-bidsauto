@@ -74,6 +74,7 @@ class ArchiveExpiredAuctions extends Command
             ->orderBy('created_at') // Required for Laravel 11 chunking
             ->chunk($batchSize, function ($expiredRecords) use (&$totalArchived) {
                 foreach ($expiredRecords as $record) {
+                    Log::info('Expired Archived Record', ['record', json_encode($record)]);
                     ArchiveExpiredAuctionsJob::dispatch($record->id);
                 }
                 $totalArchived += count($expiredRecords);
