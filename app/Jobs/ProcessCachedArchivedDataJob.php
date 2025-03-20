@@ -146,7 +146,7 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
             // DB::commit();
             $url = config('app.cron_history_api_url') . "/delete/vehicle-archived-record/" . $this->cacheKey->id;
             Log::info('DELET API URL: ', ['url' => $url]);
-            $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->delete($url, [
+            $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->post($url, [
                 'end_time' => Carbon::now(),
                 'status' => 'success',
                 'updated_at' => now(),
