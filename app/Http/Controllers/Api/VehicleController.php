@@ -24,18 +24,28 @@ class VehicleController extends Controller
 
     public function destroy($id){
         try{
-            VehicleProcessCachedApiData::where('_id', $id)->delete();
+            $deleted = VehicleProcessCachedApiData::where('_id', $id)->delete();
+            if ($deleted) {
+                return sendResponse(true, 200, 'Record Deleted Successfully', null, 200);
+            } else {
+                return sendResponse(false, 404, 'Record Not Found', null, 404);
+            }
         }catch (\Exception $ex) {
-            Log::info('Delete Cached Data Error', ['data' => json_encode($$ex->getMessage())]);
+            Log::info('Delete Cached Data Error', ['data' => json_encode($ex->getMessage())]);
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }
     }
 
     public function destroy_archived($id){
         try{
-            VehicleProcessCachedArchivedApiData::where('_id', $id)->delete();
+            $deleted = VehicleProcessCachedArchivedApiData::where('_id', $id)->delete();
+            if ($deleted) {
+                return sendResponse(true, 200, 'Record Deleted Successfully', null, 200);
+            } else {
+                return sendResponse(false, 404, 'Record Not Found', null, 404);
+            }
         }catch (\Exception $ex) {
-            Log::info('Delete Archived Data Error', ['data' => json_encode($$ex->getMessage())]);
+            Log::info('Delete Archived Data Error', ['data' => json_encode($ex->getMessage())]);
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }
     }
