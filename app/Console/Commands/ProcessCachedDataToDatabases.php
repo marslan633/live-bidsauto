@@ -5,11 +5,8 @@ namespace App\Console\Commands;
 use App\Jobs\ProcessCachedDataToDatabaseJob;
 use Illuminate\Console\Command;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\{DB, Http, Mail, Log};
+use Illuminate\Support\Facades\{Http, Mail, Log};
 use App\Mail\CronJobFailedMail;
-use App\Models\CronRunHistory;
-use App\Models\VehicleProcessCachedApiData;
-use MongoDB\Laravel\Eloquent\Casts\ObjectId;
 
 class ProcessCachedDataToDatabases extends Command
 {

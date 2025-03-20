@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
 class ArchiveExpiredAuctions extends Command
 {
@@ -35,14 +36,18 @@ class ArchiveExpiredAuctions extends Command
      */
     public function handle()
     {
+
         try {
+            $url = config('app.cron_history_api_url') . '/cron-run-histories';
 
             $startTime = microtime(true);
+            $cronRun = '';
             $startDateTime = Carbon::now();
             $this->info("Process Archived Expired Auction Data started at: " . $startDateTime);
             Log::info("Process Archived Expired Auction Data started at: " . $startDateTime);
 
-            $cronRun = DB::connection('mysql')->table('cron_run_history')->insertGetId([
+            // Remote Connection to KVM4.1
+            $cronRunResponse = Http::timeout(120)->retry(3, 1000)->post($url, [
                 'cron_name' => 'process_auction_archive',
                 'start_time' => $startDateTime,
                 'status' => 'running',
@@ -50,6 +55,16 @@ class ArchiveExpiredAuctions extends Command
                 'updated_at' => now(),
             ]);
 
+            if ($cronRunResponse->successful()) {
+                Log::info('PROCESS Auction Archived DATA TO DATABASE CREATED');
+                // Handle the successful API cronRunResponse
+                $cronRun = $cronRunResponse->json()['id'] ?? null; // You can process the data as needed
+                // Optionally, you can update the cron record with the API response or status
+            } else {
+                Log::info('Error: PROCESS Auction Archived DATA TO DATABASE CREATED');
+            }
+
+            $updateUrl = $url . "/$cronRun";
             $batchSize = intval(config('app.batch_size'));
             // $expiredRecords = VehicleRecord::whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [now()])->get();
             $totalArchived = 0;
@@ -66,11 +81,21 @@ class ArchiveExpiredAuctions extends Command
             if ($totalArchived === 0) {
                 $this->info("No expired auctions found.");
                 Log::info("No expired auctions found.");
-                DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
+
+
+                // Remote Connection to KVM4.1
+                $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->post($updateUrl, [
                     'end_time' => Carbon::now(),
                     'status' => 'success',
                     'updated_at' => now(),
                 ]);
+
+                if ($cronRunUpdateResponse->successful()) {
+                    Log::info('PROCESS CACHED DATA TO DATABASE UPDATED');
+                } else {
+                    Log::info('ERROR: PROCESS CACHED DATA TO DATABASE UPDATED');
+                }
+
                 return;
             }
 
@@ -88,12 +113,19 @@ class ArchiveExpiredAuctions extends Command
             $this->error("An error occurred while archiving expired auctions.");
             Log::error("Error in auction:archive cron job - " . $e->getMessage());
 
-            DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
+            // Remote Connection to KVM4.1
+            $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->post($updateUrl, [
                 'end_time' => Carbon::now(),
                 'status' => 'failed',
                 'error_message' => $e->getMessage(),
                 'updated_at' => now(),
             ]);
+
+            if ($cronRunUpdateResponse->successful()) {
+                Log::info('PROCESS CACHED DATA TO DATABASE UPDATED');
+            } else {
+                Log::info('ERROR: PROCESS CACHED DATA TO DATABASE UPDATED');
+            }
 
             // Send email notification
             $cronJobName = 'process_auction_archive';

@@ -38,7 +38,7 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
         Log::info('Archived Expired Job Handle Function Calling');
         try {
 
-            $record  = DB::connection('mysql')->table('vehicle_records')->where('id', $this->recordId)->first();
+            $record  = DB::table('vehicle_records')->where('id', $this->recordId)->first();
             // Log::info('Record Fetched', ['record' => json_encode($record)]);
 
             if (!$record) {
@@ -51,7 +51,7 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
             $record['updated_at'] = Carbon::now();
 
               // Check if the record already exists in VehicleRecordArchived
-              $archivedRecord = DB::connection('mysql')->table('vehicle_record_archiveds')->where('vin', $record['vin'])->first();
+              $archivedRecord = DB::table('vehicle_record_archiveds')->where('vin', $record['vin'])->first();
 
               if ($archivedRecord) {
                   // If it exists, update the existing record
@@ -64,7 +64,7 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
                   // If it doesn't exist, create a new one
                 //   Log::info("Archived Expired Creating Record: ", ['record' => json_encode($record)]);
                 $record['created_at'] = Carbon::now();
-                DB::connection('mysql')->table('vehicle_record_archiveds')->insert($record);
+                DB::table('vehicle_record_archiveds')->insert($record);
               }
 
               // Insert record into SaleAuctionHistory
@@ -79,7 +79,7 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
             //     'seller_id' => $record['seller_id']
             //   ])]);
 
-              DB::connection('mysql')->table('sale_auction_histories')->insert([
+              DB::table('sale_auction_histories')->insert([
                 'vin' => $record['vin'],
                 'domain_id' => $record['domain_id'],
                 'sale_date' => $record['sale_date'],
@@ -93,7 +93,7 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
               ]);
 
 
-              DB::table('vehicle_records')->where('id', $this->recordId)->delete();
+              DB::where('id', $this->recordId)->delete();
             //   Log::info('Vehicle Record Deleted ' . $this->recordId);
         } catch (\Exception $e) {
             Log::error("Error processing auction record VIN: {$record['vin']} - " . $e->getMessage());
