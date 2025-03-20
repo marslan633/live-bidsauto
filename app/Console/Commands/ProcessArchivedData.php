@@ -118,6 +118,7 @@ class ProcessArchivedData extends Command
 
                         // Chunk the collection into smaller collections of 200 items each
                         $dataCollection->chunk(200)->each(function ($chunk) {
+                            Log::info('Data Being Inserted For Archvied');
                             // Prepare the chunk for insertion
                             $insertData = [
                                 'cache_value' => compressData($chunk->toArray()),
