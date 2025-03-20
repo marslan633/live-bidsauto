@@ -84,7 +84,7 @@ class ArchiveExpiredAuctions extends Command
 
 
                 // Remote Connection to KVM4.1
-                $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->post($updateUrl, [
+                $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->put($updateUrl, [
                     'end_time' => Carbon::now(),
                     'status' => 'success',
                     'updated_at' => now(),
@@ -114,7 +114,7 @@ class ArchiveExpiredAuctions extends Command
             Log::error("Error in auction:archive cron job - " . $e->getMessage());
 
             // Remote Connection to KVM4.1
-            $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->post($updateUrl, [
+            $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->put($updateUrl, [
                 'end_time' => Carbon::now(),
                 'status' => 'failed',
                 'error_message' => $e->getMessage(),

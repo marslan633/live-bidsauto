@@ -56,11 +56,6 @@ if (config('app.app_kvm_three') === true) {
     // app(Schedule::class)->command('process:expired-auction-archive')->hourly()->withoutOverlapping();
 
     /**
-     * Cron Job - Update the data (bid, final_bid_updated_at, status) of archived vehicle table on the base of third party api.
-    */
-    // app(Schedule::class)->command('process:cached-archived-data')->everySixHours()->withoutOverlapping();
-
-    /**
      * Cron Job - Process Buy Now Data from third Party API and Populate it into Cache.
     */
     // app(Schedule::class)->command('cron:process-buy-now')->everyFifteenMinutes()->withoutOverlapping();

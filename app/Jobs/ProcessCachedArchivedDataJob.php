@@ -94,6 +94,11 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
                 ->whereIn('lot_id', $lotIds)
                 ->pluck('id', 'lot_id');
 
+            // $saleAuctionHistories = DB::table('sale_auction_histories')
+            //     ->whereIn('lot_id', $lotIds)
+            //     ->orderBy('sale_date', 'desc')
+            //     ->pluck('id', 'lot_id');
+
             // Separate new and update data
 
             $updatedRecords = [];
@@ -101,6 +106,7 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
 
             foreach ($batchData as $record) {
                 try{
+
                     if (isset($existingRecords[$record['lot_id']])) {
                         // Existing record - update full data
                         $record['id'] = $existingRecords[$record['lot_id']];
@@ -117,6 +123,7 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
             if (!empty($updatedRecords)) {
                 DB::table('vehicle_record_archiveds')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
             }
+
 
             // DB::commit();
             $url = config('app.cron_history_api_url') . "/delete/vehicle-archived-record/$this->cacheKey->id";
