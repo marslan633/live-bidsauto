@@ -481,18 +481,18 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
                 DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
             }
 
-            // $url = config('app.cron_history_api_url') . "/vehicle-record/$cacheKey";
-            // $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->delete($url, [
-            //     'end_time' => Carbon::now(),
-            //     'status' => 'success',
-            //     'updated_at' => now(),
-            // ]);
+            $url = config('app.cron_history_api_url') . "/delete-my-vehicle/$cacheKey";
+            $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->post($url, [
+                'end_time' => Carbon::now(),
+                'status' => 'success',
+                'updated_at' => now(),
+            ]);
 
-            // if ($cronRunUpdateResponse->successful()) {
-            //     Log::info('Vehicle Process Cached Api Data Delete');
-            // } else {
-            //     Log::info('ERROR: Vehicle Process Cached Api Data Delete');
-            // }
+            if ($cronRunUpdateResponse->successful()) {
+                Log::info('Vehicle Process Cached Api Data Delete');
+            } else {
+                Log::info('ERROR: Vehicle Process Cached Api Data Delete');
+            }
 
 
         } catch (\Exception $e) {
