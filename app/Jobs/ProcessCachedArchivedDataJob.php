@@ -97,11 +97,10 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
                 ->whereIn('lot_id', $lotIds)
                 ->pluck('id');
 
-
-
             // Separate new and update data
 
             $updatedRecords = [];
+            $updatedRecordIds = [];
             $failedRecords = []; // ❌ Store records that failed
             $updatedSaleRecords = [];
 
@@ -112,6 +111,7 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
                     if (isset($existingRecords[$record['lot_id']])) {
                         // Existing record - update full data
                         $record['id'] = $existingRecords[$record['lot_id']];
+                        $updatedRecordIds[] = $existingRecords[$record['lot_id']];
                         $record['updated_at'] = now();
                         $updatedRecords[] = $record;
                     }
@@ -134,9 +134,11 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
             // ✅ Bulk Update Existing Records
             if (!empty($updatedRecords)) {
                 DB::table('vehicle_record_archiveds')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
+                Log::info('Updated Records Ids', ['data' => json_encode($updatedRecordIds)]);
             }
             if (!empty($saleRecord)) {
                 DB::table('sale_auction_histories')->upsert($saleRecord, ['id'], array_keys($saleRecord[0]));
+                Log::info('Updated Records Sale Ids', ['data' => json_encode($updatedRecordIds)]);
             }
 
 
