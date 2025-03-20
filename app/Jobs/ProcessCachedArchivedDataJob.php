@@ -112,7 +112,7 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
                     if (isset($existingRecords[$record['lot_id']])) {
                         // Existing record - update full data
                         $record['id'] = $existingRecords[$record['lot_id']];
-                        $updatedRecordIds[] = $existingRecords[$record['lot_id']];
+                        $updatedRecordIds[] = $record['lot_id'];
                         $record['updated_at'] = now();
                         $updatedRecords[] = $record;
                     }
