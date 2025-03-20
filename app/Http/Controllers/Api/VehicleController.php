@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\SendQuoteMail;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class VehicleController extends Controller
 {
@@ -25,6 +26,7 @@ class VehicleController extends Controller
         try{
             VehicleProcessCachedApiData::where('_id', $id)->delete();
         }catch (\Exception $ex) {
+            Log::info('Delete Cached Data Error', ['data' => json_encode($$ex->getMessage())]);
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }
     }
@@ -33,6 +35,7 @@ class VehicleController extends Controller
         try{
             VehicleProcessCachedArchivedApiData::where('_id', $id)->delete();
         }catch (\Exception $ex) {
+            Log::info('Delete Archived Data Error', ['data' => json_encode($$ex->getMessage())]);
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }
     }
