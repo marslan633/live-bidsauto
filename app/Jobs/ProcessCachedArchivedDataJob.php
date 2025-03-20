@@ -93,19 +93,21 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
             $existingRecords = DB::table('vehicle_record_archiveds')
                 ->whereIn('lot_id', $lotIds)
                 ->pluck('id', 'lot_id');
+            $existingSaleRecords = DB::table('sale_auction_histories')
+                ->whereIn('lot_id', $lotIds)
+                ->pluck('id');
 
-            // $saleAuctionHistories = DB::table('sale_auction_histories')
-            //     ->whereIn('lot_id', $lotIds)
-            //     ->orderBy('sale_date', 'desc')
-            //     ->pluck('id', 'lot_id');
+
 
             // Separate new and update data
 
             $updatedRecords = [];
             $failedRecords = []; // ❌ Store records that failed
+            $updatedSaleRecords = [];
 
             foreach ($batchData as $record) {
                 try{
+
 
                     if (isset($existingRecords[$record['lot_id']])) {
                         // Existing record - update full data
@@ -113,6 +115,16 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
                         $record['updated_at'] = now();
                         $updatedRecords[] = $record;
                     }
+
+                    if (isset($existingSaleRecords[$record['lot_id']])) {
+                        // Existing record - update full data
+                        $saleRecord = $record;
+                        $saleRecord['id'] = $existingSaleRecords[$record['lot_id']];
+                        $saleRecord['status_id'] = $record['status_id'];
+                        $saleRecord['bid'] = $record['status_id'];
+                        $updatedSaleRecords[] = $saleRecord;
+                    }
+
                 }catch (\Exception $e) {
                     $failedRecords[] = $record;
                     Log::info("Skipping record due to error: " . $e->getMessage());
@@ -122,6 +134,9 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
             // ✅ Bulk Update Existing Records
             if (!empty($updatedRecords)) {
                 DB::table('vehicle_record_archiveds')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
+            }
+            if (!empty($saleRecord)) {
+                DB::table('sale_auction_histories')->upsert($saleRecord, ['id'], array_keys($saleRecord[0]));
             }
 
 

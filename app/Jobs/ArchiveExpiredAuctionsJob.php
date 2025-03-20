@@ -47,7 +47,9 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
             }
 
             $record = (array) $record;
-            $record['status_id'] = 7;
+            if($record['status_id'] == 3){
+                $record['status_id'] = 7;
+            }
             $record['updated_at'] = Carbon::now();
 
               // Check if the record already exists in VehicleRecordArchived
