@@ -69,7 +69,7 @@ class ProcessCachedDataToDatabases extends Command
             }
             $data = $response->json()['data']['data'] ?? [];
 
-            if (count($data) > 0) {
+            if (count($data) == 0) {
                 $this->info("No Data Pending to process");
                 Log::info('NOT DATA:PROCESS CACHED DATA TO DATABASE CREATED');
                 return;
