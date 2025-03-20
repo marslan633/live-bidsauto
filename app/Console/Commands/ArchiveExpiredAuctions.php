@@ -56,12 +56,12 @@ class ArchiveExpiredAuctions extends Command
             ]);
 
             if ($cronRunResponse->successful()) {
-                Log::info('PROCESS Auction Archived DATA TO DATABASE CREATED');
+                Log::info('PROCESS AUCTION ARCHIVED DATA TO DATABASE CREATED');
                 // Handle the successful API cronRunResponse
                 $cronRun = $cronRunResponse->json()['id'] ?? null; // You can process the data as needed
                 // Optionally, you can update the cron record with the API response or status
             } else {
-                Log::info('Error: PROCESS Auction Archived DATA TO DATABASE CREATED');
+                Log::info('Error: PROCESS AUCTION ARCHIVED DATA TO DATABASE CREATED');
             }
 
             $updateUrl = $url . "/$cronRun";
@@ -102,12 +102,26 @@ class ArchiveExpiredAuctions extends Command
             $this->info("Successfully archived and deleted {$totalArchived} expired auctions.");
             Log::info("Successfully archived and deleted {$totalArchived} expired auctions.");
 
-            DB::connection('mysql')->table('cron_run_history')->where('id', $cronRun)->update([
-                'total_records' => $totalArchived,
-                'end_time' => Carbon::now(),
-                'status' => 'success',
-                'updated_at' => now(),
-            ]);
+            if($cronRun){
+
+                $updateUrl = $url . "/$cronRun";
+                 // Remote Connection to KVM4.1
+                 $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->put($updateUrl, [
+                    'total_records' => $totalArchived,
+                    'end_time' => Carbon::now(),
+                    'status' => 'success',
+                    'updated_at' => now(),
+                ]);
+
+                if ($cronRunUpdateResponse->successful()) {
+                    Log::info('PROCESS CACHED DATA TO DATABASE UPDATED');
+                } else {
+                    Log::info('ERROR: PROCESS CACHED DATA TO DATABASE UPDATED');
+
+
+                }
+
+            }
 
         } catch (Exception $e) {
             $this->error("An error occurred while archiving expired auctions.");
@@ -122,9 +136,9 @@ class ArchiveExpiredAuctions extends Command
             ]);
 
             if ($cronRunUpdateResponse->successful()) {
-                Log::info('PROCESS CACHED DATA TO DATABASE UPDATED');
+                Log::info('PROCESS AUCTOIN ARCHIVED DATA TO DATABASE UPDATED');
             } else {
-                Log::info('ERROR: PROCESS CACHED DATA TO DATABASE UPDATED');
+                Log::info('ERROR: PROCESS AUCTOIN ARCHIVED DATA TO DATABASE UPDATED');
             }
 
             // Send email notification
