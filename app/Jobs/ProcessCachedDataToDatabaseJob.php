@@ -36,7 +36,7 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
         try {
             $data = unCompressData($this->cacheKey->cache_value);
             if (!$data) {
-                Log::warning("No data found for key: {$this->cacheKey->id}");
+                Log::warning("No data found for key: {$this->cacheKey->_id}");
                 return;
             }
 
@@ -47,14 +47,14 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
 
             if (count($batchData) > 0) {
                 Log::info('Batch Inserted');
-                $this->insertBatch($batchData, $this->cacheKey->id);
+                $this->insertBatch($batchData, $this->cacheKey->_id);
                 $batchData = []; // Reset batch
             }else{
                 Log::info('Batch Condition Not Meet');
             }
 
         } catch (\Exception $e) {
-            Log::error("Error processing key {$this->cacheKey->id}: " . $e->getMessage());
+            Log::error("Error processing key {$this->cacheKey->_id}: " . $e->getMessage());
         }
     }
 
