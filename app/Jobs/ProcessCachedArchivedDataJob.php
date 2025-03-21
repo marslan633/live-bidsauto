@@ -134,11 +134,18 @@ class ProcessCachedArchivedDataJob implements ShouldQueue
 
             // ✅ Bulk Update Existing Records
             if (!empty($updatedRecords)) {
-                DB::table('vehicle_record_archiveds')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
+                foreach($updatedRecords as $item_one){
+
+                    DB::table('vehicle_record_archiveds')->where('id', $item_one['id'])->update($item_one);
+                }
+                // DB::table('vehicle_record_archiveds')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
                 Log::info('Updated Records Ids', ['data' => json_encode($updatedRecordIds)]);
             }
             if (!empty($saleRecord)) {
-                DB::table('sale_auction_histories')->upsert($saleRecord, ['id'], array_keys($saleRecord[0]));
+                foreach($saleRecord as $item_two){
+                    DB::table('sale_auction_histories')->where('id', $item_two['id'])->update($item_two);
+                }
+                // DB::table('sale_auction_histories')->upsert($saleRecord, ['id'], array_keys($saleRecord[0]));
                 Log::info('Updated Records Sale Ids', ['data' => json_encode($updatedRecordIds)]);
             }
 

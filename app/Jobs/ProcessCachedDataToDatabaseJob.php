@@ -478,7 +478,10 @@ class ProcessCachedDataToDatabaseJob implements ShouldQueue
 
             // ✅ Bulk Update Existing Records
             if (!empty($updatedRecords)) {
-                DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
+                foreach($updatedRecords as $item){
+                    DB::table('vehicle_records')->where('id', $item['id'])->update($item);
+                }
+                // DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
             }
 
             $url = config('app.cron_history_api_url') . "/delete-my-vehicle/$cacheKey";
