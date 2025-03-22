@@ -120,7 +120,7 @@ Route::get('/test-archived-dates', function(Request $request){
     $saleDate = $request->input('sale_date');
 
     $records = DB::table('vehicle_records')
-        ->limit(100)
+        ->limit(20)
         ->orderBy('created_at')
         ->get();
 
