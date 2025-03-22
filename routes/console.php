@@ -40,6 +40,9 @@ if (config('app.app_kvm_three') === true) {
      */
     app(Schedule::class)->command('process:process-cached-data-to-databases')->everyTenMinutes()->withoutOverlapping();
 
+    app(Schedule::class)->command('auction:restore-archived')->dailyAt('09:43')->withoutOverlapping();
+
+
     /**
     * Cron Job - Update the data (bid, final_bid_updated_at, status) of archived vehicle table on the base of third party api.
     */
