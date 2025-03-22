@@ -20,29 +20,15 @@ class RestoreArchivedAuctions extends Command
     public function handle()
     {
         try {
-            $startTime = microtime(true);
             $startDateTime = Carbon::now();
             $this->info("Process Restore Archived Auction Data started at: " . $startDateTime);
             Log::info("Process Restore Archived Auction Data started at: " . $startDateTime);
-
-            $cronRun = DB::table('cron_run_history')->insertGetId([
-                'cron_name' => 'restore_auction_archive',
-                'start_time' => $startDateTime,
-                'status' => 'running',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
 
             $archivedRecords = VehicleRecordArchived::all();
 
             if ($archivedRecords->isEmpty()) {
                 $this->info("No archived auctions found to restore.");
                 Log::info("No archived auctions found to restore.");
-                DB::table('cron_run_history')->where('id', $cronRun)->update([
-                    'end_time' => Carbon::now(),
-                    'status' => 'success',
-                    'updated_at' => now(),
-                ]);
                 return;
             }
 
@@ -62,23 +48,10 @@ class RestoreArchivedAuctions extends Command
             $this->info("Successfully restored {$count} archived auctions and cleaned up SaleAuctionHistory.");
             Log::info("Successfully restored {$count} archived auctions and cleaned up SaleAuctionHistory.");
 
-            DB::table('cron_run_history')->where('id', $cronRun)->update([
-                'total_records' => $count,
-                'end_time' => Carbon::now(),
-                'status' => 'success',
-                'updated_at' => now(),
-            ]);
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             Log::error("Error in auction:restore-archived cron job - " . $e->getMessage());
             $this->error("An error occurred while restoring archived auctions.");
-
-            DB::table('cron_run_history')->where('id', $cronRun)->update([
-                'end_time' => Carbon::now(),
-                'status' => 'failed',
-                'error_message' => $e->getMessage(),
-                'updated_at' => now(),
-            ]);
 
             // Send email notification
             $cronJobName = 'restore_auction_archive';

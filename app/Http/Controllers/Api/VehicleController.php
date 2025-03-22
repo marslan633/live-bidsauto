@@ -793,7 +793,7 @@ public function filterAttributes(Request $request)
 
         // return $expiredRecords;
 
-        $expiredRecords = VehicleRecord::whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [now()])
+        $expiredRecords = VehicleRecord::whereRaw("DATE_FORMAT(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), '%Y-%m-%d %H:%i') <= ?", [now()->format('Y-m-d H:i')])
             ->take(100)
             ->get();
         return $expiredRecords;

@@ -126,7 +126,7 @@ Route::get('/test-archived-dates', function(Request $request){
     // Query: match till minute
     $records = DB::table('vehicle_records')
         ->limit(10)
-        ->whereRaw("DATE_FORMAT(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), '%Y-%m-%d %H:%i') < ?", [$formattedSaleDate])
+        ->whereRaw("DATE_FORMAT(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), '%Y-%m-%d %H:%i') <= ?", [$formattedSaleDate])
         ->orderBy('created_at')
         ->get();
 
