@@ -117,19 +117,10 @@ Route::post('/delete-my-archive-vehicle/{id}', [VehicleController::class, 'delet
 
 Route::get('/test-archived-dates', function(Request $request){
     // Retrieve the 'sale_date' parameter from the request, defaulting to null if not provided
-    $saleDate = $request->input('sale_date');
-
+    $saleDate = Carbon::createFromFormat('Y-m-d\TH:i:s.u\Z', $request->input('sale_date'));
     $records = DB::table('vehicle_records')
-        ->limit(20)
-        ->orderBy('created_at')
-        ->get();
-
-    // Filter records in PHP where sale_date < now
-    $filteredDates = $records
-    ->map(function ($record) {
-        return ['sale_date' => $record->sale_date];
-    })
-    ->values(); // re-index
-
-    return response()->json($filteredDates);
+            ->limit(10)
+            ->whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [$saleDate])
+            ->orderBy('created_at')->get();
+    return response()->json(['saleDate' => $saleDate, 'now' => now(), 'records' => $records]);
 });
