@@ -114,3 +114,12 @@ Route::get('/get-vehicles-for-database', [VehicleController::class, 'getVechicle
 Route::get('/get-archived-vehicles-for-database', [VehicleController::class, 'getArchivedVechiclesForDatabase']);
 Route::post('/delete-my-vehicle/{id}', [VehicleController::class, 'deleteMyVehicle']);
 Route::post('/delete-my-archive-vehicle/{id}', [VehicleController::class, 'deleteMyArchiveVehicle']);
+
+Route::get('/test-archived-dates', function(Request $request){
+    $date = $request->has('date') ? $request->input('date') : now();
+    $records = DB::table('vehicle_records')
+            ->limit(10)
+            ->whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [$date])
+            ->orderBy('created_at')->get();
+    return response()->json($records);
+});
