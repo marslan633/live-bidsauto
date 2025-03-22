@@ -118,10 +118,26 @@ Route::post('/delete-my-archive-vehicle/{id}', [VehicleController::class, 'delet
 Route::get('/test-archived-dates', function(Request $request){
     // Retrieve the 'sale_date' parameter from the request, defaulting to null if not provided
     $saleDate = Carbon::createFromFormat('Y-m-d\TH:i:s.u\Z', $request->input('sale_date'));
+
+    // Format both dates to 'Y-m-d H:i'
+    $formattedSaleDate = $saleDate->format('Y-m-d H:i');
+    $formattedNow = now()->format('Y-m-d H:i');
+
+    // Query: match till minute
     $records = DB::table('vehicle_records')
-            ->limit(10)
-            ->whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [$saleDate])
-            ->orderBy('created_at')->get();
-    $comparionDates = $saleDate < now() ? 'Yes' : 'NO';
-    return response()->json(['saleDate' => $saleDate, 'now' => now(), 'comparionDates' => $comparionDates, 'records' => $records]);
+        ->limit(10)
+        ->whereRaw("DATE_FORMAT(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), '%Y-%m-%d %H:%i') = ?", [$formattedSaleDate])
+        ->orderBy('created_at')
+        ->get();
+
+    // Compare till minute
+    $comparionDates = $formattedSaleDate === $formattedNow ? 'Yes' : 'NO';
+
+    return response()->json([
+        'saleDate' => $formattedSaleDate,
+        'now' => $formattedNow,
+        'comparionDates' => $comparionDates,
+        'records' => $records
+    ]);
+
 });
