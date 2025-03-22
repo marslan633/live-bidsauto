@@ -126,10 +126,6 @@ Route::get('/test-archived-dates', function(Request $request){
 
     // Filter records in PHP where sale_date < now
     $filteredDates = $records
-    ->filter(function ($record) {
-        $parsedDate = Carbon::createFromFormat('Y-m-d\TH:i:s.u\Z', $record->sale_date);
-        return $parsedDate < now();
-    })
     ->map(function ($record) {
         return ['sale_date' => $record->sale_date];
     })
