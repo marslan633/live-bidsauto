@@ -122,6 +122,6 @@ Route::get('/test-archived-dates', function(Request $request){
             ->limit(10)
             ->whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [$saleDate])
             ->orderBy('created_at')->get();
-    $comparionDates = $saleDate < now();
-    return response()->json(['saleDate' => $saleDate, 'now' => now(), 'records' => $records, 'comparionDates' => $comparionDates]);
+    $comparionDates = $saleDate < now() ? 'Yes' : 'NO';
+    return response()->json(['saleDate' => $saleDate, 'now' => now(), 'comparionDates' => $comparionDates, 'records' => $records]);
 });
