@@ -116,10 +116,30 @@ Route::post('/delete-my-vehicle/{id}', [VehicleController::class, 'deleteMyVehic
 Route::post('/delete-my-archive-vehicle/{id}', [VehicleController::class, 'deleteMyArchiveVehicle']);
 
 Route::get('/test-archived-dates', function(Request $request){
-    $date = $request->has('date') ? $request->input('date') : now();
-    $records = DB::table('vehicle_records')
-            ->limit(10)
-            ->whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [$date])
-            ->orderBy('created_at')->get();
+    // Retrieve the 'sale_date' parameter from the request, defaulting to null if not provided
+    $saleDate = $request->input('sale_date');
+
+    // Initialize the query builder for the 'vehicle_records' table
+    $query = DB::table('vehicle_records');
+
+    // Apply the 'STR_TO_DATE' conditionally if 'sale_date' is provided
+    $query->when($saleDate, function ($q) use ($saleDate) {
+        return $q->whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [$saleDate]);
+    }, function ($q) {
+        // If 'sale_date' is not provided, use the current date and time
+        return $q->whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [now()]);
+    });
+
+    // Execute the query and retrieve the results, ordered by 'created_at'
+    $records = $query->orderBy('created_at')->get();
+
+    // Return the results as a JSON response
     return response()->json($records);
+
+    // $date = $request->has('date') ? $request->input('date') : now();
+    // $records = DB::table('vehicle_records')
+    //         ->limit(10)
+    //         ->whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [$date])
+    //         ->orderBy('created_at')->get();
+    // return response()->json($records);
 });
