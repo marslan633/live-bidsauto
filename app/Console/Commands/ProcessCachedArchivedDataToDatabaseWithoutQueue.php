@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\ProcessCachedArchivedDataJob;
 use Illuminate\Console\Command;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -107,12 +106,12 @@ class ProcessCachedArchivedDataToDatabaseWithoutQueue extends Command
                     }
 
                      // Process batch when the limit is reached
-                     if (count($batchData) > 0) {
-                        Log::info('Batch Start Insert');
-                        $this->insertBatch($batchData, $cacheKey->id);
-                        Log::info('Batch End Insert');
-                        $batchData = []; // Reset batch
-                    }
+                    //  if (count($batchData) > 0) {
+                    //     Log::info('Batch Start Insert');
+                    //     $this->insertBatch($batchData, $cacheKey->id);
+                    //     Log::info('Batch End Insert');
+                    //     $batchData = []; // Reset batch
+                    // }
 
                     // Log success and remove cache
                     Log::info("Data for cache key '{$cacheKey->id}' processed successfully.");
