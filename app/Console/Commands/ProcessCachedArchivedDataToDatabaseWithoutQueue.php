@@ -101,9 +101,10 @@ class ProcessCachedArchivedDataToDatabaseWithoutQueue extends Command
                     $batchData = [];
 
                     foreach ($data as $car) {
-                    Log::info('Uncompressed Data Type', ['type' => gettype($car)]);
 
-                        $batchData[] = $this->prepareArchivedData($car);
+                        $batch = $this->prepareArchivedData($car);
+                        Log::info('Uncompressed Data Type', ['type' => gettype($batch)]);
+                        $batchData[] = $batch;
 
                     }
 
