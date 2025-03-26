@@ -92,6 +92,7 @@ class ProcessCachedArchivedDataToDatabaseWithoutQueue extends Command
                 try {
                     // Retrieve data from cache
                     $data = unCompressData($cacheKey->cache_value);
+                    Log::info('Uncompressed Data Type', ['type' => gettype($data)]);
                     // Log::info('Uncompressed Log', ['data', json_encode($data)]);
                     if (!$data) {
                         Log::warning("No archived data found for key: {$cacheKey->id}");
@@ -155,7 +156,7 @@ class ProcessCachedArchivedDataToDatabaseWithoutQueue extends Command
             'bid' => $car['bid'],
             'final_bid_updated_at' => $car['final_bid_updated_at'],
         ];
-        Log::info('Data', ['data' => json_encode($data)]);
+        // Log::info('Data', ['data' => json_encode($data)]);
         return $data;
     }
 
