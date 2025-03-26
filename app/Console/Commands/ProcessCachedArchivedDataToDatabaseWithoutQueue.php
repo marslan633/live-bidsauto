@@ -100,18 +100,18 @@ class ProcessCachedArchivedDataToDatabaseWithoutQueue extends Command
 
                     $batchData = [];
 
-                    // foreach ($data as $car) {
-                    //     $batchData[] = $this->prepareArchivedData((array) $car);
+                    foreach ($data as $car) {
+                        $batchData[] = $this->prepareArchivedData($car);
 
-                    // }
+                    }
 
-                    //  // Process batch when the limit is reached
-                    //  if (count($batchData) > 0) {
-                    //     Log::info('Batch Start Insert');
-                    //     $this->insertBatch($batchData, $cacheKey->id);
-                    //     Log::info('Batch End Insert');
-                    //     $batchData = []; // Reset batch
-                    // }
+                     // Process batch when the limit is reached
+                     if (count($batchData) > 0) {
+                        Log::info('Batch Start Insert');
+                        $this->insertBatch($batchData, $cacheKey->id);
+                        Log::info('Batch End Insert');
+                        $batchData = []; // Reset batch
+                    }
 
                     // Log success and remove cache
                     Log::info("Data for cache key '{$cacheKey->id}' processed successfully.");
