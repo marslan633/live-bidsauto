@@ -92,7 +92,7 @@ class ProcessCachedArchivedDataToDatabaseWithoutQueue extends Command
                 try {
                     // Retrieve data from cache
                     $data = unCompressData($cacheKey->cache_value);
-                    Log::info('Uncompressed Log', ['data', json_encode($data)]);
+                    // Log::info('Uncompressed Log', ['data', json_encode($data)]);
                     if (!$data) {
                         Log::warning("No archived data found for key: {$cacheKey->id}");
                         return;
@@ -149,12 +149,14 @@ class ProcessCachedArchivedDataToDatabaseWithoutQueue extends Command
 
     private function prepareArchivedData(array $car)
     {
-        return [
+        $data = [
             'lot_id' => $car['lot'],
             'status_id' => $car['status']['id'],
             'bid' => $car['bid'],
             'final_bid_updated_at' => $car['final_bid_updated_at'],
         ];
+        Log::info('Data', ['data' => json_encode($data)]);
+        return $data;
     }
 
     private function insertBatch(array $batchData, $cacheKey)
