@@ -6,9 +6,6 @@ use Illuminate\Console\Command;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\{DB, Http, Mail, Log};
 use App\Mail\CronJobFailedMail;
-use App\Models\CronRunHistory;
-use App\Models\VehicleProcessCachedApiData;
-use MongoDB\Laravel\Eloquent\Casts\ObjectId;
 
 class ProcessCachedDataToDatabasesWithoutQueue extends Command
 {
@@ -38,21 +35,44 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
 
         $cronRun = null;
 
+        $url = config('app.cron_history_api_url') . '/cron-run-histories';
+        $apiUrl = config('app.cron_history_api_url') . '/get-vehicles-for-database';
+
         try{
             // Remote Connection to KVM4.1
-
-            $cronRunRecord = CronRunHistory::create([
+            $cronRunResponse = Http::timeout(120)->retry(3, 1000)->post($url, [
                 'cron_name' => 'process_cached_data_to_database',
                 'start_time' => now(),
                 'status' => 'running',
             ]);
-            $cronRun = $cronRunRecord->_id ?? null;
 
-            if (!VehicleProcessCachedApiData::exists()) {
-                $this->info("No Data Pending to process");
-                return;
+            if ($cronRunResponse->successful()) {
+                Log::info('PROCESS CACHED DATA TO DATABASE CREATED');
+                // Handle the successful API cronRunResponse
+                $cronRun = $cronRunResponse->json()['id'] ?? null; // You can process the data as needed
+                // Optionally, you can update the cron record with the API response or status
+            } else {
+                Log::info('Error: PROCESS CACHED DATA TO DATABASE CREATED');
             }
 
+
+            // **Fetch Fresh Data from API**
+            $response = Http::timeout(120)
+                ->retry(3, 1000)
+                ->get($apiUrl);
+
+            if (!$response->successful()) {
+                $this->info("Error In Fetch Data Api Call");
+                Log::info('Error: PROCESS CACHED DATA TO DATABASE CREATED FETCH API');
+                return;
+            }
+            $data = $response->json()['data']['data'] ?? [];
+
+            if (count($data) == 0) {
+                $this->info("No Data Pending to process");
+                Log::info('NOT DATA:PROCESS CACHED DATA TO DATABASE CREATED');
+                return;
+            }
 
         }catch(\Exception $e){
             // if($cronRun !== null){
@@ -63,64 +83,57 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
 
         // **Batch processing setup**
         // Initialize an empty array to hold the jobs
-        VehicleProcessCachedApiData::orderBy('_id')
-            ->take(100) // Fetch only the first 100 rows
-            ->chunkById(10, function ($cacheKeys) {
-                foreach ($cacheKeys as $itemKey) {
-                    try {
-                        $data = $itemKey->cache_value;
-                        if (!$data) {
-                            Log::warning("No data found for key: {$itemKey->id}");
-                            return;
-                        }
-
-                        $batchData = [];
-                        foreach ($data as $car) {
-                            $batchData[] = $this->prepareCarData((array) $car);
-                        }
-
-                        if (count($batchData) > 0) {
-                            Log::info('Batch Inserted');
-                            $this->insertBatch($batchData, $itemKey->id);
-                            $batchData = []; // Reset batch
-                        }else{
-                            Log::info('Batch Condition Not Meet');
-                        }
-
-                    } catch (\Exception $e) {
-                        Log::error("Error processing key {$itemKey->id}: " . $e->getMessage());
+        collect($data)->chunk(100)->each(function ($chunk) {
+            foreach ($chunk as $item) {
+                // Dispatch a job for each item in the chunk
+                $cacheKey = (object) $item;
+                try {
+                    $data = unCompressData($cacheKey->cache_value);
+                    if (!$data) {
+                        Log::warning("No data found for key: {$cacheKey->id}");
+                        return;
                     }
+
+                    $batchData = [];
+                    foreach ($data as $car) {
+                        $batchData[] = $this->prepareCarData((array) $car);
+                    }
+
+                    if (count($batchData) > 0) {
+                        Log::info('Batch Inserted');
+                        $this->insertBatch($batchData, $cacheKey->id);
+                        $batchData = []; // Reset batch
+                    }else{
+                        Log::info('Batch Condition Not Meet');
+                    }
+
+                } catch (\Exception $e) {
+                    Log::error("Error processing key {$cacheKey->id}: " . $e->getMessage());
                 }
-            });
+            }
+        });
 
         if($cronRun){
 
-            CronRunHistory::where('_id', new ObjectId($cronRun))->update([
+            $updateUrl = $url . "/$cronRun";
+             // Remote Connection to KVM4.1
+             $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->put($updateUrl, [
                 'end_time' => Carbon::now(),
                 'status' => 'success',
                 'updated_at' => now(),
             ]);
+
+            if ($cronRunUpdateResponse->successful()) {
+                Log::info('PROCESS CACHED DATA TO DATABASE UPDATED');
+            } else {
+                Log::info('ERROR: PROCESS CACHED DATA TO DATABASE UPDATED');
+
+
+            }
+
         }
 
 
-    }
-
-    /**
-     * Handle cron job failure and send email notification.
-     */
-    private function handleCronError($cronRun, $errorMessage)
-    {
-        Log::error($errorMessage);
-        $apiUrl = config('app.cron_history_api_url') . '/api/cron-run-histories';
-
-        CronRunHistory::where('_id', new ObjectId($cronRun))->update([
-            'end_time' => Carbon::now(),
-            'status' => 'failed',
-            'updated_at' => now(),
-        ]);
-
-        $adminEmails = explode(',', env('ADMIN_EMAIL'));
-        Mail::to($adminEmails)->send(new CronJobFailedMail($errorMessage, 'process_cached_data'));
     }
 
     public function prepareCarData(array $car)
@@ -543,12 +556,24 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
 
             // ✅ Bulk Update Existing Records
             if (!empty($updatedRecords)) {
-                DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
+                foreach($updatedRecords as $item){
+                    DB::table('vehicle_records')->where('id', $item['id'])->update($item);
+                }
+                // DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
             }
 
-            VehicleProcessCachedApiData::where('id', $cacheKey)->delete();
+            $url = config('app.cron_history_api_url') . "/delete-my-vehicle/$cacheKey";
+            $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->post($url, [
+                'end_time' => Carbon::now(),
+                'status' => 'success',
+                'updated_at' => now(),
+            ]);
 
-
+            if ($cronRunUpdateResponse->successful()) {
+                Log::info('Vehicle Process Cached Api Data Delete');
+            } else {
+                Log::info('ERROR: Vehicle Process Cached Api Data Delete');
+            }
 
 
         } catch (\Exception $e) {
@@ -558,4 +583,32 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
             Log::info("Batch insert failed: " . $e->getMessage());
         }
     }
+
+    /**
+     * Handle cron job failure and send email notification.
+     */
+    private function handleCronError($cronRun, $errorMessage)
+    {
+        Log::error($errorMessage);
+        $url = config('app.cron_history_api_url') . '/cron-run-histories';
+        $updateUrl = $url . "/$cronRun";
+             // Remote Connection to KVM4.1
+             $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->put($updateUrl, [
+                'end_time' => Carbon::now(),
+                'status' => 'failed',
+                'updated_at' => now(),
+            ]);
+
+            if ($cronRunUpdateResponse->successful()) {
+                Log::info('PROCESS CACHED DATA TO DATABASE UPDATED FAILED');
+            } else {
+                Log::info('ERROR: PROCESS CACHED DATA TO DATABASE UPDATED FAILED');
+            }
+
+
+        $adminEmails = explode(',', env('ADMIN_EMAIL'));
+        Mail::to($adminEmails)->send(new CronJobFailedMail($errorMessage, 'process_cached_data'));
+    }
+
+
 }
