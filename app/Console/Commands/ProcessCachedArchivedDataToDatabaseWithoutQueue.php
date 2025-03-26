@@ -92,7 +92,6 @@ class ProcessCachedArchivedDataToDatabaseWithoutQueue extends Command
                 try {
                     // Retrieve data from cache
                     $data = unCompressData($cacheKey->cache_value);
-                    Log::info('Uncompressed Data Type', ['type' => gettype($data)]);
                     // Log::info('Uncompressed Log', ['data', json_encode($data)]);
                     if (!$data) {
                         Log::warning("No archived data found for key: {$cacheKey->id}");
@@ -102,6 +101,8 @@ class ProcessCachedArchivedDataToDatabaseWithoutQueue extends Command
                     $batchData = [];
 
                     foreach ($data as $car) {
+                    Log::info('Uncompressed Data Type', ['type' => gettype($car)]);
+
                         $batchData[] = $this->prepareArchivedData($car);
 
                     }
