@@ -316,6 +316,7 @@ class VehicleController extends Controller
 
             $data_source = $request->input('data_source', 'active') === 'archived' ? VehicleRecordArchived::class : VehicleRecord::class;
 
+            // Build base query with common conditions
             $baseQuery = $data_source::query()->whereNotNull('sale_date');
 
             if ($request->has('domain_id')) {
@@ -361,20 +362,39 @@ class VehicleController extends Controller
                         $baseQuery->whereDate('sale_date', $date);
                     }
                 } else {
-                    return sendResponse(true, 400, "Invalid 'auction_date' format. Expecting an array with two elements.", [], 200);
+                    return sendResponse(true, 400, "Invalid 'auction_date' format.", [], 200);
                 }
             }
 
-            $allRelatedIds = [];
+            // Collect distinct IDs using a single UNION query
+            $queries = [];
             foreach ($filters as $details) {
-                $allRelatedIds = array_merge($allRelatedIds, (clone $baseQuery)->distinct()->pluck($details['column'])->filter()->unique()->toArray());
+                $column = $details['column'];
+                $table = $details['table'];
+                $queries[] = (clone $baseQuery)
+                    ->select(DB::raw("'$table' as table_name"), DB::raw("$column as id"))
+                    ->distinct();
             }
-            $allRelatedIds = array_unique($allRelatedIds);
 
-            $relatedNameMaps = [];
-            foreach ($filters as $key => $details) {
-                $relatedNameMaps[$key] = DB::table($details['table'])->whereIn('id', $allRelatedIds)->pluck('name', 'id');
+            $unionQuery = null;
+            foreach ($queries as $query) {
+                $unionQuery = $unionQuery ? $unionQuery->unionAll($query) : $query;
             }
+
+            $results = $unionQuery ? $unionQuery->get() : collect();
+
+            // Group IDs by their respective tables
+            $tableIds = [];
+            foreach ($results as $row) {
+                $table = $row->table_name;
+                $id = $row->id;
+                if ($id !== null) {
+                    $tableIds[$table][] = $id;
+                }
+            }
+            $tableIds = array_map(function ($ids) {
+                return array_unique($ids);
+            }, $tableIds);
 
             foreach ($filters as $key => $details) {
                 if ($activeFilterKey && $key !== $activeFilterKey) continue;
@@ -386,81 +406,83 @@ class VehicleController extends Controller
 
                     foreach ($filters as $filterKey => $filterDetails) {
                         if ($filterKey === $currentHitAttribute) continue;
-                        if ($request->has($filterKey) && is_array($request->input($filterKey))) {
-                            $existingResults->whereIn($filterDetails['column'], $request->input($filterKey));
+                        if ($request->has($filterKey)) {
+                            $existingResults->whereIn($filterDetails['column'], (array)$request->input($filterKey));
                         }
                     }
 
                     $existingResults = $existingResults
-                        ->select("{$details['column']} as id", DB::raw("COUNT(*) as count"))
-                        ->groupBy("{$details['column']}")
+                        ->leftJoin($details['table'], $details['column'], '=', $details['table'] . '.id')
+                        ->select($details['column'] . ' as id', $details['table'] . '.name', DB::raw('COUNT(*) as count'))
+                        ->groupBy($details['column'], $details['table'] . '.name')
+                        ->orderBy($details['table'] . '.name')
                         ->simplePaginate($perPage, ['*'], 'page', $page);
 
-                    $response[$key] = $existingResults->map(function ($item) use ($relatedNameMaps, $key) {
+                    $response[$key] = $existingResults->map(function ($item) {
                         return [
-                            "id" => $item->id,
-                            'name' => $relatedNameMaps[$key][$item->id] ?? 'unknown',
+                            'id' => $item->id,
+                            'name' => $item->name ?? 'unknown',
                             'count' => $item->count,
                         ];
-                    })->sortBy('name')->values();
+                    })->values();
                     continue;
                 }
 
-                if ($searchAttribute && in_array($searchAttribute, $validListings) && $searchValue) {
-                    $cloneQuery = (clone $query);
+                if ($searchAttribute && $searchAttribute === $key && $searchValue) {
+                    $query->leftJoin($details['table'], $details['column'], '=', $details['table'] . '.id')
+                        ->where($details['table'] . '.name', 'LIKE', "%$searchValue%");
 
-                    $filteredResults = $cloneQuery->whereHas($filters[$searchAttribute]['relation'], function ($query) use ($searchValue) {
-                        $query->where('name', 'LIKE', "%$searchValue%");
-                    })->select("{$filters[$searchAttribute]['column']} as id", DB::raw("COUNT(*) as count"))
-                        ->groupBy("{$filters[$searchAttribute]['column']}")
+                    $filteredResults = $query
+                        ->select($details['column'] . ' as id', $details['table'] . '.name', DB::raw('COUNT(*) as count'))
+                        ->groupBy($details['column'], $details['table'] . '.name')
+                        ->orderBy($details['table'] . '.name')
                         ->simplePaginate($perPage, ['*'], 'page', $page);
 
-                    $response[$searchAttribute] = $filteredResults->map(function ($item) use ($relatedNameMaps, $searchAttribute) {
+                    $response[$key] = $filteredResults->map(function ($item) {
                         return [
-                            "id" => $item->id,
-                            'name' => $relatedNameMaps[$searchAttribute][$item->id] ?? 'unknown',
+                            'id' => $item->id,
+                            'name' => $item->name ?? 'unknown',
                             'count' => $item->count,
                         ];
-                    })->sortBy('name')->values();
+                    })->values();
                     continue;
                 }
 
                 foreach ($filters as $filterKey => $filterDetails) {
-                    if ($request->has($filterKey) && is_array($request->input($filterKey))) {
-                        $query->whereIn($filterDetails['column'], $request->input($filterKey));
+                    if ($request->has($filterKey)) {
+                        $query->whereIn($filterDetails['column'], (array)$request->input($filterKey));
                     }
                 }
 
-                $results = $details['paginate'] && (!$activeFilterKey || $key === $activeFilterKey) ?
-                    $query->selectRaw("{$details['column']} as id, COUNT(*) as count")
-                        ->groupBy("{$details['column']}")
-                        ->simplePaginate($perPage, ['*'], 'page', $page) :
-                    $query->selectRaw("{$details['column']} as id, COUNT(*) as count")
-                        ->groupBy("{$details['column']}")
-                        ->get();
+                $query->leftJoin($details['table'], $details['column'], '=', $details['table'] . '.id')
+                    ->select($details['column'] . ' as id', $details['table'] . '.name', DB::raw('COUNT(*) as count'))
+                    ->groupBy($details['column'], $details['table'] . '.name')
+                    ->orderBy($details['table'] . '.name');
 
-                $response[$key] = $results->map(function ($item) use ($relatedNameMaps, $key) {
+                $results = $details['paginate'] && (!$activeFilterKey || $key === $activeFilterKey)
+                    ? $query->simplePaginate($perPage, ['*'], 'page', $page)
+                    : $query->get();
+
+                $response[$key] = $results->map(function ($item) {
                     return [
-                        "id" => $item->id,
-                        'name' => $relatedNameMaps[$key][$item->id] ?? 'unknown',
+                        'id' => $item->id,
+                        'name' => $item->name ?? 'unknown',
                         'count' => $item->count,
                     ];
-                })->sortBy('name')->values();
+                })->values();
             }
 
             if ($activeFilterKey) {
-                return sendResponse(true, 200, ucfirst(str_replace('_', ' ', $activeFilterKey)) . ' Fetched Successfully!', [
+                return sendResponse(true, 200, ucfirst(str_replace('_', ' ', $activeFilterKey)) . ' Fetched!', [
                     $activeFilterKey => $response[$activeFilterKey]
                 ], 200);
             }
 
-            return sendResponse(true, 200, 'Attributes Fetched Successfully!', $response, 200);
+            return sendResponse(true, 200, 'Attributes Fetched!', $response, 200);
         } catch (\Exception $ex) {
-            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+            return sendResponse(false, 500, 'Server Error', $ex->getMessage(), 200);
         }
     }
-
-
 
     /**
     * Filter Attributes and Manage Counts API.
