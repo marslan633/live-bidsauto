@@ -21,7 +21,6 @@ Route::prefix('vehicles')->group(function () {
     Route::get('/{id}', [VehicleController::class, 'searchVehicle']);
 });
 
-
 Route::post('filter-attributes', [VehicleController::class, 'filterAttributes']);
 Route::get('filtered-records-count', [VehicleController::class, 'filteredRecordsCount'])->name('filtered.records.count');
 Route::post('/sendQuote', [VehicleController::class, 'sendQuote']);
