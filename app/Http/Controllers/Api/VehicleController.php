@@ -303,8 +303,8 @@ class VehicleController extends Controller
             ];
 
             $response = [];
-            $page = $request->input('page') ?? 1;
-            $perPage = $request->input('size') ?? 10;
+            $page = $request->input('page', 1);
+            $perPage = $request->input('size', 10);
 
             $searchAttribute = $request->input('search_attribute');
             $searchValue = $request->input('search_value');
@@ -334,13 +334,13 @@ class VehicleController extends Controller
             }
 
             if ($request->has('year_from') && $request->has('year_to')) {
-                $baseQuery->whereBetween('year', [(int) $request->input('year_from'), (int) $request->input('year_to')]);
+                $baseQuery->whereBetween('year', [(int)$request->input('year_from'), (int)$request->input('year_to')]);
             }
 
             if ($request->has('odometer_min') && $request->has('odometer_max')) {
                 $baseQuery->whereBetween('odometer_mi', [
-                    (int) str_replace(',', '', $request->input('odometer_min')),
-                    (int) str_replace(',', '', $request->input('odometer_max'))
+                    (int)str_replace(',', '', $request->input('odometer_min')),
+                    (int)str_replace(',', '', $request->input('odometer_max'))
                 ]);
             }
 
@@ -365,6 +365,7 @@ class VehicleController extends Controller
                 }
             }
 
+            // No caching – just fetch name maps directly
             $relatedNameMaps = [];
             foreach ($filters as $key => $details) {
                 $relatedNameMaps[$key] = DB::table($details['table'])->pluck('name', 'id');
@@ -373,10 +374,10 @@ class VehicleController extends Controller
             foreach ($filters as $key => $details) {
                 if ($activeFilterKey && $key !== $activeFilterKey) continue;
 
-                $query = clone $baseQuery;
+                $query = (clone $baseQuery);
 
                 if ($currentHitAttribute && $currentHitAttribute === $key) {
-                    $existingResults = clone $query;
+                    $existingResults = (clone $query);
 
                     foreach ($filters as $filterKey => $filterDetails) {
                         if ($filterKey === $currentHitAttribute) continue;
@@ -385,12 +386,10 @@ class VehicleController extends Controller
                         }
                     }
 
-                    $existingResults = $existingResults->select("{$details['column']} as id", DB::raw("COUNT(*) as count"))
-                        ->groupBy("{$details['column']}");
-
-                    $existingResults = (!empty($perPage) && !empty($page)) ?
-                        $existingResults->paginate($perPage, ['*'], 'page', $page) :
-                        $existingResults->get();
+                    $existingResults = $existingResults
+                        ->select("{$details['column']} as id", DB::raw("COUNT(*) as count"))
+                        ->groupBy("{$details['column']}")
+                        ->simplePaginate($perPage, ['*'], 'page', $page);
 
                     $response[$key] = $existingResults->map(function ($item) use ($relatedNameMaps, $key) {
                         return [
@@ -403,13 +402,13 @@ class VehicleController extends Controller
                 }
 
                 if ($searchAttribute && in_array($searchAttribute, $validListings) && $searchValue) {
-                    $cloneQuery = clone $query;
+                    $cloneQuery = (clone $query)->with($filters[$searchAttribute]['relation']);
 
                     $filteredResults = $cloneQuery->whereHas($filters[$searchAttribute]['relation'], function ($query) use ($searchValue) {
                         $query->where('name', 'LIKE', "%$searchValue%");
                     })->select("{$filters[$searchAttribute]['column']} as id", DB::raw("COUNT(*) as count"))
-                      ->groupBy("{$filters[$searchAttribute]['column']}")
-                      ->paginate($perPage, ['*'], 'page', $page);
+                        ->groupBy("{$filters[$searchAttribute]['column']}")
+                        ->simplePaginate($perPage, ['*'], 'page', $page);
 
                     $response[$searchAttribute] = $filteredResults->map(function ($item) use ($relatedNameMaps, $searchAttribute) {
                         return [
@@ -430,7 +429,7 @@ class VehicleController extends Controller
                 $results = $details['paginate'] && (!$activeFilterKey || $key === $activeFilterKey) ?
                     $query->selectRaw("{$details['column']} as id, COUNT(*) as count")
                         ->groupBy("{$details['column']}")
-                        ->paginate($perPage, ['*'], 'page', $page) :
+                        ->simplePaginate($perPage, ['*'], 'page', $page) :
                     $query->selectRaw("{$details['column']} as id, COUNT(*) as count")
                         ->groupBy("{$details['column']}")
                         ->get();
@@ -455,6 +454,7 @@ class VehicleController extends Controller
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }
     }
+
 
     /**
     * Filter Attributes and Manage Counts API.
