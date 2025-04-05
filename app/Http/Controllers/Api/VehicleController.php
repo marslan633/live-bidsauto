@@ -317,7 +317,7 @@ class VehicleController extends Controller
             $model = $data_source === 'archived' ? VehicleRecordArchived::class : VehicleRecord::class;
 
             $baseQuery = $model::query()
-                ->from(DB::raw('vehicle_record_archiveds FORCE INDEX (idx_filters_only)'))
+                ->from(DB::raw('vehicle_record_archiveds FORCE INDEX (idx_filters)'))
                 ->whereNotNull('sale_date')
                 ->when($request->filled('domain_id'), fn($q) => $q->whereIn('domain_id', $request->input('domain_id')))
                 ->when($request->has('buy_now'), function ($q) use ($request) {
