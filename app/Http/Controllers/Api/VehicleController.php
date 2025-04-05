@@ -286,176 +286,179 @@ class VehicleController extends Controller
     * Filter Attributes and Manage Counts API.
     */
     public function filterAttributes(Request $request)
-{
-    try {
-        $filters = [
-            'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers', 'paginate' => true],
-            'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models', 'paginate' => true],
-            'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types', 'paginate' => true],
-            'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions', 'paginate' => true],
-            'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels', 'paginate' => true],
-            'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types', 'paginate' => true],
-            'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels', 'paginate' => true],
-            'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions', 'paginate' => true],
-            'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles', 'paginate' => true],
-            'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages', 'paginate' => true],
-            'buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows', 'paginate' => true],
-        ];
+    {
+        try {
+            $filters = [
+                'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers', 'paginate' => true],
+                'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models', 'paginate' => true],
+                'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types', 'paginate' => true],
+                'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions', 'paginate' => true],
+                'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels', 'paginate' => true],
+                'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types', 'paginate' => true],
+                'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels', 'paginate' => true],
+                'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions', 'paginate' => true],
+                'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles', 'paginate' => true],
+                'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages', 'paginate' => true],
+                'buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows', 'paginate' => true],
+            ];
 
-        $response = [];
-        $page = $request->input('page', 1);
-        $perPage = $request->input('size', 10);
+            $response = [];
+            $page = $request->input('page', 1);
+            $perPage = $request->input('size', 10);
 
-        $searchAttribute = $request->input('search_attribute');
-        $searchValue = $request->input('search_value');
-        $currentHitAttribute = $request->input('current_hit_attribute');
-        $listing = $request->input('listing');
+            $searchAttribute = $request->input('search_attribute');
+            $searchValue = $request->input('search_value');
+            $currentHitAttribute = $request->input('current_hit_attribute');
+            $listing = $request->input('listing');
 
-        $validListings = array_keys($filters);
-        $activeFilterKey = in_array($listing, $validListings) ? $listing : null;
+            $validListings = array_keys($filters);
+            $activeFilterKey = in_array($listing, $validListings) ? $listing : null;
 
-        $data_source = $request->input('data_source', 'active');
-        $model = $data_source === 'archived' ? VehicleRecordArchived::class : VehicleRecord::class;
+            $data_source = $request->input('data_source', 'active') === 'archived' ? VehicleRecordArchived::class : VehicleRecord::class;
 
-        $baseQuery = $model::query()->whereNotNull('sale_date');
+            $baseQuery = $data_source::query()->whereNotNull('sale_date');
 
-        if ($request->has('domain_id')) {
-            $baseQuery->whereIn('domain_id', $request->input('domain_id'));
-        }
-
-        if ($request->has('buy_now')) {
-            if ($request->buy_now == true) {
-                $buy_now_id = BuyNow::where('name', 'buyNowWithPrice')->pluck('id');
-                $baseQuery->where('buy_now_id', $buy_now_id);
-            } else {
-                $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->toArray();
-                $baseQuery->whereIn('buy_now_id', $buy_now_ids);
+            if ($request->has('domain_id')) {
+                $baseQuery->whereIn('domain_id', $request->input('domain_id'));
             }
-        }
 
-        if ($request->has('year_from') && $request->has('year_to')) {
-            $baseQuery->whereBetween('year', [(int)$request->input('year_from'), (int)$request->input('year_to')]);
-        }
-
-        if ($request->has('odometer_min') && $request->has('odometer_max')) {
-            $baseQuery->whereBetween('odometer_mi', [
-                (int)str_replace(',', '', $request->input('odometer_min')),
-                (int)str_replace(',', '', $request->input('odometer_max'))
-            ]);
-        }
-
-        if ($request->has('auction_date')) {
-            $auctionDateInput = $request->input('auction_date');
-            if (is_array($auctionDateInput) && count($auctionDateInput) === 2) {
-                [$auctionDateFrom, $auctionDateTo] = $auctionDateInput;
-                if ($auctionDateFrom && $auctionDateTo) {
-                    $from = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom));
-                    $to = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo));
-                    if ($from->equalTo($to)) {
-                        $baseQuery->whereDate('sale_date', $from->format('Y-m-d'));
-                    } else {
-                        $baseQuery->whereBetween('sale_date', [$from->format('Y-m-d'), $to->format('Y-m-d')]);
-                    }
-                } elseif ($auctionDateFrom && !$auctionDateTo) {
-                    $date = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->format('Y-m-d');
-                    $baseQuery->whereDate('sale_date', $date);
+            if ($request->has('buy_now')) {
+                $buyNowQuery = BuyNow::query();
+                if ($request->buy_now == true) {
+                    $buy_now_id = $buyNowQuery->where('name', 'buyNowWithPrice')->pluck('id');
+                    $baseQuery->where('buy_now_id', $buy_now_id);
+                } else {
+                    $buy_now_ids = $buyNowQuery->whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->toArray();
+                    $baseQuery->whereIn('buy_now_id', $buy_now_ids);
                 }
-            } else {
-                return sendResponse(true, 400, "Invalid 'auction_date' format. Expecting an array with two elements.", [], 200);
             }
-        }
 
-        $relatedNameMaps = [];
+            if ($request->has('year_from') && $request->has('year_to')) {
+                $baseQuery->whereBetween('year', [(int)$request->input('year_from'), (int)$request->input('year_to')]);
+            }
 
-        foreach ($filters as $key => $details) {
-            $column = $details['column'];
-            $ids = (clone $baseQuery)->distinct()->pluck($column)->filter()->unique()->toArray();
-            $relatedNameMaps[$key] = DB::table($details['table'])->whereIn('id', $ids)->pluck('name', 'id');
-        }
+            if ($request->has('odometer_min') && $request->has('odometer_max')) {
+                $baseQuery->whereBetween('odometer_mi', [
+                    (int)str_replace(',', '', $request->input('odometer_min')),
+                    (int)str_replace(',', '', $request->input('odometer_max'))
+                ]);
+            }
 
-        foreach ($filters as $key => $details) {
-            if ($activeFilterKey && $key !== $activeFilterKey) continue;
+            if ($request->has('auction_date')) {
+                $auctionDateInput = $request->input('auction_date');
+                if (is_array($auctionDateInput) && count($auctionDateInput) === 2) {
+                    [$auctionDateFrom, $auctionDateTo] = $auctionDateInput;
+                    if ($auctionDateFrom && $auctionDateTo) {
+                        $from = Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom));
+                        $to = Carbon::createFromFormat('Y-m-d', trim($auctionDateTo));
+                        if ($from->equalTo($to)) {
+                            $baseQuery->whereDate('sale_date', $from->format('Y-m-d'));
+                        } else {
+                            $baseQuery->whereBetween('sale_date', [$from->format('Y-m-d'), $to->format('Y-m-d')]);
+                        }
+                    } elseif ($auctionDateFrom && !$auctionDateTo) {
+                        $date = Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->format('Y-m-d');
+                        $baseQuery->whereDate('sale_date', $date);
+                    }
+                } else {
+                    return sendResponse(true, 400, "Invalid 'auction_date' format. Expecting an array with two elements.", [], 200);
+                }
+            }
 
-            $query = (clone $baseQuery);
+            $allRelatedIds = [];
+            foreach ($filters as $details) {
+                $allRelatedIds = array_merge($allRelatedIds, (clone $baseQuery)->distinct()->pluck($details['column'])->filter()->unique()->toArray());
+            }
+            $allRelatedIds = array_unique($allRelatedIds);
 
-            if ($currentHitAttribute && $currentHitAttribute === $key) {
-                $existingResults = (clone $query);
+            $relatedNameMaps = [];
+            foreach ($filters as $key => $details) {
+                $relatedNameMaps[$key] = DB::table($details['table'])->whereIn('id', $allRelatedIds)->pluck('name', 'id');
+            }
+
+            foreach ($filters as $key => $details) {
+                if ($activeFilterKey && $key !== $activeFilterKey) continue;
+
+                $query = (clone $baseQuery);
+
+                if ($currentHitAttribute && $currentHitAttribute === $key) {
+                    $existingResults = (clone $query);
+
+                    foreach ($filters as $filterKey => $filterDetails) {
+                        if ($filterKey === $currentHitAttribute) continue;
+                        if ($request->has($filterKey) && is_array($request->input($filterKey))) {
+                            $existingResults->whereIn($filterDetails['column'], $request->input($filterKey));
+                        }
+                    }
+
+                    $existingResults = $existingResults
+                        ->select("{$details['column']} as id", DB::raw("COUNT(*) as count"))
+                        ->groupBy("{$details['column']}")
+                        ->simplePaginate($perPage, ['*'], 'page', $page);
+
+                    $response[$key] = $existingResults->map(function ($item) use ($relatedNameMaps, $key) {
+                        return [
+                            "id" => $item->id,
+                            'name' => $relatedNameMaps[$key][$item->id] ?? 'unknown',
+                            'count' => $item->count,
+                        ];
+                    })->sortBy('name')->values();
+                    continue;
+                }
+
+                if ($searchAttribute && in_array($searchAttribute, $validListings) && $searchValue) {
+                    $cloneQuery = (clone $query);
+
+                    $filteredResults = $cloneQuery->whereHas($filters[$searchAttribute]['relation'], function ($query) use ($searchValue) {
+                        $query->where('name', 'LIKE', "%$searchValue%");
+                    })->select("{$filters[$searchAttribute]['column']} as id", DB::raw("COUNT(*) as count"))
+                        ->groupBy("{$filters[$searchAttribute]['column']}")
+                        ->simplePaginate($perPage, ['*'], 'page', $page);
+
+                    $response[$searchAttribute] = $filteredResults->map(function ($item) use ($relatedNameMaps, $searchAttribute) {
+                        return [
+                            "id" => $item->id,
+                            'name' => $relatedNameMaps[$searchAttribute][$item->id] ?? 'unknown',
+                            'count' => $item->count,
+                        ];
+                    })->sortBy('name')->values();
+                    continue;
+                }
 
                 foreach ($filters as $filterKey => $filterDetails) {
-                    if ($filterKey === $currentHitAttribute) continue;
                     if ($request->has($filterKey) && is_array($request->input($filterKey))) {
-                        $existingResults->whereIn($filterDetails['column'], $request->input($filterKey));
+                        $query->whereIn($filterDetails['column'], $request->input($filterKey));
                     }
                 }
 
-                $existingResults = $existingResults
-                    ->select("{$details['column']} as id", DB::raw("COUNT(*) as count"))
-                    ->groupBy("{$details['column']}")
-                    ->simplePaginate($perPage, ['*'], 'page', $page);
+                $results = $details['paginate'] && (!$activeFilterKey || $key === $activeFilterKey) ?
+                    $query->selectRaw("{$details['column']} as id, COUNT(*) as count")
+                        ->groupBy("{$details['column']}")
+                        ->simplePaginate($perPage, ['*'], 'page', $page) :
+                    $query->selectRaw("{$details['column']} as id, COUNT(*) as count")
+                        ->groupBy("{$details['column']}")
+                        ->get();
 
-                $response[$key] = $existingResults->map(function ($item) use ($relatedNameMaps, $key) {
+                $response[$key] = $results->map(function ($item) use ($relatedNameMaps, $key) {
                     return [
                         "id" => $item->id,
                         'name' => $relatedNameMaps[$key][$item->id] ?? 'unknown',
                         'count' => $item->count,
                     ];
                 })->sortBy('name')->values();
-                continue;
             }
 
-            if ($searchAttribute && in_array($searchAttribute, $validListings) && $searchValue) {
-                $cloneQuery = (clone $query);
-
-                $filteredResults = $cloneQuery->whereHas($filters[$searchAttribute]['relation'], function ($query) use ($searchValue) {
-                    $query->where('name', 'LIKE', "%$searchValue%");
-                })->select("{$filters[$searchAttribute]['column']} as id", DB::raw("COUNT(*) as count"))
-                    ->groupBy("{$filters[$searchAttribute]['column']}")
-                    ->simplePaginate($perPage, ['*'], 'page', $page);
-
-                $response[$searchAttribute] = $filteredResults->map(function ($item) use ($relatedNameMaps, $searchAttribute) {
-                    return [
-                        "id" => $item->id,
-                        'name' => $relatedNameMaps[$searchAttribute][$item->id] ?? 'unknown',
-                        'count' => $item->count,
-                    ];
-                })->sortBy('name')->values();
-                continue;
+            if ($activeFilterKey) {
+                return sendResponse(true, 200, ucfirst(str_replace('_', ' ', $activeFilterKey)) . ' Fetched Successfully!', [
+                    $activeFilterKey => $response[$activeFilterKey]
+                ], 200);
             }
 
-            foreach ($filters as $filterKey => $filterDetails) {
-                if ($request->has($filterKey) && is_array($request->input($filterKey))) {
-                    $query->whereIn($filterDetails['column'], $request->input($filterKey));
-                }
-            }
-
-            $results = $details['paginate'] && (!$activeFilterKey || $key === $activeFilterKey) ?
-                $query->selectRaw("{$details['column']} as id, COUNT(*) as count")
-                    ->groupBy("{$details['column']}")
-                    ->simplePaginate($perPage, ['*'], 'page', $page) :
-                $query->selectRaw("{$details['column']} as id, COUNT(*) as count")
-                    ->groupBy("{$details['column']}")
-                    ->get();
-
-            $response[$key] = $results->map(function ($item) use ($relatedNameMaps, $key) {
-                return [
-                    "id" => $item->id,
-                    'name' => $relatedNameMaps[$key][$item->id] ?? 'unknown',
-                    'count' => $item->count,
-                ];
-            })->sortBy('name')->values();
+            return sendResponse(true, 200, 'Attributes Fetched Successfully!', $response, 200);
+        } catch (\Exception $ex) {
+            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }
-
-        if ($activeFilterKey) {
-            return sendResponse(true, 200, ucfirst(str_replace('_', ' ', $activeFilterKey)) . ' Fetched Successfully!', [
-                $activeFilterKey => $response[$activeFilterKey]
-            ], 200);
-        }
-
-        return sendResponse(true, 200, 'Attributes Fetched Successfully!', $response, 200);
-    } catch (\Exception $ex) {
-        return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
     }
-}
 
 
 
