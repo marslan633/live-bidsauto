@@ -3,71 +3,80 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\{
-    VehicleRecord, Manufacturer, VehicleModel, Generation, BodyType, Color,
-    Transmission, DriveWheel, Fuel, Condition, Status, VehicleType, Domain,
-    Engine, Seller, SellerType, Title, DetailedTitle, Damage, Image, Country,
-    State, City, Location, SellingBranch, Year, BuyNow, Odometer, CacheKey, CronRunHistory, VehicleArchivedApiData, VehicleProcessCachedApiData, VehicleProcessCachedArchivedApiData, VehicleRecordArchived
-};
-
-use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Mail;
 use App\Mail\SendQuoteMail;
-use Illuminate\Support\Facades\Http;
+use App\Models\BuyNow;
+use App\Models\CacheKey;
+use App\Models\CronRunHistory;
+use App\Models\Domain;
+use App\Models\Odometer;
+use App\Models\Status;
+use App\Models\VehicleArchivedApiData;
+use App\Models\VehicleProcessCachedApiData;
+use App\Models\VehicleRecord;
+use App\Models\VehicleRecordArchived;
+use App\Models\Year;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class VehicleController extends Controller
 {
-
-    public function deleteMyVehicle($id){
-        try{
+    public function deleteMyVehicle($id)
+    {
+        try {
             $deleted = VehicleProcessCachedApiData::where('_id', $id)->delete();
             if ($deleted) {
                 return sendResponse(true, 200, 'Record Deleted Successfully', null, 200);
             } else {
                 return sendResponse(false, 404, 'Record Not Found', null, 404);
             }
-        }catch (\Exception $ex) {
+        } catch (\Exception $ex) {
             Log::info('Delete Cached Data Error', ['data' => json_encode($ex->getMessage())]);
+
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }
     }
 
-    public function deleteMyArchiveVehicle($id){
-        try{
+    public function deleteMyArchiveVehicle($id)
+    {
+        try {
             $deleted = VehicleArchivedApiData::where('_id', $id)->delete();
             if ($deleted) {
                 return sendResponse(true, 200, 'Record Deleted Successfully', null, 200);
             } else {
                 return sendResponse(false, 404, 'Record Not Found', null, 404);
             }
-        }catch (\Exception $ex) {
+        } catch (\Exception $ex) {
             Log::info('Delete Cached Data Error', ['data' => json_encode($ex->getMessage())]);
+
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }
     }
 
-    public function destroy_archived($id){
-        try{
+    public function destroy_archived($id)
+    {
+        try {
             $deleted = VehicleArchivedApiData::where('_id', $id)->delete();
             if ($deleted) {
                 return sendResponse(true, 200, 'Record Deleted Successfully', null, 200);
             } else {
                 return sendResponse(false, 404, 'Record Not Found', null, 404);
             }
-        }catch (\Exception $ex) {
+        } catch (\Exception $ex) {
             Log::info('Delete Archived Data Error', ['data' => json_encode($ex->getMessage())]);
+
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }
     }
 
-    public function getVechiclesForDatabase(){
-        try{
+    public function getVechiclesForDatabase()
+    {
+        try {
             $data = VehicleProcessCachedApiData::orderBy('created_at', 'desc')->paginate(intval(config('app.per_page_vehicle_data')));
+
             return sendResponse(true, 200, 'Vehicles Detail Fetched Successfully!', $data, 200);
 
         } catch (\Exception $ex) {
@@ -75,9 +84,11 @@ class VehicleController extends Controller
         }
     }
 
-    public function getArchivedVechiclesForDatabase(){
-        try{
+    public function getArchivedVechiclesForDatabase()
+    {
+        try {
             $data = VehicleArchivedApiData::orderBy('created_at', 'desc')->paginate(intval(config('app.per_page_archived_data')));
+
             return sendResponse(true, 200, 'Archived Vehicles Detail Fetched Successfully!', $data, 200);
 
         } catch (\Exception $ex) {
@@ -86,8 +97,8 @@ class VehicleController extends Controller
     }
 
     /**
-    * Fetch Cars Information API.
-    */
+     * Fetch Cars Information API.
+     */
     public function vehicleInformations(Request $request)
     {
         try {
@@ -99,7 +110,7 @@ class VehicleController extends Controller
                 'manufacturer', 'vehicleModel', 'generation', 'bodyType', 'color', 'engine',
                 'transmission', 'driveWheel', 'vehicleType', 'fuel', 'status', 'seller',
                 'sellerType', 'titleRelation', 'detailedTitle', 'damageMain', 'damageSecond',
-                'condition', 'image', 'country', 'state', 'city', 'location', 'sellingBranch', 'buyNowRelation'
+                'condition', 'image', 'country', 'state', 'city', 'location', 'sellingBranch', 'buyNowRelation',
             ]);
 
             $query->whereNotNull('sale_date');
@@ -145,9 +156,9 @@ class VehicleController extends Controller
                     $query->where('buy_now_id', $buy_now_id);
                 } elseif ($request->buy_now == false) {
                     $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
-                            ->pluck('id')
-                            ->toArray();
-                        $query->whereIn('buy_now_id', $buy_now_ids);
+                        ->pluck('id')
+                        ->toArray();
+                    $query->whereIn('buy_now_id', $buy_now_ids);
                 }
             }
 
@@ -191,7 +202,7 @@ class VehicleController extends Controller
                             // Date range
                             $query->whereBetween('sale_date', [$auctionDateFrom, $auctionDateTo]);
                         }
-                    } elseif ($auctionDateFrom && !$auctionDateTo) {
+                    } elseif ($auctionDateFrom && ! $auctionDateTo) {
                         $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->format('Y-m-d');
                         $query->whereDate('sale_date', $auctionDate);
                     }
@@ -211,7 +222,7 @@ class VehicleController extends Controller
                 'drive_wheels' => 'drive_wheel_id',
                 'transmissions' => 'transmission_id',
                 'detailed_titles' => 'detailed_title_id',
-                'damages' => 'damage_id'
+                'damages' => 'damage_id',
             ];
 
             // Apply filters dynamically
@@ -230,7 +241,7 @@ class VehicleController extends Controller
 
             $response = [
                 'count' => $totalCount,
-                'data' => $vehicleInformations
+                'data' => $vehicleInformations,
             ];
 
             return sendResponse(true, 200, 'Vehicle Informations Fetched Successfully!', $response, 200);
@@ -240,9 +251,10 @@ class VehicleController extends Controller
     }
 
     /**
-    * Search vehicle information records throught lot_id or vin.
-    */
-    public function searchVehicle(Request $request, $id) {
+     * Search vehicle information records throught lot_id or vin.
+     */
+    public function searchVehicle(Request $request, $id)
+    {
         try {
             // Determine the model based on the 'type' parameter
             $data_source = $request->input('data_source', 'active'); // Default to 'active'
@@ -252,7 +264,7 @@ class VehicleController extends Controller
                 'manufacturer', 'vehicleModel', 'generation', 'bodyType', 'color', 'engine',
                 'transmission', 'driveWheel', 'vehicleType', 'fuel', 'status', 'seller',
                 'sellerType', 'titleRelation', 'detailedTitle', 'damageMain', 'damageSecond',
-                'condition', 'image', 'country', 'state', 'city', 'location', 'sellingBranch', 'buyNowRelation'
+                'condition', 'image', 'country', 'state', 'city', 'location', 'sellingBranch', 'buyNowRelation',
             ]);
 
             // If querying from archived data and is_history is true, include SaleAuctionHistory
@@ -282,9 +294,205 @@ class VehicleController extends Controller
     }
 
     /**
-    * Filter Attributes and Manage Counts API.
-    */
+     * Filter Attributes and Manage Counts API.
+     */
     public function filterAttributes(Request $request)
+    {
+        try {
+            // Define filters and relationships dynamically
+            $filters = [
+                'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers', 'paginate' => true],
+                'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models', 'paginate' => true],
+                'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types', 'paginate' => true],
+                'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions', 'paginate' => true],
+                'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels', 'paginate' => true],
+                'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types', 'paginate' => true],
+                'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels', 'paginate' => true],
+                'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions', 'paginate' => true],
+                'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles', 'paginate' => true],
+                'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages', 'paginate' => true],
+                'buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows', 'paginate' => true],
+            ];
+
+            $response = [];
+            $page = $request->input('page') ?? 1; // Default to page 1 if not provided
+            $perPage = $request->input('size') ?? 20; // Default to 20 items per page
+            $searchAttribute = $request->input('search_attribute');
+            $searchValue = $request->input('search_value');
+            $currentHitAttribute = $request->input('current_hit_attribute');
+            $listing = $request->input('listing');
+            $activeFilterKey = in_array($listing, array_keys($filters)) ? $listing : null;
+
+            // Process each filter
+            foreach ($filters as $key => $details) {
+                if ($activeFilterKey && $key !== $activeFilterKey) {
+                    continue;
+                }
+
+                $data_source = $request->input('data_source', 'active');
+                $model = $data_source === 'archived' ? VehicleRecordArchived::class : VehicleRecord::class;
+                $query = $model::query()->whereNotNull('sale_date');
+
+                // Apply domain filter if provided
+                if ($request->has('domain_id')) {
+                    $query->whereIn('domain_id', $request->input('domain_id'));
+                }
+
+                // Apply the 'buy_now' filter logic
+                if ($request->has('buy_now')) {
+                    if ($request->buy_now == true) {
+                        $buy_now_id = BuyNow::where('name', 'buyNowWithPrice')->pluck('id');
+                        $query->where('buy_now_id', $buy_now_id);
+                    } elseif ($request->buy_now == false) {
+                        $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->toArray();
+                        $query->whereIn('buy_now_id', $buy_now_ids);
+                    }
+                }
+
+                // Handling filters like 'year_from', 'year_to', 'odometer_min', 'odometer_max'
+                if ($request->has('year_from') && $request->has('year_to')) {
+                    $query->whereBetween('year', [(int)$request->input('year_from'), (int)$request->input('year_to')]);
+                }
+
+                if ($request->has('odometer_min') && $request->has('odometer_max')) {
+                    $query->whereBetween('odometer_mi', [
+                        (int)str_replace(',', '', $request->input('odometer_min')),
+                        (int)str_replace(',', '', $request->input('odometer_max')),
+                    ]);
+                }
+
+                // Handling 'auction_date'
+                if ($request->has('auction_date')) {
+                    $auctionDateInput = $request->input('auction_date');
+                    if (is_array($auctionDateInput) && count($auctionDateInput) === 2) {
+                        [$auctionDateFrom, $auctionDateTo] = $auctionDateInput;
+                        if ($auctionDateFrom && $auctionDateTo) {
+                            $auctionDateFromCarbon = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom));
+                            $auctionDateToCarbon = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo));
+
+                            if ($auctionDateFromCarbon->equalTo($auctionDateToCarbon)) {
+                                $query->whereDate('sale_date', $auctionDateFromCarbon->format('Y-m-d'));
+                            } else {
+                                $query->whereBetween('sale_date', [$auctionDateFromCarbon->format('Y-m-d'), $auctionDateToCarbon->format('Y-m-d')]);
+                            }
+                        }
+                    }
+                }
+
+                // Skip applying the current hit attribute filter if already processed
+                if ($currentHitAttribute && $currentHitAttribute === $key) {
+                    $existingResults = clone $query;
+                    foreach ($filters as $filterKey => $filterDetails) {
+                        if ($filterKey === $currentHitAttribute) {
+                            continue;
+                        }
+
+                        if ($request->has($filterKey) && is_array($request->input($filterKey))) {
+                            $existingResults->whereIn($filterDetails['column'], $request->input($filterKey));
+                        }
+                    }
+
+                    $existingResults = $existingResults->select("{$details['column']} as id", DB::raw('COUNT(*) as count'))
+                        ->groupBy("{$details['column']}");
+
+                    if ($perPage && $page) {
+                        $existingResults = $existingResults->paginate($perPage, ['*'], 'page', $page);
+                    } else {
+                        $existingResults = $existingResults->get();
+                    }
+
+                    $relatedNames = DB::table($details['table'])
+                        ->whereIn('id', $existingResults->pluck('id'))
+                        ->pluck('name', 'id');
+
+                    $response[$key] = $existingResults->map(function ($item) use ($relatedNames) {
+                        return [
+                            'id' => $item->id,
+                            'name' => $relatedNames[$item->id] ?? 'unknown',
+                            'count' => $item->count,
+                        ];
+                    })->sortBy('name')->values();
+
+                    continue;
+                }
+
+                // If search_attribute is set and valid, perform search
+                if ($searchAttribute && in_array($searchAttribute, array_keys($filters)) && $searchValue) {
+                    $cloneQuery = clone $query;
+                    $filteredResults = $cloneQuery->whereHas($filters[$searchAttribute]['relation'], function ($query) use ($searchValue) {
+                        $query->where('name', 'LIKE', "%$searchValue%");
+                    })->select("{$filters[$searchAttribute]['column']} as id", DB::raw('COUNT(*) as count'))
+                        ->groupBy("{$filters[$searchAttribute]['column']}")
+                        ->paginate($perPage, ['*'], 'page', $page);
+
+                    $relatedNames = DB::table($filters[$searchAttribute]['table'])
+                        ->whereIn('id', $filteredResults->pluck('id'))
+                        ->pluck('name', 'id');
+
+                    $response[$searchAttribute] = $filteredResults->map(function ($item) use ($relatedNames) {
+                        return [
+                            'id' => $item->id,
+                            'name' => $relatedNames[$item->id] ?? 'unknown',
+                            'count' => $item->count,
+                        ];
+                    })->sortBy('name')->values();
+                }
+
+                // Apply filters dynamically based on the filters array
+                foreach ($filters as $filterKey => $filterDetails) {
+                    if ($request->has($filterKey) && is_array($request->input($filterKey))) {
+                        $query->whereIn($filterDetails['column'], $request->input($filterKey));
+                    }
+                }
+
+                // Apply pagination logic dynamically
+                if ($details['paginate'] && (!$activeFilterKey || $key === $activeFilterKey)) {
+                    $results = $query
+                        ->selectRaw("{$details['column']} as id, COUNT(*) as count")
+                        ->groupBy("{$details['column']}")
+                        ->paginate($perPage, ['*'], 'page', $page);
+                } else {
+                    $results = $query
+                        ->selectRaw("{$details['column']} as id, COUNT(*) as count")
+                        ->groupBy("{$details['column']}")
+                        ->get();
+                }
+
+                // Fetch related names in bulk
+                $relatedNames = DB::table($details['table'])
+                    ->whereIn('id', $results->pluck('id'))
+                    ->pluck('name', 'id');
+
+                // Map results to the response structure
+                $response[$key] = $results->map(function ($item) use ($relatedNames) {
+                    return [
+                        'id' => $item->id,
+                        'name' => $relatedNames[$item->id] ?? 'unknown',
+                        'count' => $item->count,
+                    ];
+                })->sortBy('name')->values();
+            }
+
+            // Return only the active filter's data if a specific filter is set
+            if ($activeFilterKey) {
+                return sendResponse(true, 200, ucfirst(str_replace('_', ' ', $activeFilterKey)).' Fetched Successfully!', [
+                    $activeFilterKey => $response[$activeFilterKey],
+                ], 200);
+            }
+
+            $finalResult = $response; // This is the first query result and accurate
+
+            return sendResponse(true, 200, 'Attributes Fetched Successfully!', $finalResult, 200);
+        } catch (\Exception $ex) {
+            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+        }
+    }
+
+
+    /**
+     * Filter Attributes and Manage Counts API.
+     */
+    public function OldThreefilterAttributes(Request $request)
     {
         try {
             $filters = [
@@ -319,7 +527,7 @@ class VehicleController extends Controller
             $baseQuery = $model::query()
                 ->from(DB::raw('vehicle_record_archiveds FORCE INDEX (idx_filters)'))
                 ->whereNotNull('sale_date')
-                ->when($request->filled('domain_id'), fn($q) => $q->whereIn('domain_id', $request->input('domain_id')))
+                ->when($request->filled('domain_id'), fn ($q) => $q->whereIn('domain_id', $request->input('domain_id')))
                 ->when($request->has('buy_now'), function ($q) use ($request) {
                     $buyNowNames = $request->boolean('buy_now') ? ['buyNowWithPrice'] : ['buyNowWithPrice', 'buyNowWithoutPrice'];
                     $buyNowIds = BuyNow::whereIn('name', $buyNowNames)->pluck('id');
@@ -352,10 +560,10 @@ class VehicleController extends Controller
                             } else {
                                 $query->whereBetween('sale_date', [
                                     $fromCarbon->format('Y-m-d'),
-                                    $toCarbon->format('Y-m-d')
+                                    $toCarbon->format('Y-m-d'),
                                 ]);
                             }
-                        } elseif ($auctionDateFrom && !$auctionDateTo) {
+                        } elseif ($auctionDateFrom && ! $auctionDateTo) {
                             $query->whereDate('sale_date', Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->format('Y-m-d'));
                         }
                     } else {
@@ -372,7 +580,7 @@ class VehicleController extends Controller
             $filteredRecords = $baseQuery->select($columnsToSelect)->get();
 
             foreach ($filters as $key => $details) {
-                $grouped = $filteredRecords->groupBy($details['column'])->map(fn($group) => $group->count());
+                $grouped = $filteredRecords->groupBy($details['column'])->map(fn ($group) => $group->count());
                 $relatedNames = DB::table($details['table'])
                     ->whereIn('id', $grouped->keys())
                     ->pluck('name', 'id');
@@ -394,182 +602,187 @@ class VehicleController extends Controller
     }
 
     /**
-    * Filter Attributes and Manage Counts API.
-    */
+     * Filter Attributes and Manage Counts API.
+     */
     public function OldTwofilterAttributes(Request $request)
     {
-    try {
-        $filters = [
-            'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers', 'paginate' => true],
-            'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models', 'paginate' => true],
-            'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types', 'paginate' => true],
-            'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions', 'paginate' => true],
-            'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels', 'paginate' => true],
-            'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types', 'paginate' => true],
-            'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels', 'paginate' => true],
-            'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions', 'paginate' => true],
-            'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles', 'paginate' => true],
-            'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages', 'paginate' => true],
-            'buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows', 'paginate' => true],
-        ];
+        try {
+            $filters = [
+                'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers', 'paginate' => true],
+                'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models', 'paginate' => true],
+                'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types', 'paginate' => true],
+                'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions', 'paginate' => true],
+                'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels', 'paginate' => true],
+                'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types', 'paginate' => true],
+                'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels', 'paginate' => true],
+                'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions', 'paginate' => true],
+                'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles', 'paginate' => true],
+                'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages', 'paginate' => true],
+                'buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows', 'paginate' => true],
+            ];
 
-        $response = [];
-        $page = $request->input('page', 1);
-        $perPage = $request->input('size', 10);
+            $response = [];
+            $page = $request->input('page', 1);
+            $perPage = $request->input('size', 10);
 
-        $searchAttribute = $request->input('search_attribute');
-        $searchValue = $request->input('search_value');
-        $currentHitAttribute = $request->input('current_hit_attribute');
-        $listing = $request->input('listing');
+            $searchAttribute = $request->input('search_attribute');
+            $searchValue = $request->input('search_value');
+            $currentHitAttribute = $request->input('current_hit_attribute');
+            $listing = $request->input('listing');
 
-        $validListings = array_keys($filters);
-        $activeFilterKey = in_array($listing, $validListings) ? $listing : null;
+            $validListings = array_keys($filters);
+            $activeFilterKey = in_array($listing, $validListings) ? $listing : null;
 
-        $data_source = $request->input('data_source', 'active');
-        $model = $data_source === 'archived' ? VehicleRecordArchived::class : VehicleRecord::class;
+            $data_source = $request->input('data_source', 'active');
+            $model = $data_source === 'archived' ? VehicleRecordArchived::class : VehicleRecord::class;
 
-        $baseQuery = $model::query()->whereNotNull('sale_date');
+            $baseQuery = $model::query()->whereNotNull('sale_date');
 
-        if ($request->has('domain_id')) {
-            $baseQuery->whereIn('domain_id', $request->input('domain_id'));
-        }
-
-        if ($request->has('buy_now')) {
-            if ($request->buy_now == true) {
-                $buy_now_id = BuyNow::where('name', 'buyNowWithPrice')->pluck('id');
-                $baseQuery->where('buy_now_id', $buy_now_id);
-            } else {
-                $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->toArray();
-                $baseQuery->whereIn('buy_now_id', $buy_now_ids);
+            if ($request->has('domain_id')) {
+                $baseQuery->whereIn('domain_id', $request->input('domain_id'));
             }
-        }
 
-        if ($request->has('year_from') && $request->has('year_to')) {
-            $baseQuery->whereBetween('year', [(int)$request->input('year_from'), (int)$request->input('year_to')]);
-        }
-
-        if ($request->has('odometer_min') && $request->has('odometer_max')) {
-            $baseQuery->whereBetween('odometer_mi', [
-                (int)str_replace(',', '', $request->input('odometer_min')),
-                (int)str_replace(',', '', $request->input('odometer_max'))
-            ]);
-        }
-
-        if ($request->has('auction_date')) {
-            $auctionDateInput = $request->input('auction_date');
-            if (is_array($auctionDateInput) && count($auctionDateInput) === 2) {
-                [$auctionDateFrom, $auctionDateTo] = $auctionDateInput;
-                if ($auctionDateFrom && $auctionDateTo) {
-                    $from = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom));
-                    $to = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo));
-                    if ($from->equalTo($to)) {
-                        $baseQuery->whereDate('sale_date', $from->format('Y-m-d'));
-                    } else {
-                        $baseQuery->whereBetween('sale_date', [$from->format('Y-m-d'), $to->format('Y-m-d')]);
-                    }
-                } elseif ($auctionDateFrom && !$auctionDateTo) {
-                    $date = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->format('Y-m-d');
-                    $baseQuery->whereDate('sale_date', $date);
+            if ($request->has('buy_now')) {
+                if ($request->buy_now == true) {
+                    $buy_now_id = BuyNow::where('name', 'buyNowWithPrice')->pluck('id');
+                    $baseQuery->where('buy_now_id', $buy_now_id);
+                } else {
+                    $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->toArray();
+                    $baseQuery->whereIn('buy_now_id', $buy_now_ids);
                 }
-            } else {
-                return sendResponse(true, 400, "Invalid 'auction_date' format. Expecting an array with two elements.", [], 200);
             }
-        }
 
-        // No caching – just fetch name maps directly
-        $relatedNameMaps = [];
-        foreach ($filters as $key => $details) {
-            $relatedNameMaps[$key] = DB::table($details['table'])->pluck('name', 'id');
-        }
+            if ($request->has('year_from') && $request->has('year_to')) {
+                $baseQuery->whereBetween('year', [(int) $request->input('year_from'), (int) $request->input('year_to')]);
+            }
 
-        foreach ($filters as $key => $details) {
-            if ($activeFilterKey && $key !== $activeFilterKey) continue;
+            if ($request->has('odometer_min') && $request->has('odometer_max')) {
+                $baseQuery->whereBetween('odometer_mi', [
+                    (int) str_replace(',', '', $request->input('odometer_min')),
+                    (int) str_replace(',', '', $request->input('odometer_max')),
+                ]);
+            }
 
-            $query = (clone $baseQuery);
+            if ($request->has('auction_date')) {
+                $auctionDateInput = $request->input('auction_date');
+                if (is_array($auctionDateInput) && count($auctionDateInput) === 2) {
+                    [$auctionDateFrom, $auctionDateTo] = $auctionDateInput;
+                    if ($auctionDateFrom && $auctionDateTo) {
+                        $from = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom));
+                        $to = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo));
+                        if ($from->equalTo($to)) {
+                            $baseQuery->whereDate('sale_date', $from->format('Y-m-d'));
+                        } else {
+                            $baseQuery->whereBetween('sale_date', [$from->format('Y-m-d'), $to->format('Y-m-d')]);
+                        }
+                    } elseif ($auctionDateFrom && ! $auctionDateTo) {
+                        $date = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->format('Y-m-d');
+                        $baseQuery->whereDate('sale_date', $date);
+                    }
+                } else {
+                    return sendResponse(true, 400, "Invalid 'auction_date' format. Expecting an array with two elements.", [], 200);
+                }
+            }
 
-            if ($currentHitAttribute && $currentHitAttribute === $key) {
-                $existingResults = (clone $query);
+            // No caching – just fetch name maps directly
+            $relatedNameMaps = [];
+            foreach ($filters as $key => $details) {
+                $relatedNameMaps[$key] = DB::table($details['table'])->pluck('name', 'id');
+            }
+
+            foreach ($filters as $key => $details) {
+                if ($activeFilterKey && $key !== $activeFilterKey) {
+                    continue;
+                }
+
+                $query = (clone $baseQuery);
+
+                if ($currentHitAttribute && $currentHitAttribute === $key) {
+                    $existingResults = (clone $query);
+
+                    foreach ($filters as $filterKey => $filterDetails) {
+                        if ($filterKey === $currentHitAttribute) {
+                            continue;
+                        }
+                        if ($request->has($filterKey) && is_array($request->input($filterKey))) {
+                            $existingResults->whereIn($filterDetails['column'], $request->input($filterKey));
+                        }
+                    }
+
+                    $existingResults = $existingResults
+                        ->select("{$details['column']} as id", DB::raw('COUNT(*) as count'))
+                        ->groupBy("{$details['column']}")
+                        ->simplePaginate($perPage, ['*'], 'page', $page);
+
+                    $response[$key] = $existingResults->map(function ($item) use ($relatedNameMaps, $key) {
+                        return [
+                            'id' => $item->id,
+                            'name' => $relatedNameMaps[$key][$item->id] ?? 'unknown',
+                            'count' => $item->count,
+                        ];
+                    })->sortBy('name')->values();
+
+                    continue;
+                }
+
+                if ($searchAttribute && in_array($searchAttribute, $validListings) && $searchValue) {
+                    $cloneQuery = (clone $query)->with($filters[$searchAttribute]['relation']);
+
+                    $filteredResults = $cloneQuery->whereHas($filters[$searchAttribute]['relation'], function ($query) use ($searchValue) {
+                        $query->where('name', 'LIKE', "%$searchValue%");
+                    })->select("{$filters[$searchAttribute]['column']} as id", DB::raw('COUNT(*) as count'))
+                        ->groupBy("{$filters[$searchAttribute]['column']}")
+                        ->simplePaginate($perPage, ['*'], 'page', $page);
+
+                    $response[$searchAttribute] = $filteredResults->map(function ($item) use ($relatedNameMaps, $searchAttribute) {
+                        return [
+                            'id' => $item->id,
+                            'name' => $relatedNameMaps[$searchAttribute][$item->id] ?? 'unknown',
+                            'count' => $item->count,
+                        ];
+                    })->sortBy('name')->values();
+
+                    continue;
+                }
 
                 foreach ($filters as $filterKey => $filterDetails) {
-                    if ($filterKey === $currentHitAttribute) continue;
                     if ($request->has($filterKey) && is_array($request->input($filterKey))) {
-                        $existingResults->whereIn($filterDetails['column'], $request->input($filterKey));
+                        $query->whereIn($filterDetails['column'], $request->input($filterKey));
                     }
                 }
 
-                $existingResults = $existingResults
-                    ->select("{$details['column']} as id", DB::raw("COUNT(*) as count"))
-                    ->groupBy("{$details['column']}")
-                    ->simplePaginate($perPage, ['*'], 'page', $page);
+                $results = $details['paginate'] && (! $activeFilterKey || $key === $activeFilterKey) ?
+                    $query->selectRaw("{$details['column']} as id, COUNT(*) as count")
+                        ->groupBy("{$details['column']}")
+                        ->simplePaginate($perPage, ['*'], 'page', $page) :
+                    $query->selectRaw("{$details['column']} as id, COUNT(*) as count")
+                        ->groupBy("{$details['column']}")
+                        ->get();
 
-                $response[$key] = $existingResults->map(function ($item) use ($relatedNameMaps, $key) {
+                $response[$key] = $results->map(function ($item) use ($relatedNameMaps, $key) {
                     return [
-                        "id" => $item->id,
+                        'id' => $item->id,
                         'name' => $relatedNameMaps[$key][$item->id] ?? 'unknown',
                         'count' => $item->count,
                     ];
                 })->sortBy('name')->values();
-                continue;
             }
 
-            if ($searchAttribute && in_array($searchAttribute, $validListings) && $searchValue) {
-                $cloneQuery = (clone $query)->with($filters[$searchAttribute]['relation']);
-
-                $filteredResults = $cloneQuery->whereHas($filters[$searchAttribute]['relation'], function ($query) use ($searchValue) {
-                    $query->where('name', 'LIKE', "%$searchValue%");
-                })->select("{$filters[$searchAttribute]['column']} as id", DB::raw("COUNT(*) as count"))
-                    ->groupBy("{$filters[$searchAttribute]['column']}")
-                    ->simplePaginate($perPage, ['*'], 'page', $page);
-
-                $response[$searchAttribute] = $filteredResults->map(function ($item) use ($relatedNameMaps, $searchAttribute) {
-                    return [
-                        "id" => $item->id,
-                        'name' => $relatedNameMaps[$searchAttribute][$item->id] ?? 'unknown',
-                        'count' => $item->count,
-                    ];
-                })->sortBy('name')->values();
-                continue;
+            if ($activeFilterKey) {
+                return sendResponse(true, 200, ucfirst(str_replace('_', ' ', $activeFilterKey)).' Fetched Successfully!', [
+                    $activeFilterKey => $response[$activeFilterKey],
+                ], 200);
             }
 
-            foreach ($filters as $filterKey => $filterDetails) {
-                if ($request->has($filterKey) && is_array($request->input($filterKey))) {
-                    $query->whereIn($filterDetails['column'], $request->input($filterKey));
-                }
-            }
-
-            $results = $details['paginate'] && (!$activeFilterKey || $key === $activeFilterKey) ?
-                $query->selectRaw("{$details['column']} as id, COUNT(*) as count")
-                    ->groupBy("{$details['column']}")
-                    ->simplePaginate($perPage, ['*'], 'page', $page) :
-                $query->selectRaw("{$details['column']} as id, COUNT(*) as count")
-                    ->groupBy("{$details['column']}")
-                    ->get();
-
-            $response[$key] = $results->map(function ($item) use ($relatedNameMaps, $key) {
-                return [
-                    "id" => $item->id,
-                    'name' => $relatedNameMaps[$key][$item->id] ?? 'unknown',
-                    'count' => $item->count,
-                ];
-            })->sortBy('name')->values();
+            return sendResponse(true, 200, 'Attributes Fetched Successfully!', $response, 200);
+        } catch (\Exception $ex) {
+            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }
-
-        if ($activeFilterKey) {
-            return sendResponse(true, 200, ucfirst(str_replace('_', ' ', $activeFilterKey)) . ' Fetched Successfully!', [
-                $activeFilterKey => $response[$activeFilterKey]
-            ], 200);
-        }
-
-        return sendResponse(true, 200, 'Attributes Fetched Successfully!', $response, 200);
-    } catch (\Exception $ex) {
-        return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
     }
-    }
-
 
     /**
-    * Filter Attributes and Manage Counts API.
-    */
+     * Filter Attributes and Manage Counts API.
+     */
     public function oldFilterAttributes(Request $request)
     {
         try {
@@ -605,7 +818,7 @@ class VehicleController extends Controller
             // Map of listing to active filter key
             $validListings = [
                 'manufacturers', 'vehicle_models', 'detailed_titles', 'vehicle_types',
-                'conditions', 'fuels', 'seller_types', 'drive_wheels', 'transmissions', 'damages'
+                'conditions', 'fuels', 'seller_types', 'drive_wheels', 'transmissions', 'damages',
             ];
 
             // Check if the listing is valid and determine the active filter key
@@ -650,7 +863,7 @@ class VehicleController extends Controller
                 if ($request->has('odometer_min') && $request->has('odometer_max')) {
                     $query->whereBetween('odometer_mi', [
                         (int) str_replace(',', '', $request->input('odometer_min')),
-                        (int) str_replace(',', '', $request->input('odometer_max'))
+                        (int) str_replace(',', '', $request->input('odometer_max')),
                     ]);
                 }
 
@@ -679,7 +892,7 @@ class VehicleController extends Controller
                                 // Date range
                                 $query->whereBetween('sale_date', [$auctionDateFrom, $auctionDateTo]);
                             }
-                        } elseif ($auctionDateFrom && !$auctionDateTo) {
+                        } elseif ($auctionDateFrom && ! $auctionDateTo) {
                             $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->format('Y-m-d');
                             $query->whereDate('sale_date', $auctionDate);
                         }
@@ -707,27 +920,25 @@ class VehicleController extends Controller
                     }
 
                     // Fetch results
-                    $existingResults = $existingResults->select("{$details['column']} as id", DB::raw("COUNT(*) as count"))
+                    $existingResults = $existingResults->select("{$details['column']} as id", DB::raw('COUNT(*) as count'))
                         ->groupBy("{$details['column']}");
 
                     // Apply pagination if parameters exist
-                    if (!empty($perPage) && !empty($page)) {
+                    if (! empty($perPage) && ! empty($page)) {
                         $existingResults = $existingResults->paginate($perPage, ['*'], 'page', $page);
                     } else {
                         $existingResults = $existingResults->get();
                     }
-
 
                     // Fetch related names in bulk
                     $relatedNames = DB::table($details['table'])
                         ->whereIn('id', $existingResults->pluck('id'))
                         ->pluck('name', 'id');
 
-
                     // Map results to the response structure
-                    $response[$key] = $existingResults->map(function ($item) use ($relatedNames, $details) {
+                    $response[$key] = $existingResults->map(function ($item) use ($relatedNames) {
                         return [
-                            "id" => $item->id,
+                            'id' => $item->id,
                             'name' => $relatedNames[$item->id] ?? 'unknown',
                             'count' => $item->count,
                         ];
@@ -743,9 +954,9 @@ class VehicleController extends Controller
                     // Fetch filtered results
                     $filteredResults = $cloneQuery->whereHas($filters[$searchAttribute]['relation'], function ($query) use ($searchValue) {
                         $query->where('name', 'LIKE', "%$searchValue%");
-                    })->select("{$filters[$searchAttribute]['column']} as id", DB::raw("COUNT(*) as count"))
-                    ->groupBy("{$filters[$searchAttribute]['column']}")
-                    ->paginate($perPage, ['*'], 'page', $page);
+                    })->select("{$filters[$searchAttribute]['column']} as id", DB::raw('COUNT(*) as count'))
+                        ->groupBy("{$filters[$searchAttribute]['column']}")
+                        ->paginate($perPage, ['*'], 'page', $page);
 
                     // Fetch related names in bulk
                     $relatedNames = DB::table($filters[$searchAttribute]['table'])
@@ -755,7 +966,7 @@ class VehicleController extends Controller
                     // Map results to the response structure
                     $response[$searchAttribute] = $filteredResults->map(function ($item) use ($relatedNames) {
                         return [
-                            "id" => $item->id,
+                            'id' => $item->id,
                             'name' => $relatedNames[$item->id] ?? 'unknown',
                             'count' => $item->count,
                         ];
@@ -771,7 +982,7 @@ class VehicleController extends Controller
                 }
 
                 // Apply pagination logic dynamically
-                if ($details['paginate'] && (!$activeFilterKey || $key === $activeFilterKey)) {
+                if ($details['paginate'] && (! $activeFilterKey || $key === $activeFilterKey)) {
                     $results = $query
                         ->selectRaw("{$details['column']} as id, COUNT(*) as count")
                         ->groupBy("{$details['column']}")
@@ -789,9 +1000,9 @@ class VehicleController extends Controller
                     ->pluck('name', 'id');
 
                 // Map results to the response structure
-                $response[$key] = $results->map(function ($item) use ($relatedNames, $details) {
+                $response[$key] = $results->map(function ($item) use ($relatedNames) {
                     return [
-                        "id" => $item->id,
+                        'id' => $item->id,
                         'name' => $relatedNames[$item->id] ?? 'unknown',
                         'count' => $item->count,
                     ];
@@ -801,8 +1012,8 @@ class VehicleController extends Controller
 
             // Return only the active filter's data if a specific filter is set
             if ($activeFilterKey) {
-                return sendResponse(true, 200, ucfirst(str_replace('_', ' ', $activeFilterKey)) . ' Fetched Successfully!', [
-                    $activeFilterKey => $response[$activeFilterKey]
+                return sendResponse(true, 200, ucfirst(str_replace('_', ' ', $activeFilterKey)).' Fetched Successfully!', [
+                    $activeFilterKey => $response[$activeFilterKey],
                 ], 200);
             }
 
@@ -815,18 +1026,18 @@ class VehicleController extends Controller
     }
 
     /**
-    * Get Vehicle Records Count.
-    */
+     * Get Vehicle Records Count.
+     */
     public function filteredRecordsCount()
     {
         try {
             // Query the VehicleRecord model and filter by sale_date
-            $vehicleRecords = VehicleRecord::selectRaw("
+            $vehicleRecords = VehicleRecord::selectRaw('
                 COUNT(CASE WHEN sale_date IS NOT NULL THEN 1 END) as sale_records,
                 COUNT(CASE WHEN sale_date IS NULL THEN 1 END) as no_sale_records,
                 MAX(updated_at) as latest_update_time_utc
-            ")
-            ->first();
+            ')
+                ->first();
 
             $vehicleRecordArchiveds = VehicleRecordArchived::count();
 
@@ -845,8 +1056,8 @@ class VehicleController extends Controller
     }
 
     /**
-    * Get Vehicle Records Count Hourly/Minutes.
-    */
+     * Get Vehicle Records Count Hourly/Minutes.
+     */
     public function getRecordsByInterval(Request $request)
     {
         $interval = $request->input('interval', '10min'); // Default to 10min
@@ -875,13 +1086,14 @@ class VehicleController extends Controller
     /**
      * Send Quote API
      */
-    public function sendQuote(Request $request) {
+    public function sendQuote(Request $request)
+    {
         try {
             $details = [
                 'name' => $request->name,
                 'phone_number' => $request->phone_number,
-                "contact_platform" => $request->contact_platform,
-                "url" => $request->url
+                'contact_platform' => $request->contact_platform,
+                'url' => $request->url,
             ];
 
             Mail::to($request->receiver_email)->send(new SendQuoteMail($details));
@@ -904,7 +1116,7 @@ class VehicleController extends Controller
 
             // Fetch the latest record(s) from the cron_run_history table
             $history = CronRunHistory::orderBy('id', 'desc')
-                    ->skip(($page - 1) * $size)->take($size)->get();
+                ->skip(($page - 1) * $size)->take($size)->get();
 
             return sendResponse(true, 200, 'Filtered records fetched successfully!', $history, 200);
         } catch (\Exception $ex) {
@@ -920,13 +1132,13 @@ class VehicleController extends Controller
     {
         try {
             // Fetch the latest record(s) from the cron_run_history table
-           // $history = CacheKey::orderBy('id', 'desc')->get();
-           $perPage = request()->get('per_page', 10); // Default to 10 if 'per_page' is not provided
-           $page = request()->get('page', 1); // Default to page 1
+            // $history = CacheKey::orderBy('id', 'desc')->get();
+            $perPage = request()->get('per_page', 10); // Default to 10 if 'per_page' is not provided
+            $page = request()->get('page', 1); // Default to page 1
 
             $history = CacheKey::select(['id', 'cache_key', 'expires_at', 'status', 'created_at', 'updated_at']) // Excludes 'cache_value'
-            ->orderBy('id', 'desc')
-            ->paginate($perPage, ['*'], 'page', $page);
+                ->orderBy('id', 'desc')
+                ->paginate($perPage, ['*'], 'page', $page);
 
             return sendResponse(true, 200, 'Cache Keys fetched successfully!', $history, 200);
         } catch (\Exception $ex) {
@@ -944,14 +1156,14 @@ class VehicleController extends Controller
         $records = DB::table('cron_run_history')
             ->where('total_records', function ($query) {
                 $query->select(DB::raw('MAX(total_records)'))
-                      ->from('cron_run_history');
+                    ->from('cron_run_history');
             })
             ->get();
 
         // Return the result as JSON
         return response()->json([
             'status' => true,
-            'data' => $records
+            'data' => $records,
         ]);
     }
 
@@ -964,17 +1176,19 @@ class VehicleController extends Controller
             $key = $cacheKey->cache_key;
 
             // Check if the key exists in the cache
-            if (!Cache::has($key)) {
+            if (! Cache::has($key)) {
 
                 // Delete the key from the database
                 CacheKey::where('cache_key', $key)->delete();
             }
         }
+
         return sendResponse(true, 200, 'Removing stale cache key successfully!', [], 200);
     }
 
-    public function testApi(Request $request) {
-      // Get the last cron job status
+    public function testApi(Request $request)
+    {
+        // Get the last cron job status
         $lastCron = DB::table('cron_run_history')
             ->where('cron_name', 'process_buy_now_data')
             ->where('status', 'success')
@@ -1000,44 +1214,36 @@ class VehicleController extends Controller
 
         return $minutes;
 
+        // Fetch and update cache keys in a single query
+        $cacheKeys = CacheKey::where('cache_key', 'like', 'buy_now_data%')
+            ->where('status', 'pending')
+            ->orderBy('created_at', 'asc')
+            ->take(50)
+            ->get();
 
-            // Fetch and update cache keys in a single query
-            $cacheKeys = CacheKey::where('cache_key', 'like', 'buy_now_data%')
-                                ->where('status', 'pending')
-                                ->orderBy('created_at', 'asc')
-                                ->take(50)
-                                ->get();
+        $cacheKeyIds = $cacheKeys->pluck('id');
 
-
-            $cacheKeyIds = $cacheKeys->pluck('id');
-
-
-            // Update status to 'progress' in a single query
-            // CacheKey::whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
-
+        // Update status to 'progress' in a single query
+        // CacheKey::whereIn('id', $cacheKeyIds)->update(['status' => 'progress']);
 
         foreach ($cacheKeys as $cacheKey) {
-
 
             $key = $cacheKey->cache_key;
             $data = Cache::get($key);
 
+            // Bulk update vehicles instead of looping individually
+            $lotIds = collect($data)->pluck('lot')->toArray();
 
-                // Bulk update vehicles instead of looping individually
-                $lotIds = collect($data)->pluck('lot')->toArray();
+            // Fetch vehicles in a single query
+            $vehicles = VehicleRecord::whereIn('lot_id', $lotIds)->get()->keyBy('lot_id');
 
-
-                // Fetch vehicles in a single query
-                $vehicles = VehicleRecord::whereIn('lot_id', $lotIds)->get()->keyBy('lot_id');
-
-
-                foreach ($data as $car) {
-                    if (isset($vehicles[$car['lot']])) {
-                        $vehicles[$car['lot']]->update(['buy_now' => $car['buy_now']['value']]);
-                    }
+            foreach ($data as $car) {
+                if (isset($vehicles[$car['lot']])) {
+                    $vehicles[$car['lot']]->update(['buy_now' => $car['buy_now']['value']]);
                 }
+            }
 
-                return 'yes';
+            return 'yes';
 
         }
 
@@ -1081,6 +1287,7 @@ class VehicleController extends Controller
         $expiredRecords = VehicleRecord::whereRaw("DATE_FORMAT(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), '%Y-%m-%d %H:%i') <= ?", [now()->format('Y-m-d H:i')])
             ->take(100)
             ->get();
+
         return $expiredRecords;
     }
 
@@ -1097,5 +1304,4 @@ class VehicleController extends Controller
 
         return [];
     }
-
 }
