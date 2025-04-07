@@ -293,11 +293,126 @@ class VehicleController extends Controller
         }
     }
 
+    public function filterAttributes(Request $request)
+    {
+        try {
+            $filters = [
+                'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers', 'paginate' => true],
+                'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models', 'paginate' => true],
+                'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types', 'paginate' => true],
+                'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions', 'paginate' => true],
+                'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels', 'paginate' => true],
+                'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types', 'paginate' => true],
+                'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels', 'paginate' => true],
+                'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions', 'paginate' => true],
+                'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles', 'paginate' => true],
+                'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages', 'paginate' => true],
+                'buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows', 'paginate' => true],
+            ];
+
+            $response = [];
+            $page = $request->input('page');
+            $perPage = $request->input('size');
+            $searchAttribute = $request->input('search_attribute');
+            $searchValue = $request->input('search_value');
+            $currentHitAttribute = $request->input('current_hit_attribute');
+            $listing = $request->input('listing');
+            $validListings = array_keys($filters);
+            $activeFilterKey = in_array($listing, $validListings) ? $listing : null;
+            $dataSource = $request->input('data_source', 'active');
+            $model = $dataSource === 'archived' ? VehicleRecordArchived::class : VehicleRecord::class;
+
+            $baseQuery = $model::query()->whereNotNull('sale_date');
+
+            if ($request->has('domain_id')) {
+                $baseQuery->whereIn('domain_id', $request->input('domain_id'));
+            }
+
+            if ($request->has('buy_now')) {
+                if ($request->buy_now == true) {
+                    $buyNowId = BuyNow::where('name', 'buyNowWithPrice')->pluck('id');
+                    $baseQuery->where('buy_now_id', $buyNowId);
+                } elseif ($request->buy_now == false) {
+                    $buyNowIds = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->toArray();
+                    $baseQuery->whereIn('buy_now_id', $buyNowIds);
+                }
+            }
+
+            if ($request->has('year_from') && $request->has('year_to')) {
+                $baseQuery->whereBetween('year', [(int) $request->input('year_from'), (int) $request->input('year_to')]);
+            }
+
+            if ($request->has('odometer_min') && $request->has('odometer_max')) {
+                $baseQuery->whereBetween('odometer_mi', [
+                    (int) str_replace(',', '', $request->input('odometer_min')),
+                    (int) str_replace(',', '', $request->input('odometer_max')),
+                ]);
+            }
+
+            if ($request->has('auction_date')) {
+                $auctionDateInput = $request->input('auction_date');
+                if (is_array($auctionDateInput) && count($auctionDateInput) === 2) {
+                    [$auctionDateFrom, $auctionDateTo] = $auctionDateInput;
+                    if ($auctionDateFrom) {
+                        $baseQuery->whereDate('sale_date', $auctionDateFrom);
+                    }
+                    if ($auctionDateFrom && $auctionDateTo && $auctionDateFrom !== $auctionDateTo) {
+                        $baseQuery->whereBetween('sale_date', [$auctionDateFrom, $auctionDateTo]);
+                    }
+                } else {
+                    return sendResponse(true, 400, "Invalid 'auction_date' format.", [], 200);
+                }
+            }
+
+            foreach ($filters as $key => $details) {
+                if ($activeFilterKey && $key !== $activeFilterKey) {
+                    continue;
+                }
+                $query = clone $baseQuery;
+                foreach ($filters as $filterKey => $filterDetails) {
+                    if ($request->has($filterKey) && is_array($request->input($filterKey)) && $filterKey !== $key) {
+                        $query->whereIn($filterDetails['column'], $request->input($filterKey));
+                    }
+                }
+
+                if ($currentHitAttribute && $currentHitAttribute === $key) {
+                    $results = $query->select("{$details['column']} as id", DB::raw('COUNT(*) as count'))->groupBy("{$details['column']}");
+                    if (! empty($perPage) && ! empty($page)) {
+                        $results = $results->paginate($perPage, ['*'], 'page', $page);
+                    } else {
+                        $results = $results->get();
+                    }
+                } elseif ($searchAttribute && in_array($searchAttribute, $validListings) && $searchValue) {
+                    $results = $query->whereHas($filters[$searchAttribute]['relation'], function ($q) use ($searchValue) {
+                        $q->where('name', 'LIKE', "%$searchValue%");
+                    })->select("{$filters[$searchAttribute]['column']} as id", DB::raw('COUNT(*) as count'))->groupBy("{$filters[$searchAttribute]['column']}");
+                    $results = $results->paginate($perPage, ['*'], 'page', $page);
+                } else {
+                    $results = $query->select("{$details['column']} as id", DB::raw('COUNT(*) as count'))->groupBy("{$details['column']}");
+                    if ($details['paginate']) {
+                        $results = $results->paginate($perPage, ['*'], 'page', $page);
+                    } else {
+                        $results = $results->get();
+                    }
+                }
+
+                $relatedNames = DB::table($details['table'])->whereIn('id', $results->pluck('id'))->pluck('name', 'id');
+                $response[$key] = $results->map(function ($item) use ($relatedNames) {
+                    return ['id' => $item->id, 'name' => $relatedNames[$item->id] ?? 'unknown', 'count' => $item->count];
+                })->sortBy('name')->values();
+            }
+
+            return sendResponse(true, 200, ($activeFilterKey ? ucfirst(str_replace('_', ' ', $activeFilterKey)) . ' Fetched Successfully!' : 'Attributes Fetched Successfully!'), ($activeFilterKey ? [$activeFilterKey => $response[$activeFilterKey]] : $response), 200);
+        } catch (\Exception $ex) {
+            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+        }
+    }
+}
 
     /**
      * Filter Attributes and Manage Counts API.
      */
-    public function filterAttributes(Request $request)
+    public function OldFilterAttributes(Request $request)
     {
         try {
             // Define filters and relationships dynamically
