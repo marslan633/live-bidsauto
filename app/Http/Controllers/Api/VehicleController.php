@@ -426,7 +426,7 @@ class VehicleController extends Controller
 
                 // Apply filters dynamically based on the filters array
                 foreach ($filters as $filterKey => $filterDetails) {
-                    $query->when($request->has($filterKey) && is_array($request->input($filterKey)), function ($q) use ($request, $filterDetails) {
+                    $query->when($request->has($filterKey) && is_array($request->input($filterKey)), function ($q) use ($request, $filterDetails, $filterKey) {
                         return $q->whereIn($filterDetails['column'], $request->input($filterKey));
                     });
                 }
