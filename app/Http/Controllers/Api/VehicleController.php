@@ -315,13 +315,16 @@ class VehicleController extends Controller
             ];
 
             $response = [];
-            $page = $request->input('page') ?? 1; // Default to page 1 if not provided
-            $perPage = $request->input('size') ?? 20; // Default to 20 items per page
+            $page = $request->input('page') ?? 1;
+            $perPage = $request->input('size') ?? 20;
             $searchAttribute = $request->input('search_attribute');
             $searchValue = $request->input('search_value');
             $currentHitAttribute = $request->input('current_hit_attribute');
             $listing = $request->input('listing');
             $activeFilterKey = in_array($listing, array_keys($filters)) ? $listing : null;
+
+            // Fetch buy_now data only once and reuse it
+            $buyNowNames = DB::table('buy_nows')->whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id');
 
             // Process each filter
             foreach ($filters as $key => $details) {
@@ -334,35 +337,33 @@ class VehicleController extends Controller
                 $query = $model::query()->whereNotNull('sale_date');
 
                 // Apply domain filter if provided
-                if ($request->has('domain_id')) {
-                    $query->whereIn('domain_id', $request->input('domain_id'));
-                }
+                $query->when($request->has('domain_id'), function ($q) use ($request) {
+                    return $q->whereIn('domain_id', $request->input('domain_id'));
+                });
 
-                // Apply the 'buy_now' filter logic
-                if ($request->has('buy_now')) {
+                // Apply the 'buy_now' filter logic using pre-fetched data
+                $query->when($request->has('buy_now'), function ($q) use ($request, $buyNowNames) {
                     if ($request->buy_now == true) {
-                        $buy_now_id = BuyNow::where('name', 'buyNowWithPrice')->pluck('id');
-                        $query->where('buy_now_id', $buy_now_id);
+                        return $q->whereIn('buy_now_id', $buyNowNames);
                     } elseif ($request->buy_now == false) {
-                        $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->toArray();
-                        $query->whereIn('buy_now_id', $buy_now_ids);
+                        return $q->whereNotIn('buy_now_id', $buyNowNames);
                     }
-                }
+                });
 
                 // Handling filters like 'year_from', 'year_to', 'odometer_min', 'odometer_max'
-                if ($request->has('year_from') && $request->has('year_to')) {
-                    $query->whereBetween('year', [(int)$request->input('year_from'), (int)$request->input('year_to')]);
-                }
+                $query->when($request->has('year_from') && $request->has('year_to'), function ($q) use ($request) {
+                    return $q->whereBetween('year', [(int)$request->input('year_from'), (int)$request->input('year_to')]);
+                });
 
-                if ($request->has('odometer_min') && $request->has('odometer_max')) {
-                    $query->whereBetween('odometer_mi', [
+                $query->when($request->has('odometer_min') && $request->has('odometer_max'), function ($q) use ($request) {
+                    return $q->whereBetween('odometer_mi', [
                         (int)str_replace(',', '', $request->input('odometer_min')),
                         (int)str_replace(',', '', $request->input('odometer_max')),
                     ]);
-                }
+                });
 
                 // Handling 'auction_date'
-                if ($request->has('auction_date')) {
+                $query->when($request->has('auction_date'), function ($q) use ($request) {
                     $auctionDateInput = $request->input('auction_date');
                     if (is_array($auctionDateInput) && count($auctionDateInput) === 2) {
                         [$auctionDateFrom, $auctionDateTo] = $auctionDateInput;
@@ -371,13 +372,13 @@ class VehicleController extends Controller
                             $auctionDateToCarbon = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo));
 
                             if ($auctionDateFromCarbon->equalTo($auctionDateToCarbon)) {
-                                $query->whereDate('sale_date', $auctionDateFromCarbon->format('Y-m-d'));
+                                return $q->whereDate('sale_date', $auctionDateFromCarbon->format('Y-m-d'));
                             } else {
-                                $query->whereBetween('sale_date', [$auctionDateFromCarbon->format('Y-m-d'), $auctionDateToCarbon->format('Y-m-d')]);
+                                return $q->whereBetween('sale_date', [$auctionDateFromCarbon->format('Y-m-d'), $auctionDateToCarbon->format('Y-m-d')]);
                             }
                         }
                     }
-                }
+                });
 
                 // Skip applying the current hit attribute filter if already processed
                 if ($currentHitAttribute && $currentHitAttribute === $key) {
@@ -417,32 +418,17 @@ class VehicleController extends Controller
                 }
 
                 // If search_attribute is set and valid, perform search
-                if ($searchAttribute && in_array($searchAttribute, array_keys($filters)) && $searchValue) {
-                    $cloneQuery = clone $query;
-                    $filteredResults = $cloneQuery->whereHas($filters[$searchAttribute]['relation'], function ($query) use ($searchValue) {
+                $query->when($searchAttribute && in_array($searchAttribute, array_keys($filters)) && $searchValue, function ($q) use ($searchAttribute, $searchValue, $filters) {
+                    return $q->whereHas($filters[$searchAttribute]['relation'], function ($query) use ($searchValue) {
                         $query->where('name', 'LIKE', "%$searchValue%");
-                    })->select("{$filters[$searchAttribute]['column']} as id", DB::raw('COUNT(*) as count'))
-                        ->groupBy("{$filters[$searchAttribute]['column']}")
-                        ->paginate($perPage, ['*'], 'page', $page);
-
-                    $relatedNames = DB::table($filters[$searchAttribute]['table'])
-                        ->whereIn('id', $filteredResults->pluck('id'))
-                        ->pluck('name', 'id');
-
-                    $response[$searchAttribute] = $filteredResults->map(function ($item) use ($relatedNames) {
-                        return [
-                            'id' => $item->id,
-                            'name' => $relatedNames[$item->id] ?? 'unknown',
-                            'count' => $item->count,
-                        ];
-                    })->sortBy('name')->values();
-                }
+                    });
+                });
 
                 // Apply filters dynamically based on the filters array
                 foreach ($filters as $filterKey => $filterDetails) {
-                    if ($request->has($filterKey) && is_array($request->input($filterKey))) {
-                        $query->whereIn($filterDetails['column'], $request->input($filterKey));
-                    }
+                    $query->when($request->has($filterKey) && is_array($request->input($filterKey)), function ($q) use ($request, $filterDetails) {
+                        return $q->whereIn($filterDetails['column'], $request->input($filterKey));
+                    });
                 }
 
                 // Apply pagination logic dynamically
@@ -480,13 +466,12 @@ class VehicleController extends Controller
                 ], 200);
             }
 
-            $finalResult = $response; // This is the first query result and accurate
-
-            return sendResponse(true, 200, 'Attributes Fetched Successfully!', $finalResult, 200);
+            return sendResponse(true, 200, 'Attributes Fetched Successfully!', $response, 200);
         } catch (\Exception $ex) {
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }
     }
+
 
 
     /**
