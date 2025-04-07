@@ -295,11 +295,10 @@ class VehicleController extends Controller
 
 
 
-
-    /**
+     /**
      * Filter Attributes and Manage Counts API.
     */
-    public function filterAttributes(Request $request)
+    public function MoreFastFilterAttributes(Request $request)
     {
         try {
             // Define filters and relationships dynamically
@@ -415,6 +414,117 @@ class VehicleController extends Controller
         }
     }
 
+    /**
+     * Filter Attributes and Manage Counts API.
+     */
+    public function filterAttributes(Request $request)
+    {
+        try {
+            $filters = [
+                'manufacturers' => ['column' => 'manufacturer_id', 'table' => 'manufacturers'],
+                'vehicle_models' => ['column' => 'vehicle_model_id', 'table' => 'vehicle_models'],
+                'vehicle_types' => ['column' => 'vehicle_type_id', 'table' => 'vehicle_types'],
+                'conditions' => ['column' => 'condition_id', 'table' => 'conditions'],
+                'fuels' => ['column' => 'fuel_id', 'table' => 'fuels'],
+                'seller_types' => ['column' => 'seller_type_id', 'table' => 'seller_types'],
+                'drive_wheels' => ['column' => 'drive_wheel_id', 'table' => 'drive_wheels'],
+                'transmissions' => ['column' => 'transmission_id', 'table' => 'transmissions'],
+                'detailed_titles' => ['column' => 'detailed_title_id', 'table' => 'detailed_titles'],
+                'damages' => ['column' => 'damage_id', 'table' => 'damages'],
+                'buy_now' => ['column' => 'buy_now_id', 'table' => 'buy_nows'],
+            ];
+
+            $response = [];
+            $page = $request->input('page');
+            $perPage = $request->input('size');
+
+            $searchAttribute = $request->input('search_attribute');
+            $searchValue = $request->input('search_value');
+            $currentHitAttribute = $request->input('current_hit_attribute');
+            $listing = $request->input('listing');
+
+            $validListings = array_keys($filters);
+            $activeFilterKey = in_array($listing, $validListings) ? $listing : null;
+
+            $data_source = $request->input('data_source', 'active');
+            $model = $data_source === 'archived' ? VehicleRecordArchived::class : VehicleRecord::class;
+
+            $baseQuery = $model::query()
+                ->from(DB::raw('vehicle_record_archiveds FORCE INDEX (idx_filters)'))
+                ->whereNotNull('sale_date')
+                ->when($request->filled('domain_id'), fn ($q) => $q->whereIn('domain_id', $request->input('domain_id')))
+                ->when($request->has('buy_now'), function ($q) use ($request) {
+                    $buyNowNames = $request->boolean('buy_now') ? ['buyNowWithPrice'] : ['buyNowWithPrice', 'buyNowWithoutPrice'];
+                    $buyNowIds = BuyNow::whereIn('name', $buyNowNames)->pluck('id');
+                    $q->whereIn('buy_now_id', $buyNowIds);
+                })
+                ->when($request->has(['year_from', 'year_to']), function ($q) use ($request) {
+                    $q->whereBetween('year', [
+                        (int) $request->input('year_from'),
+                        (int) $request->input('year_to'),
+                    ]);
+                })
+                ->when($request->has(['odometer_min', 'odometer_max']), function ($q) use ($request) {
+                    $q->whereBetween('odometer_mi', [
+                        (int) str_replace(',', '', $request->input('odometer_min')),
+                        (int) str_replace(',', '', $request->input('odometer_max')),
+                    ]);
+                })
+                ->when($request->has('auction_date'), function ($query) use ($request) {
+                    $auctionDateInput = $request->input('auction_date');
+
+                    if (is_array($auctionDateInput) && count($auctionDateInput) === 2) {
+                        [$auctionDateFrom, $auctionDateTo] = $auctionDateInput;
+
+                        if ($auctionDateFrom && $auctionDateTo) {
+                            $fromCarbon = Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom));
+                            $toCarbon = Carbon::createFromFormat('Y-m-d', trim($auctionDateTo));
+
+                            if ($fromCarbon->equalTo($toCarbon)) {
+                                $query->whereDate('sale_date', $fromCarbon->format('Y-m-d'));
+                            } else {
+                                $query->whereBetween('sale_date', [
+                                    $fromCarbon->format('Y-m-d'),
+                                    $toCarbon->format('Y-m-d'),
+                                ]);
+                            }
+                        } elseif ($auctionDateFrom && ! $auctionDateTo) {
+                            $query->whereDate('sale_date', Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->format('Y-m-d'));
+                        }
+                    } else {
+                        abort(response()->json([
+                            'success' => true,
+                            'status_code' => 400,
+                            'message' => "Invalid 'auction_date' format. Expecting an array with two elements.",
+                            'data' => [],
+                        ], 200));
+                    }
+                });
+
+            $columnsToSelect = collect($filters)->pluck('column')->unique()->toArray();
+            $filteredRecords = $baseQuery->select($columnsToSelect)->get();
+
+            foreach ($filters as $key => $details) {
+                $grouped = $filteredRecords->groupBy($details['column'])->map(fn ($group) => $group->count());
+                $relatedNames = DB::table($details['table'])
+                    ->whereIn('id', $grouped->keys())
+                    ->pluck('name', 'id');
+
+                $response[$key] = $grouped->map(function ($count, $id) use ($relatedNames) {
+                    return [
+                        'id' => $id,
+                        'name' => $relatedNames[$id] ?? 'unknown',
+                        'count' => $count,
+                    ];
+                })->sortBy('name')->values();
+            }
+
+            return sendResponse(true, 200, 'Attributes Fetched Successfully!', $response, 200);
+
+        } catch (\Exception $ex) {
+            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+        }
+    }
 
     /**
      * Filter Attributes and Manage Counts API.
