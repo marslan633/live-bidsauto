@@ -407,7 +407,7 @@ class VehicleController extends Controller
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }
     }
-}
+
 
     /**
      * Filter Attributes and Manage Counts API.
