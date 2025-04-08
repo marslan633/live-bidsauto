@@ -49,7 +49,7 @@ class ProcessCachedDataToDatabasesWithoutQueueLocal extends Command
             ]);
 
 
-            $data = VehicleProcessCachedApiData::orderBy('created_at', 'desc')->limit(100)->get();
+            $data = VehicleProcessCachedApiData::orderBy('created_at', 'desc')->limit(10)->get();
             if (count($data) == 0) {
                 $this->info("No Data Pending to process");
                 Log::info('NOT DATA:PROCESS CACHED DATA TO DATABASE CREATED');

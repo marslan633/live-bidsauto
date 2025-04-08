@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class VehicleRecord extends Model
 {
+
+    protected $connection = 'mysql';
+    protected $table = 'vehicle_records';
+
     protected $fillable = [
         'api_id', 'year', 'year_id', 'title', 'vin', 'manufacturer_id', 'vehicle_model_id', 'generation_id',
         'body_type_id', 'color_id', 'engine_id', 'transmission_id', 'drive_wheel_id',
