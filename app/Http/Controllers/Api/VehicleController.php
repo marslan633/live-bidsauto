@@ -293,250 +293,394 @@ class VehicleController extends Controller
         }
     }
 
+    public function filterAttributes(Request $request)
+{
+    try {
+        $filters = [
+            'manufacturers' => ['column' => 'manufacturer_id', 'table' => 'manufacturers'],
+            'vehicle_models' => ['column' => 'vehicle_model_id', 'table' => 'vehicle_models'],
+            'vehicle_types' => ['column' => 'vehicle_type_id', 'table' => 'vehicle_types'],
+            'conditions' => ['column' => 'condition_id', 'table' => 'conditions'],
+            'fuels' => ['column' => 'fuel_id', 'table' => 'fuels'],
+            'seller_types' => ['column' => 'seller_type_id', 'table' => 'seller_types'],
+            'drive_wheels' => ['column' => 'drive_wheel_id', 'table' => 'drive_wheels'],
+            'transmissions' => ['column' => 'transmission_id', 'table' => 'transmissions'],
+            'detailed_titles' => ['column' => 'detailed_title_id', 'table' => 'detailed_titles'],
+            'damages' => ['column' => 'damage_id', 'table' => 'damages'],
+            'buy_now' => ['column' => 'buy_now_id', 'table' => 'buy_nows'],
+        ];
+
+        $validListings = array_keys($filters);
+
+        $activeFilterKey = in_array($request->input('listing'), $validListings) ? $request->input('listing') : null;
+        $currentHit = $request->input('current_hit_attribute');
+        $searchAttribute = $request->input('search_attribute');
+        $searchValue = $request->input('search_value');
+
+        $model = $request->input('data_source', 'active') === 'archived'
+            ? VehicleRecordArchived::class
+            : VehicleRecord::class;
+
+        // Base query with all common filters
+        $query = $model::query()->whereNotNull('sale_date');
+
+        if ($request->has('domain_id')) {
+            $query->whereIn('domain_id', $request->input('domain_id'));
+        }
+
+        if ($request->has('buy_now')) {
+            $buyNowNames = $request->buy_now == true
+                ? ['buyNowWithPrice']
+                : ['buyNowWithoutPrice', 'buyNowWithPrice'];
+            $buyNowIds = BuyNow::whereIn('name', $buyNowNames)->pluck('id');
+            $query->whereIn('buy_now_id', $buyNowIds);
+        }
+
+        if ($request->has('year_from') && $request->has('year_to')) {
+            $query->whereBetween('year', [
+                (int) $request->input('year_from'),
+                (int) $request->input('year_to'),
+            ]);
+        }
+
+        if ($request->has('odometer_min') && $request->has('odometer_max')) {
+            $query->whereBetween('odometer_mi', [
+                (int) str_replace(',', '', $request->input('odometer_min')),
+                (int) str_replace(',', '', $request->input('odometer_max')),
+            ]);
+        }
+
+        if ($request->has('auction_date')) {
+            $auction = $request->input('auction_date');
+            if (is_array($auction) && count($auction) === 2) {
+                [$from, $to] = $auction;
+                if ($from && $to) {
+                    $fromDate = Carbon::createFromFormat('Y-m-d', trim($from))->format('Y-m-d');
+                    $toDate = Carbon::createFromFormat('Y-m-d', trim($to))->format('Y-m-d');
+
+                    if ($fromDate === $toDate) {
+                        $query->whereDate('sale_date', $fromDate);
+                    } else {
+                        $query->whereBetween('sale_date', [$fromDate, $toDate]);
+                    }
+                } elseif ($from && !$to) {
+                    $query->whereDate('sale_date', Carbon::createFromFormat('Y-m-d', trim($from))->format('Y-m-d'));
+                }
+            }
+        }
+
+        // Apply selected filters
+        foreach ($filters as $key => $filter) {
+            if ($request->has($key) && is_array($request->input($key))) {
+                $query->whereIn($filter['column'], $request->input($key));
+            }
+        }
+
+        // Pre-filtered IDs once for reuse
+        $filteredIds = $query->pluck('id')->toArray();
+
+        $response = [];
+
+        foreach ($filters as $key => $details) {
+            // Skip filters not in active listing
+            if ($activeFilterKey && $key !== $activeFilterKey) {
+                continue;
+            }
+
+            $filterQuery = VehicleRecord::whereIn('id', $filteredIds);
+
+            // Skip filtering currentHit key
+            if ($currentHit && $currentHit !== $key) {
+                foreach ($filters as $filterKey => $filterDetails) {
+                    if ($request->has($filterKey) && $filterKey !== $currentHit) {
+                        $filterQuery->whereIn($filterDetails['column'], $request->input($filterKey));
+                    }
+                }
+            }
+
+            // Handle search
+            if ($searchAttribute === $key && $searchValue) {
+                $relation = $details['table'];
+                $filterQuery->whereHas($relation, function ($q) use ($searchValue) {
+                    $q->where('name', 'LIKE', "%$searchValue%");
+                });
+            }
+
+            $results = $filterQuery
+                ->select($details['column'] . ' as id', DB::raw('COUNT(*) as count'))
+                ->groupBy($details['column'])
+                ->get();
+
+            $names = DB::table($details['table'])
+                ->whereIn('id', $results->pluck('id'))
+                ->pluck('name', 'id');
+
+            $response[$key] = $results->map(function ($item) use ($names) {
+                return [
+                    'id' => $item->id,
+                    'name' => $names[$item->id] ?? 'unknown',
+                    'count' => $item->count,
+                ];
+            })->sortBy('name')->values();
+        }
+
+        if ($activeFilterKey) {
+            return sendResponse(true, 200, ucfirst(str_replace('_', ' ', $activeFilterKey)) . ' Fetched Successfully!', [
+                $activeFilterKey => $response[$activeFilterKey],
+            ], 200);
+        }
+
+        return sendResponse(true, 200, 'Attributes Fetched Successfully!', $response, 200);
+    } catch (\Exception $ex) {
+        return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+    }
+}
+
+
     /**
      * Filter Attributes and Manage Counts API.
      */
-    public function filterAttributes(Request $request)
-    {
-        try {
-            // Define filters and relationships dynamically
-            $filters = [
-                'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers', 'paginate' => true],
-                'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models', 'paginate' => true],
-                'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types', 'paginate' => true],
-                'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions', 'paginate' => true],
-                'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels', 'paginate' => true],
-                'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types', 'paginate' => true],
-                'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels', 'paginate' => true],
-                'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions', 'paginate' => true],
-                'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles', 'paginate' => true],
-                'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages', 'paginate' => true],
-                'buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows', 'paginate' => true],
-            ];
+    // public function filterAttributes(Request $request)
+    // {
+    //     try {
+    //         // Define filters and relationships dynamically
+    //         $filters = [
+    //             'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers', 'paginate' => true],
+    //             'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models', 'paginate' => true],
+    //             'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types', 'paginate' => true],
+    //             'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions', 'paginate' => true],
+    //             'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels', 'paginate' => true],
+    //             'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types', 'paginate' => true],
+    //             'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels', 'paginate' => true],
+    //             'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions', 'paginate' => true],
+    //             'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles', 'paginate' => true],
+    //             'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages', 'paginate' => true],
+    //             'buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows', 'paginate' => true],
+    //         ];
 
-            $response = [];
-            $page = $request->input('page'); // Default to page 1 if not provided
-            $perPage = $request->input('size'); // Default to 20 items per page
+    //         $response = [];
+    //         $page = $request->input('page'); // Default to page 1 if not provided
+    //         $perPage = $request->input('size'); // Default to 20 items per page
 
-            // Search parameters
-            $searchAttribute = $request->input('search_attribute');
-            $searchValue = $request->input('search_value');
+    //         // Search parameters
+    //         $searchAttribute = $request->input('search_attribute');
+    //         $searchValue = $request->input('search_value');
 
-            // Get the current_hit_attribute from the request
-            $currentHitAttribute = $request->input('current_hit_attribute');
+    //         // Get the current_hit_attribute from the request
+    //         $currentHitAttribute = $request->input('current_hit_attribute');
 
-            // Check if specific filters are set
-            $listing = $request->input('listing');
+    //         // Check if specific filters are set
+    //         $listing = $request->input('listing');
 
-            // Map of listing to active filter key
-            $validListings = [
-                'manufacturers', 'vehicle_models', 'detailed_titles', 'vehicle_types',
-                'conditions', 'fuels', 'seller_types', 'drive_wheels', 'transmissions', 'damages',
-            ];
+    //         // Map of listing to active filter key
+    //         $validListings = [
+    //             'manufacturers', 'vehicle_models', 'detailed_titles', 'vehicle_types',
+    //             'conditions', 'fuels', 'seller_types', 'drive_wheels', 'transmissions', 'damages',
+    //         ];
 
-            // Check if the listing is valid and determine the active filter key
-            $activeFilterKey = in_array($listing, $validListings) ? $listing : null;
+    //         // Check if the listing is valid and determine the active filter key
+    //         $activeFilterKey = in_array($listing, $validListings) ? $listing : null;
 
-            foreach ($filters as $key => $details) {
-                // Skip other attributes if an active filter is set
-                if ($activeFilterKey && $key !== $activeFilterKey) {
-                    continue;
-                }
+    //         foreach ($filters as $key => $details) {
+    //             // Skip other attributes if an active filter is set
+    //             if ($activeFilterKey && $key !== $activeFilterKey) {
+    //                 continue;
+    //             }
 
-                // Determine the model based on the 'type' parameter
-                $data_source = $request->input('data_source', 'active'); // Default to 'active'
-                $model = $data_source === 'archived' ? VehicleRecordArchived::class : VehicleRecord::class;
+    //             // Determine the model based on the 'type' parameter
+    //             $data_source = $request->input('data_source', 'active'); // Default to 'active'
+    //             $model = $data_source === 'archived' ? VehicleRecordArchived::class : VehicleRecord::class;
 
-                $query = $model::query()->whereNotNull('sale_date');
+    //             $query = $model::query()->whereNotNull('sale_date');
 
-                // Apply domain filter if provided
-                if ($request->has('domain_id')) {
-                    $query->whereIn('domain_id', $request->input('domain_id'));
-                }
+    //             // Apply domain filter if provided
+    //             if ($request->has('domain_id')) {
+    //                 $query->whereIn('domain_id', $request->input('domain_id'));
+    //             }
 
-                // Handle the 'buy_now' logic
-                if ($request->has('buy_now')) {
-                    if ($request->buy_now == true) {
-                        $buy_now_id = BuyNow::where('name', 'buyNowWithPrice')->pluck('id');
-                        $query->where('buy_now_id', $buy_now_id);
-                    } elseif ($request->buy_now == false) {
-                        $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
-                            ->pluck('id')
-                            ->toArray();
-                        $query->whereIn('buy_now_id', $buy_now_ids);
-                    }
-                }
+    //             // Handle the 'buy_now' logic
+    //             if ($request->has('buy_now')) {
+    //                 if ($request->buy_now == true) {
+    //                     $buy_now_id = BuyNow::where('name', 'buyNowWithPrice')->pluck('id');
+    //                     $query->where('buy_now_id', $buy_now_id);
+    //                 } elseif ($request->buy_now == false) {
+    //                     $buy_now_ids = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])
+    //                         ->pluck('id')
+    //                         ->toArray();
+    //                     $query->whereIn('buy_now_id', $buy_now_ids);
+    //                 }
+    //             }
 
-                // Handling 'year_from' and 'year_to'
-                if ($request->has('year_from') && $request->has('year_to')) {
-                    $query->whereBetween('year', [(int) $request->input('year_from'), (int) $request->input('year_to')]);
-                }
+    //             // Handling 'year_from' and 'year_to'
+    //             if ($request->has('year_from') && $request->has('year_to')) {
+    //                 $query->whereBetween('year', [(int) $request->input('year_from'), (int) $request->input('year_to')]);
+    //             }
 
-                // Handling 'odometer_min' and 'odometer_max'
-                if ($request->has('odometer_min') && $request->has('odometer_max')) {
-                    $query->whereBetween('odometer_mi', [
-                        (int) str_replace(',', '', $request->input('odometer_min')),
-                        (int) str_replace(',', '', $request->input('odometer_max')),
-                    ]);
-                }
+    //             // Handling 'odometer_min' and 'odometer_max'
+    //             if ($request->has('odometer_min') && $request->has('odometer_max')) {
+    //                 $query->whereBetween('odometer_mi', [
+    //                     (int) str_replace(',', '', $request->input('odometer_min')),
+    //                     (int) str_replace(',', '', $request->input('odometer_max')),
+    //                 ]);
+    //             }
 
-                // Handling 'auction_date'
-                if ($request->has('auction_date')) {
-                    $auctionDateInput = $request->input('auction_date');
+    //             // Handling 'auction_date'
+    //             if ($request->has('auction_date')) {
+    //                 $auctionDateInput = $request->input('auction_date');
 
-                    // Ensure it's an array with exactly two elements
-                    if (is_array($auctionDateInput) && count($auctionDateInput) === 2) {
-                        [$auctionDateFrom, $auctionDateTo] = $auctionDateInput;
+    //                 // Ensure it's an array with exactly two elements
+    //                 if (is_array($auctionDateInput) && count($auctionDateInput) === 2) {
+    //                     [$auctionDateFrom, $auctionDateTo] = $auctionDateInput;
 
-                        if ($auctionDateFrom && $auctionDateTo) {
-                            // Keep Carbon instances for comparisons
-                            $auctionDateFromCarbon = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom));
-                            $auctionDateToCarbon = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo));
+    //                     if ($auctionDateFrom && $auctionDateTo) {
+    //                         // Keep Carbon instances for comparisons
+    //                         $auctionDateFromCarbon = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom));
+    //                         $auctionDateToCarbon = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateTo));
 
-                            // Format for database query (string values)
-                            $auctionDateFrom = $auctionDateFromCarbon->format('Y-m-d');
-                            $auctionDateTo = $auctionDateToCarbon->format('Y-m-d');
+    //                         // Format for database query (string values)
+    //                         $auctionDateFrom = $auctionDateFromCarbon->format('Y-m-d');
+    //                         $auctionDateTo = $auctionDateToCarbon->format('Y-m-d');
 
-                            // Compare using Carbon instances
-                            if ($auctionDateFromCarbon->equalTo($auctionDateToCarbon)) {
-                                // Same date, use whereDate
-                                $query->whereDate('sale_date', $auctionDateFrom);
-                            } else {
-                                // Date range
-                                $query->whereBetween('sale_date', [$auctionDateFrom, $auctionDateTo]);
-                            }
-                        } elseif ($auctionDateFrom && ! $auctionDateTo) {
-                            $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->format('Y-m-d');
-                            $query->whereDate('sale_date', $auctionDate);
-                        }
-                    } else {
-                        return sendResponse(true, 400, "Invalid 'auction_date' format. Expecting an array with two elements.", [], 200);
-                    }
-                }
+    //                         // Compare using Carbon instances
+    //                         if ($auctionDateFromCarbon->equalTo($auctionDateToCarbon)) {
+    //                             // Same date, use whereDate
+    //                             $query->whereDate('sale_date', $auctionDateFrom);
+    //                         } else {
+    //                             // Date range
+    //                             $query->whereBetween('sale_date', [$auctionDateFrom, $auctionDateTo]);
+    //                         }
+    //                     } elseif ($auctionDateFrom && ! $auctionDateTo) {
+    //                         $auctionDate = \Carbon\Carbon::createFromFormat('Y-m-d', trim($auctionDateFrom))->format('Y-m-d');
+    //                         $query->whereDate('sale_date', $auctionDate);
+    //                     }
+    //                 } else {
+    //                     return sendResponse(true, 400, "Invalid 'auction_date' format. Expecting an array with two elements.", [], 200);
+    //                 }
+    //             }
 
-                // If current_hit_attribute is set and matches the current filter, skip changing this filter
-                if ($currentHitAttribute && $currentHitAttribute === $key) {
+    //             // If current_hit_attribute is set and matches the current filter, skip changing this filter
+    //             if ($currentHitAttribute && $currentHitAttribute === $key) {
 
-                    $existingResults = clone $query;
+    //                 $existingResults = clone $query;
 
-                    foreach ($filters as $filterKey => $filterDetails) {
-                        // Check if the current filter key matches the current_hit_attribute
-                        if ($filterKey === $currentHitAttribute) {
-                            // Skip applying whereIn if it matches the current_hit_attribute
-                            continue;
-                        }
+    //                 foreach ($filters as $filterKey => $filterDetails) {
+    //                     // Check if the current filter key matches the current_hit_attribute
+    //                     if ($filterKey === $currentHitAttribute) {
+    //                         // Skip applying whereIn if it matches the current_hit_attribute
+    //                         continue;
+    //                     }
 
-                        if ($request->has($filterKey) && is_array($request->input($filterKey))) {
-                            // Use the correct column from the filters array for dynamic filtering
-                            $existingResults->whereIn($filterDetails['column'], $request->input($filterKey));
-                        }
-                    }
+    //                     if ($request->has($filterKey) && is_array($request->input($filterKey))) {
+    //                         // Use the correct column from the filters array for dynamic filtering
+    //                         $existingResults->whereIn($filterDetails['column'], $request->input($filterKey));
+    //                     }
+    //                 }
 
-                    // Fetch results
-                    $existingResults = $existingResults->select("{$details['column']} as id", DB::raw('COUNT(*) as count'))
-                        ->groupBy("{$details['column']}");
+    //                 // Fetch results
+    //                 $existingResults = $existingResults->select("{$details['column']} as id", DB::raw('COUNT(*) as count'))
+    //                     ->groupBy("{$details['column']}");
 
-                    // Apply pagination if parameters exist
-                    if (! empty($perPage) && ! empty($page)) {
-                        $existingResults = $existingResults->paginate($perPage, ['*'], 'page', $page);
-                    } else {
-                        $existingResults = $existingResults->get();
-                    }
+    //                 // Apply pagination if parameters exist
+    //                 if (! empty($perPage) && ! empty($page)) {
+    //                     $existingResults = $existingResults->paginate($perPage, ['*'], 'page', $page);
+    //                 } else {
+    //                     $existingResults = $existingResults->get();
+    //                 }
 
-                    // Fetch related names in bulk
-                    $relatedNames = DB::table($details['table'])
-                        ->whereIn('id', $existingResults->pluck('id'))
-                        ->pluck('name', 'id');
+    //                 // Fetch related names in bulk
+    //                 $relatedNames = DB::table($details['table'])
+    //                     ->whereIn('id', $existingResults->pluck('id'))
+    //                     ->pluck('name', 'id');
 
-                    // Map results to the response structure
-                    $response[$key] = $existingResults->map(function ($item) use ($relatedNames) {
-                        return [
-                            'id' => $item->id,
-                            'name' => $relatedNames[$item->id] ?? 'unknown',
-                            'count' => $item->count,
-                        ];
-                    })->sortBy('name')->values();
+    //                 // Map results to the response structure
+    //                 $response[$key] = $existingResults->map(function ($item) use ($relatedNames) {
+    //                     return [
+    //                         'id' => $item->id,
+    //                         'name' => $relatedNames[$item->id] ?? 'unknown',
+    //                         'count' => $item->count,
+    //                     ];
+    //                 })->sortBy('name')->values();
 
-                    continue; // Skip to the next filter
-                }
+    //                 continue; // Skip to the next filter
+    //             }
 
-                // If search_attribute is set and valid, perform search
-                if ($searchAttribute && in_array($searchAttribute, $validListings) && $searchValue) {
-                    $cloneQuery = clone $query;
+    //             // If search_attribute is set and valid, perform search
+    //             if ($searchAttribute && in_array($searchAttribute, $validListings) && $searchValue) {
+    //                 $cloneQuery = clone $query;
 
-                    // Fetch filtered results
-                    $filteredResults = $cloneQuery->whereHas($filters[$searchAttribute]['relation'], function ($query) use ($searchValue) {
-                        $query->where('name', 'LIKE', "%$searchValue%");
-                    })->select("{$filters[$searchAttribute]['column']} as id", DB::raw('COUNT(*) as count'))
-                        ->groupBy("{$filters[$searchAttribute]['column']}")
-                        ->paginate($perPage, ['*'], 'page', $page);
+    //                 // Fetch filtered results
+    //                 $filteredResults = $cloneQuery->whereHas($filters[$searchAttribute]['relation'], function ($query) use ($searchValue) {
+    //                     $query->where('name', 'LIKE', "%$searchValue%");
+    //                 })->select("{$filters[$searchAttribute]['column']} as id", DB::raw('COUNT(*) as count'))
+    //                     ->groupBy("{$filters[$searchAttribute]['column']}")
+    //                     ->paginate($perPage, ['*'], 'page', $page);
 
-                    // Fetch related names in bulk
-                    $relatedNames = DB::table($filters[$searchAttribute]['table'])
-                        ->whereIn('id', $filteredResults->pluck('id'))
-                        ->pluck('name', 'id');
+    //                 // Fetch related names in bulk
+    //                 $relatedNames = DB::table($filters[$searchAttribute]['table'])
+    //                     ->whereIn('id', $filteredResults->pluck('id'))
+    //                     ->pluck('name', 'id');
 
-                    // Map results to the response structure
-                    $response[$searchAttribute] = $filteredResults->map(function ($item) use ($relatedNames) {
-                        return [
-                            'id' => $item->id,
-                            'name' => $relatedNames[$item->id] ?? 'unknown',
-                            'count' => $item->count,
-                        ];
-                    })->sortBy('name')->values();
-                }
+    //                 // Map results to the response structure
+    //                 $response[$searchAttribute] = $filteredResults->map(function ($item) use ($relatedNames) {
+    //                     return [
+    //                         'id' => $item->id,
+    //                         'name' => $relatedNames[$item->id] ?? 'unknown',
+    //                         'count' => $item->count,
+    //                     ];
+    //                 })->sortBy('name')->values();
+    //             }
 
-                // Apply input filters dynamically for the columns that are listed in the filters array
-                foreach ($filters as $filterKey => $filterDetails) {
-                    if ($request->has($filterKey) && is_array($request->input($filterKey))) {
-                        // Use the correct column from the filters array for dynamic filtering
-                        $query->whereIn($filterDetails['column'], $request->input($filterKey));
-                    }
-                }
+    //             // Apply input filters dynamically for the columns that are listed in the filters array
+    //             foreach ($filters as $filterKey => $filterDetails) {
+    //                 if ($request->has($filterKey) && is_array($request->input($filterKey))) {
+    //                     // Use the correct column from the filters array for dynamic filtering
+    //                     $query->whereIn($filterDetails['column'], $request->input($filterKey));
+    //                 }
+    //             }
 
-                // Apply pagination logic dynamically
-                if ($details['paginate'] && (! $activeFilterKey || $key === $activeFilterKey)) {
-                    $results = $query
-                        ->selectRaw("{$details['column']} as id, COUNT(*) as count")
-                        ->groupBy("{$details['column']}")
-                        ->paginate($perPage, ['*'], 'page', $page);
-                } else {
-                    $results = $query
-                        ->selectRaw("{$details['column']} as id, COUNT(*) as count")
-                        ->groupBy("{$details['column']}")
-                        ->get();
-                }
+    //             // Apply pagination logic dynamically
+    //             if ($details['paginate'] && (! $activeFilterKey || $key === $activeFilterKey)) {
+    //                 $results = $query
+    //                     ->selectRaw("{$details['column']} as id, COUNT(*) as count")
+    //                     ->groupBy("{$details['column']}")
+    //                     ->paginate($perPage, ['*'], 'page', $page);
+    //             } else {
+    //                 $results = $query
+    //                     ->selectRaw("{$details['column']} as id, COUNT(*) as count")
+    //                     ->groupBy("{$details['column']}")
+    //                     ->get();
+    //             }
 
-                // Fetch related names in bulk
-                $relatedNames = DB::table($details['table'])
-                    ->whereIn('id', $results->pluck('id'))
-                    ->pluck('name', 'id');
+    //             // Fetch related names in bulk
+    //             $relatedNames = DB::table($details['table'])
+    //                 ->whereIn('id', $results->pluck('id'))
+    //                 ->pluck('name', 'id');
 
-                // Map results to the response structure
-                $response[$key] = $results->map(function ($item) use ($relatedNames) {
-                    return [
-                        'id' => $item->id,
-                        'name' => $relatedNames[$item->id] ?? 'unknown',
-                        'count' => $item->count,
-                    ];
-                })->sortBy('name')->values();
+    //             // Map results to the response structure
+    //             $response[$key] = $results->map(function ($item) use ($relatedNames) {
+    //                 return [
+    //                     'id' => $item->id,
+    //                     'name' => $relatedNames[$item->id] ?? 'unknown',
+    //                     'count' => $item->count,
+    //                 ];
+    //             })->sortBy('name')->values();
 
-            }
+    //         }
 
-            // Return only the active filter's data if a specific filter is set
-            if ($activeFilterKey) {
-                return sendResponse(true, 200, ucfirst(str_replace('_', ' ', $activeFilterKey)).' Fetched Successfully!', [
-                    $activeFilterKey => $response[$activeFilterKey],
-                ], 200);
-            }
+    //         // Return only the active filter's data if a specific filter is set
+    //         if ($activeFilterKey) {
+    //             return sendResponse(true, 200, ucfirst(str_replace('_', ' ', $activeFilterKey)).' Fetched Successfully!', [
+    //                 $activeFilterKey => $response[$activeFilterKey],
+    //             ], 200);
+    //         }
 
-            $finalResult = $response; // This is first query result and accurate
+    //         $finalResult = $response; // This is first query result and accurate
 
-            return sendResponse(true, 200, 'Attributes Fetched Successfully!', $finalResult, 200);
-        } catch (\Exception $ex) {
-            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
-        }
-    }
+    //         return sendResponse(true, 200, 'Attributes Fetched Successfully!', $finalResult, 200);
+    //     } catch (\Exception $ex) {
+    //         return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+    //     }
+    // }
 
     /**
      * Get Vehicle Records Count.
