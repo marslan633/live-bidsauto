@@ -19,7 +19,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton('Elasticsearch', function () {
             return ClientBuilder::create()
-                ->setHosts(['localhost:9200']) // Or your actual host/IP
+                ->setHosts(['86.38.205.69:9200']) // Or your actual host/IP
                 ->build();
         });
     }
