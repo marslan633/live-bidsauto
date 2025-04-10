@@ -7,15 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 class VehicleRecordArchived extends Model
 {
     protected $fillable = [
-        'api_id', 'year', 'year_id', 'title', 'vin', 'manufacturer_id', 'vehicle_model_id', 'generation_id', 
-        'body_type_id', 'color_id', 'engine_id', 'transmission_id', 'drive_wheel_id', 
-        'vehicle_type_id', 'fuel_id', 'cylinders', 'salvage_id', 'lot_id', 'domain_id', 
-        'external_id', 'odometer_km', 'odometer_mi', 'odometer_status', 'estimate_repair_price', 
-        'pre_accident_price', 'clean_wholesale_price', 'actual_cash_value', 'sale_date', 
-        'sale_date_updated_at', 'bid', 'bid_updated_at', 'buy_now', 'buy_now_updated_at', 
-        'final_bid', 'final_bid_updated_at', 'status_id', 'seller_id', 'seller_type_id', 
-        'title_id', 'detailed_title_id', 'damage_id', 'damage_main', 'damage_second', 'keys_available', 
-        'airbags', 'condition_id', 'grade_iaai', 'image_id', 'country_id', 'state_id', 
+        'api_id', 'year', 'year_id', 'title', 'vin', 'manufacturer_id', 'vehicle_model_id', 'generation_id',
+        'body_type_id', 'color_id', 'engine_id', 'transmission_id', 'drive_wheel_id',
+        'vehicle_type_id', 'fuel_id', 'cylinders', 'salvage_id', 'lot_id', 'domain_id',
+        'external_id', 'odometer_km', 'odometer_mi', 'odometer_status', 'estimate_repair_price',
+        'pre_accident_price', 'clean_wholesale_price', 'actual_cash_value', 'sale_date',
+        'sale_date_updated_at', 'bid', 'bid_updated_at', 'buy_now', 'buy_now_updated_at',
+        'final_bid', 'final_bid_updated_at', 'status_id', 'seller_id', 'seller_type_id',
+        'title_id', 'detailed_title_id', 'damage_id', 'damage_main', 'damage_second', 'keys_available',
+        'airbags', 'condition_id', 'grade_iaai', 'image_id', 'country_id', 'state_id',
         'city_id', 'location_id', 'selling_branch', 'details', 'buy_now_id', 'processed_at', 'is_new', 'odometer_id'
     ];
 

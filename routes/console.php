@@ -43,6 +43,7 @@ if (config('app.app_kvm_three') === true) {
     //app(Schedule::class)->command('auction:restore-archived')->dailyAt('09:43')->withoutOverlapping();
 
     app(Schedule::class)->command('index:vehicle-records')->dailyAt('11:32')->withoutOverlapping();
+    app(Schedule::class)->command('index:vehicle-record-archiveds')->dailyAt('07:52')->withoutOverlapping();
 
     /**
     * Cron Job - Update the data (bid, final_bid_updated_at, status) of archived vehicle table on the base of third party api.
@@ -57,7 +58,7 @@ if (config('app.app_kvm_three') === true) {
     /**
      * Cron Job - Move expired auctions from VehicleRecord to VehicleRecordArchived table.
     */
-    app(Schedule::class)->command('process:expired-auction-archive-without-queue')->hourly()->withoutOverlapping();
+    // app(Schedule::class)->command('process:expired-auction-archive-without-queue')->hourly()->withoutOverlapping();
 
     /**
      * Cron Job - Process Buy Now Data from third Party API and Populate it into Cache.
