@@ -10,9 +10,11 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "elasticsearch/elasticsearch": "^8.17",
         "goodway/laravel-nats": "^0.17.0",
         "laravel/framework": "^11.31",
         "laravel/sanctum": "^4.0",
+        "laravel/scout": "^10.14",
         "laravel/tinker": "^2.9",
         "mongodb/laravel-mongodb": "^5.2",
         "nesbot/carbon": "^2.73"

@@ -293,10 +293,137 @@ class VehicleController extends Controller
         }
     }
 
+    public function filterAttributes(Request $request)
+{
+    try {
+        $client = app('Elasticsearch');
+
+        $index = $request->input('data_source', 'active') === 'archived'
+            ? 'vehicle_record_archiveds'
+            : 'vehicle_records';
+
+        $filters = [
+            'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers', 'paginate' => true],
+            'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models', 'paginate' => true],
+            'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types', 'paginate' => true],
+            'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions', 'paginate' => true],
+            'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels', 'paginate' => true],
+            'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types', 'paginate' => true],
+            'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels', 'paginate' => true],
+            'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions', 'paginate' => true],
+            'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles', 'paginate' => true],
+            'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages', 'paginate' => true],
+            'buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows', 'paginate' => true],
+        ];
+
+        $page = (int) $request->input('page', 1);
+        $perPage = (int) $request->input('size', 10);
+        $from = ($page - 1) * $perPage;
+
+        $searchAttribute = $request->input('search_attribute');
+        $searchValue = $request->input('search_value');
+        $currentHitAttribute = $request->input('current_hit_attribute');
+        $listing = $request->input('listing');
+
+        $validListings = array_keys($filters);
+        $activeFilterKey = in_array($listing, $validListings) ? $listing : null;
+
+        $must = [['exists' => ['field' => 'sale_date']]];
+
+        if ($request->has('domain_id')) {
+            $must[] = ['terms' => ['domain_id' => $request->input('domain_id')]];
+        }
+
+        if ($request->has('buy_now')) {
+            $buyNow = $request->input('buy_now');
+            if ($buyNow === true || $buyNow === 'true') {
+                $must[] = ['term' => ['buy_now_id' => BuyNow::where('name', 'buyNowWithPrice')->value('id')]];
+            } else {
+                $must[] = ['terms' => ['buy_now_id' => BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->toArray()]];
+            }
+        }
+
+        if ($request->has(['year_from', 'year_to'])) {
+            $must[] = ['range' => ['year' => ['gte' => (int) $request->input('year_from'), 'lte' => (int) $request->input('year_to')]]];
+        }
+
+        if ($request->has(['odometer_min', 'odometer_max'])) {
+            $must[] = ['range' => ['odometer_mi' => [
+                'gte' => (int) str_replace(',', '', $request->input('odometer_min')),
+                'lte' => (int) str_replace(',', '', $request->input('odometer_max'))
+            ]]];
+        }
+
+        if ($request->has('auction_date')) {
+            $dates = $request->input('auction_date');
+            if (is_array($dates) && count($dates) === 2) {
+                $must[] = ['range' => ['sale_date' => [
+                    'gte' => Carbon::parse($dates[0])->format('Y-m-d'),
+                    'lte' => Carbon::parse($dates[1])->format('Y-m-d'),
+                ]]];
+            }
+        }
+
+        foreach ($filters as $key => $config) {
+            if ($activeFilterKey && $key !== $activeFilterKey) continue;
+
+            $localMust = $must;
+
+            foreach ($filters as $filterKey => $filterDetails) {
+                if ($filterKey === $key) continue;
+                if ($request->has($filterKey) && is_array($request->input($filterKey))) {
+                    $localMust[] = ['terms' => [$filterDetails['column'] => $request->input($filterKey)]];
+                }
+            }
+
+            $params = [
+                'index' => $index,
+                'body' => [
+                    'from' => 0,
+                    'size' => 0,
+                    'query' => ['bool' => ['must' => $localMust]],
+                    'aggs' => [
+                        $key => [
+                            'terms' => [
+                                'field' => $config['column'],
+                                'size' => 1000
+                            ]
+                        ]
+                    ]
+                ]
+            ];
+
+            $results = $client->search($params);
+
+            $buckets = $results['aggregations'][$key]['buckets'] ?? [];
+
+            $names = DB::table($config['table'])->pluck('name', 'id');
+
+            $response[$key] = collect($buckets)->map(function ($bucket) use ($names) {
+                return [
+                    'id' => $bucket['key'],
+                    'name' => $names[$bucket['key']] ?? 'unknown',
+                    'count' => $bucket['doc_count'],
+                ];
+            })->sortBy('name')->values();
+        }
+
+        if ($activeFilterKey) {
+            return sendResponse(true, 200, ucfirst(str_replace('_', ' ', $activeFilterKey)).' Fetched Successfully!', [
+                $activeFilterKey => $response[$activeFilterKey],
+            ], 200);
+        }
+
+        return sendResponse(true, 200, 'Attributes Fetched Successfully!', $response, 200);
+    } catch (\Exception $ex) {
+        return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 500);
+    }
+}
+
     /**
      * Filter Attributes and Manage Counts API.
      */
-    public function filterAttributes(Request $request)
+    public function OldFilterAttributes(Request $request)
     {
         try {
             // Define filters and relationships dynamically

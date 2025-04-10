@@ -1,0 +1,34 @@
+<?php
+
+namespace App\Console\Commands;
+
+use Illuminate\Console\Command;
+use App\Models\VehicleRecord;
+use Illuminate\Support\Facades\App;
+
+
+class IndexVehicleRecords extends Command
+{
+    protected $signature = 'index:vehicle-records';
+    protected $description = 'Index all vehicle records to Elasticsearch';
+
+    public function handle()
+{
+    $this->info('🚀 Indexing vehicle_records started...');
+
+    $elasticsearch = app('Elasticsearch');
+
+    \App\Models\VehicleRecord::chunk(500, function ($vehicles) use ($elasticsearch) {
+        foreach ($vehicles as $vehicle) {
+            $elasticsearch->index([
+                'index' => 'vehicle_records',
+                'id' => $vehicle->id,
+                'body' => $vehicle->toArray(),
+            ]);
+        }
+    });
+
+    $this->info('✅ Indexing vehicle_records completed!');
+}
+
+}
