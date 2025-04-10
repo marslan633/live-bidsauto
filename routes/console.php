@@ -1,5 +1,6 @@
 <?php
 
+use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -43,7 +44,10 @@ if (config('app.app_kvm_three') === true) {
     //app(Schedule::class)->command('auction:restore-archived')->dailyAt('09:43')->withoutOverlapping();
 
     app(Schedule::class)->command('index:vehicle-records')->dailyAt('11:32')->withoutOverlapping();
-    app(Schedule::class)->command('index:vehicle-record-archiveds')->dailyAt('7:52')->withoutOverlapping();
+
+    app(Schedule::class)->command('index:vehicle-record-archiveds')
+    ->at(Carbon::now('UTC')->addMinutes(5)->format('H:i'))
+    ->withoutOverlapping();
 
     /**
     * Cron Job - Update the data (bid, final_bid_updated_at, status) of archived vehicle table on the base of third party api.
