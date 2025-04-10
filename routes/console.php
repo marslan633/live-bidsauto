@@ -38,15 +38,16 @@ if (config('app.app_kvm_three') === true) {
     /**
      * Cron Job - Process Vehicle Data from kvm4.2 redis cache and populate it into kvm4.3 Mysql.
      */
-    app(Schedule::class)->command('process:process-cached-data-to-databases-without-queue')->everyTenMinutes()->withoutOverlapping();
+    // app(Schedule::class)->command('process:process-cached-data-to-databases-without-queue')->everyTenMinutes()->withoutOverlapping();
 
     //app(Schedule::class)->command('auction:restore-archived')->dailyAt('09:43')->withoutOverlapping();
 
+    app(Schedule::class)->command('index:vehicle-records')->dailyAt('11:32')->withoutOverlapping();
 
     /**
     * Cron Job - Update the data (bid, final_bid_updated_at, status) of archived vehicle table on the base of third party api.
     */
-    app(Schedule::class)->command('process:cached-archived-data-to-database-without-queue')->everyTenMinutes()->withoutOverlapping();
+    // app(Schedule::class)->command('process:cached-archived-data-to-database-without-queue')->everyTenMinutes()->withoutOverlapping();
 
     /**
      * Cron Job - Move expired auctions from VehicleRecord to VehicleRecordArchived table.
