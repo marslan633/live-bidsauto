@@ -111,20 +111,25 @@ class VehicleController extends Controller
 
         $must = [['exists' => ['field' => 'sale_date']]];
 
-        // Filters
+        // Domain Filter
         if ($request->has('domain_id')) {
-            $must[] = ['terms' => ['domain_id' => $request->input('domain_id')]];
+            $domainIds = array_map('intval', (array) $request->input('domain_id'));
+            $must[] = ['terms' => ['domain_id' => $domainIds]];
         }
 
+        // Buy Now Filter
         if ($request->has('buy_now')) {
             $buyNow = $request->input('buy_now');
-            if ($buyNow === true || $buyNow === 'true') {
-                $must[] = ['term' => ['buy_now_id' => BuyNow::where('name', 'buyNowWithPrice')->value('id')]];
+            if ($buyNow === true || $buyNow === 'true' || $buyNow === 1 || $buyNow === '1') {
+                $buyNowId = BuyNow::where('name', 'buyNowWithPrice')->value('id');
+                $must[] = ['term' => ['buy_now_id' => (int) $buyNowId]];
             } else {
-                $must[] = ['terms' => ['buy_now_id' => BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->toArray()]];
+                $buyNowIds = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->map(fn($i) => (int) $i)->toArray();
+                $must[] = ['terms' => ['buy_now_id' => $buyNowIds]];
             }
         }
 
+        // Year range
         if ($request->has(['year_from', 'year_to'])) {
             $must[] = ['range' => [
                 'year' => [
@@ -134,6 +139,7 @@ class VehicleController extends Controller
             ]];
         }
 
+        // Odometer range
         if ($request->has(['odometer_min', 'odometer_max'])) {
             $must[] = ['range' => [
                 'odometer_mi' => [
@@ -143,18 +149,20 @@ class VehicleController extends Controller
             ]];
         }
 
+        // Auction date range
         if ($request->has('auction_date')) {
             $dates = $request->input('auction_date');
             if (is_array($dates) && count($dates) === 2) {
                 $must[] = ['range' => [
                     'sale_date' => [
-                        'gte' => Carbon::parse($dates[0])->format('Y-m-d'),
-                        'lte' => Carbon::parse($dates[1])->format('Y-m-d'),
+                        'gte' => \Carbon\Carbon::parse($dates[0])->format('Y-m-d'),
+                        'lte' => \Carbon\Carbon::parse($dates[1])->format('Y-m-d'),
                     ]
                 ]];
             }
         }
 
+        // Dynamic Filters
         $filters = [
             'manufacturers' => 'manufacturer_id',
             'vehicle_models' => 'vehicle_model_id',
@@ -170,13 +178,14 @@ class VehicleController extends Controller
 
         foreach ($filters as $key => $column) {
             if ($request->has($key) && is_array($request->input($key))) {
-                $must[] = ['terms' => [$column => $request->input($key)]];
+                $values = array_map('intval', $request->input($key));
+                $must[] = ['terms' => [$column => $values]];
             }
         }
 
         // Sorting
-        $currentDate = Carbon::now()->toDateString();
-        $currentDateMillis = Carbon::parse($currentDate)->timestamp * 1000;
+        $currentDate = \Carbon\Carbon::now()->toDateString();
+        $currentDateMillis = \Carbon\Carbon::parse($currentDate)->timestamp * 1000;
         $saleDateOrder = $request->input('sale_date_order', 'sooner');
 
         $sort = [
@@ -194,14 +203,15 @@ class VehicleController extends Controller
             ['sale_date' => $saleDateOrder === 'farthest' ? 'desc' : 'asc']
         ];
 
-        // Build Elasticsearch query
+        // Final ES Query
         $params = [
             'index' => $index,
             'body' => [
                 'from' => $from,
                 'size' => $size,
                 'query' => ['bool' => ['must' => $must]],
-                'sort' => $sort
+                'sort' => $sort,
+                'track_total_hits' => true
             ]
         ];
 
@@ -218,6 +228,7 @@ class VehicleController extends Controller
         return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 500);
     }
 }
+
 
     /**
      * Fetch Cars Information API.
