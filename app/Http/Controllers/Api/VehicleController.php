@@ -111,6 +111,7 @@ class VehicleController extends Controller
 
         $must = [['exists' => ['field' => 'sale_date']]];
 
+        // Filters
         if ($request->has('domain_id')) {
             $must[] = ['terms' => ['domain_id' => $request->input('domain_id')]];
         }
@@ -119,32 +120,38 @@ class VehicleController extends Controller
             $buyNow = $request->input('buy_now');
             if ($buyNow === true || $buyNow === 'true') {
                 $must[] = ['term' => ['buy_now_id' => BuyNow::where('name', 'buyNowWithPrice')->value('id')]];
-            } elseif ($buyNow === false || $buyNow === 'false') {
+            } else {
                 $must[] = ['terms' => ['buy_now_id' => BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->toArray()]];
             }
         }
 
         if ($request->has(['year_from', 'year_to'])) {
-            $must[] = ['range' => ['year' => [
-                'gte' => (int) $request->input('year_from'),
-                'lte' => (int) $request->input('year_to')
-            ]]];
+            $must[] = ['range' => [
+                'year' => [
+                    'gte' => (int) $request->input('year_from'),
+                    'lte' => (int) $request->input('year_to'),
+                ]
+            ]];
         }
 
         if ($request->has(['odometer_min', 'odometer_max'])) {
-            $must[] = ['range' => ['odometer_mi' => [
-                'gte' => (int) str_replace(',', '', $request->input('odometer_min')),
-                'lte' => (int) str_replace(',', '', $request->input('odometer_max'))
-            ]]];
+            $must[] = ['range' => [
+                'odometer_mi' => [
+                    'gte' => (int) str_replace(',', '', $request->input('odometer_min')),
+                    'lte' => (int) str_replace(',', '', $request->input('odometer_max')),
+                ]
+            ]];
         }
 
         if ($request->has('auction_date')) {
             $dates = $request->input('auction_date');
             if (is_array($dates) && count($dates) === 2) {
-                $must[] = ['range' => ['sale_date' => [
-                    'gte' => Carbon::parse($dates[0])->format('Y-m-d'),
-                    'lte' => Carbon::parse($dates[1])->format('Y-m-d'),
-                ]]];
+                $must[] = ['range' => [
+                    'sale_date' => [
+                        'gte' => Carbon::parse($dates[0])->format('Y-m-d'),
+                        'lte' => Carbon::parse($dates[1])->format('Y-m-d'),
+                    ]
+                ]];
             }
         }
 
@@ -167,97 +174,50 @@ class VehicleController extends Controller
             }
         }
 
-        // Elasticsearch query with filters, sorting, pagination and aggregations
+        // Sorting
+        $currentDate = Carbon::now()->toDateString();
+        $currentDateMillis = Carbon::parse($currentDate)->timestamp * 1000;
+        $saleDateOrder = $request->input('sale_date_order', 'sooner');
+
+        $sort = [
+            [
+                '_script' => [
+                    'type' => 'number',
+                    'script' => [
+                        'source' => "doc['sale_date'].value.toInstant().toEpochMilli() >= params.date ? 1 : 0",
+                        'params' => ['date' => $currentDateMillis],
+                        'lang' => 'painless',
+                    ],
+                    'order' => 'desc'
+                ]
+            ],
+            ['sale_date' => $saleDateOrder === 'farthest' ? 'desc' : 'asc']
+        ];
+
+        // Build Elasticsearch query
         $params = [
             'index' => $index,
             'body' => [
                 'from' => $from,
                 'size' => $size,
                 'query' => ['bool' => ['must' => $must]],
-                'sort' => [],
-                'aggs' => []
+                'sort' => $sort
             ]
         ];
 
-        foreach ($filters as $key => $column) {
-            $params['body']['aggs'][$key] = [
-                'terms' => [
-                    'field' => $column,
-                    'size' => 1000
-                ]
-            ];
-        }
-
-        // Sale date sorting
-        $currentDateMillis = Carbon::now()->timestamp * 1000;
-        $saleDateOrder = $request->input('sale_date_order', 'sooner');
-
-        if ($saleDateOrder === 'farthest') {
-            $params['body']['sort'] = [
-                [
-                    '_script' => [
-                        'type' => 'number',
-                        'script' => [
-                            'source' => "doc['sale_date'].value.toInstant().toEpochMilli() >= params.date ? 1 : 0",
-                            'params' => ['date' => $currentDateMillis],
-                            'lang' => 'painless'
-                        ],
-                        'order' => 'desc'
-                    ]
-                ],
-                ['sale_date' => 'desc']
-            ];
-        } else {
-            $params['body']['sort'] = [
-                [
-                    '_script' => [
-                        'type' => 'number',
-                        'script' => [
-                            'source' => "doc['sale_date'].value.toInstant().toEpochMilli() >= params.date ? 1 : 0",
-                            'params' => ['date' => $currentDateMillis],
-                            'lang' => 'painless'
-                        ],
-                        'order' => 'desc'
-                    ]
-                ],
-                ['sale_date' => 'asc']
-            ];
-        }
-
-        // Execute query
         $results = $client->search($params);
 
-        // Extract vehicles
         $vehicles = collect($results['hits']['hits'])->map(fn($hit) => $hit['_source']);
-        $totalCount = $results['hits']['total']['value'] ?? 0;
-
-        // Aggregation counts
-        $aggregations = [];
-        foreach ($filters as $key => $column) {
-            $names = DB::table(str_replace('_', '', $key))->pluck('name', 'id');
-            $aggregations[$key] = collect($results['aggregations'][$key]['buckets'] ?? [])->map(function ($bucket) use ($names) {
-                return [
-                    'id' => $bucket['key'],
-                    'name' => $names[$bucket['key']] ?? 'unknown',
-                    'count' => $bucket['doc_count'],
-                ];
-            })->sortBy('name')->values();
-        }
+        $count = $results['hits']['total']['value'] ?? 0;
 
         return sendResponse(true, 200, 'Vehicle Informations Fetched Successfully!', [
-            'count' => $totalCount,
-            'total_pages' => ceil($totalCount / $size),
-            'current_page' => $page,
-            'page_size' => $size,
-            'data' => $vehicles,
-            'filters' => $aggregations
+            'count' => $count,
+            'data' => $vehicles
         ], 200);
     } catch (\Exception $ex) {
-        return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+        return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 500);
     }
 }
-
-
 
     /**
      * Fetch Cars Information API.
