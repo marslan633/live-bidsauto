@@ -96,7 +96,8 @@ class VehicleController extends Controller
         }
     }
 
-    public function vehicleInformations(Request $request)
+
+    public function vehicleInformationsWithFilters(Request $request)
 {
     try {
         $client = app('Elasticsearch');
@@ -109,84 +110,71 @@ class VehicleController extends Controller
         $size = (int) $request->input('size', 10);
         $from = ($page - 1) * $size;
 
+        $filters = [
+            'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers'],
+            'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models'],
+            'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types'],
+            'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions'],
+            'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels'],
+            'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types'],
+            'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels'],
+            'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions'],
+            'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles'],
+            'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages'],
+            'buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows'],
+        ];
+
+        $searchAttribute = $request->input('search_attribute');
+        $searchValue = $request->input('search_value');
+        $currentHitAttribute = $request->input('current_hit_attribute');
+        $listing = $request->input('listing');
+        $validListings = array_keys($filters);
+        $activeFilterKey = in_array($listing, $validListings) ? $listing : null;
+
         $must = [['exists' => ['field' => 'sale_date']]];
 
-        // Domain Filter
         if ($request->has('domain_id')) {
-            $domainIds = array_map('intval', (array) $request->input('domain_id'));
-            $must[] = ['terms' => ['domain_id' => $domainIds]];
+            $must[] = ['terms' => ['domain_id' => (array) $request->input('domain_id')]];
         }
 
-        // Buy Now Filter
         if ($request->has('buy_now')) {
             $buyNow = $request->input('buy_now');
-            if ($buyNow === true || $buyNow === 'true' || $buyNow === 1 || $buyNow === '1') {
-                $buyNowId = BuyNow::where('name', 'buyNowWithPrice')->value('id');
-                $must[] = ['term' => ['buy_now_id' => (int) $buyNowId]];
+            if ($buyNow === true || $buyNow === 'true') {
+                $must[] = ['term' => ['buy_now_id' => BuyNow::where('name', 'buyNowWithPrice')->value('id')]];
             } else {
-                $buyNowIds = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->map(fn($i) => (int) $i)->toArray();
-                $must[] = ['terms' => ['buy_now_id' => $buyNowIds]];
+                $must[] = ['terms' => ['buy_now_id' => BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->toArray()]];
             }
         }
 
-        // Year range
         if ($request->has(['year_from', 'year_to'])) {
-            $must[] = ['range' => [
-                'year' => [
-                    'gte' => (int) $request->input('year_from'),
-                    'lte' => (int) $request->input('year_to'),
-                ]
-            ]];
+            $must[] = ['range' => ['year' => [
+                'gte' => (int) $request->input('year_from'),
+                'lte' => (int) $request->input('year_to')
+            ]]];
         }
 
-        // Odometer range
         if ($request->has(['odometer_min', 'odometer_max'])) {
-            $must[] = ['range' => [
-                'odometer_mi' => [
-                    'gte' => (int) str_replace(',', '', $request->input('odometer_min')),
-                    'lte' => (int) str_replace(',', '', $request->input('odometer_max')),
-                ]
-            ]];
+            $must[] = ['range' => ['odometer_mi' => [
+                'gte' => (int) str_replace(',', '', $request->input('odometer_min')),
+                'lte' => (int) str_replace(',', '', $request->input('odometer_max')),
+            ]]];
         }
 
-        // Auction date range
         if ($request->has('auction_date')) {
             $dates = $request->input('auction_date');
             if (is_array($dates) && count($dates) === 2) {
-                $must[] = ['range' => [
-                    'sale_date' => [
-                        'gte' => \Carbon\Carbon::parse($dates[0])->format('Y-m-d'),
-                        'lte' => \Carbon\Carbon::parse($dates[1])->format('Y-m-d'),
-                    ]
-                ]];
+                $must[] = ['range' => ['sale_date' => [
+                    'gte' => Carbon::parse($dates[0])->format('Y-m-d'),
+                    'lte' => Carbon::parse($dates[1])->format('Y-m-d')
+                ]]];
             }
         }
 
-        // Dynamic Filters
-        $filters = [
-            'manufacturers' => 'manufacturer_id',
-            'vehicle_models' => 'vehicle_model_id',
-            'vehicle_types' => 'vehicle_type_id',
-            'conditions' => 'condition_id',
-            'fuels' => 'fuel_id',
-            'seller_types' => 'seller_type_id',
-            'drive_wheels' => 'drive_wheel_id',
-            'transmissions' => 'transmission_id',
-            'detailed_titles' => 'detailed_title_id',
-            'damages' => 'damage_id',
-        ];
-
-        foreach ($filters as $key => $column) {
+        foreach ($filters as $key => $config) {
             if ($request->has($key) && is_array($request->input($key))) {
-                $values = array_map('intval', $request->input($key));
-                $must[] = ['terms' => [$column => $values]];
+                $must[] = ['terms' => [$config['column'] => array_map('intval', $request->input($key))]];
             }
         }
-
-        // Sorting
-        $currentDate = \Carbon\Carbon::now()->toDateString();
-        $currentDateMillis = \Carbon\Carbon::parse($currentDate)->timestamp * 1000;
-        $saleDateOrder = $request->input('sale_date_order', 'sooner');
 
         $sort = [
             [
@@ -194,16 +182,15 @@ class VehicleController extends Controller
                     'type' => 'number',
                     'script' => [
                         'source' => "doc['sale_date'].value.toInstant().toEpochMilli() >= params.date ? 1 : 0",
-                        'params' => ['date' => $currentDateMillis],
-                        'lang' => 'painless',
+                        'params' => ['date' => Carbon::now()->timestamp * 1000],
+                        'lang' => 'painless'
                     ],
                     'order' => 'desc'
                 ]
             ],
-            ['sale_date' => $saleDateOrder === 'farthest' ? 'desc' : 'asc']
+            ['sale_date' => $request->input('sale_date_order', 'sooner') === 'farthest' ? 'desc' : 'asc']
         ];
 
-        // Final ES Query
         $params = [
             'index' => $index,
             'body' => [
@@ -220,14 +207,202 @@ class VehicleController extends Controller
         $vehicles = collect($results['hits']['hits'])->map(fn($hit) => $hit['_source']);
         $count = $results['hits']['total']['value'] ?? 0;
 
-        return sendResponse(true, 200, 'Vehicle Informations Fetched Successfully!', [
+        // filter attributes
+        $responseFilters = [];
+
+        foreach ($filters as $key => $config) {
+            if ($activeFilterKey && $key !== $activeFilterKey) continue;
+
+            $localMust = $must;
+
+            foreach ($filters as $filterKey => $filterDetails) {
+                if ($filterKey === $key) continue;
+                if ($request->has($filterKey) && is_array($request->input($filterKey))) {
+                    $localMust[] = ['terms' => [$filterDetails['column'] => $request->input($filterKey)]];
+                }
+            }
+
+            if ($searchAttribute === $key && $searchValue) {
+                $nameMatches = DB::table($config['table'])
+                    ->where('name', 'LIKE', "%{$searchValue}%")
+                    ->pluck('id')
+                    ->toArray();
+
+                $localMust[] = ['terms' => [$config['column'] => $nameMatches]];
+            }
+
+            $aggParams = [
+                'index' => $index,
+                'body' => [
+                    'size' => 0,
+                    'query' => ['bool' => ['must' => $localMust]],
+                    'aggs' => [
+                        $key => [
+                            'terms' => [
+                                'field' => $config['column'],
+                                'size' => 1000
+                            ]
+                        ]
+                    ]
+                ]
+            ];
+
+            $aggResults = $client->search($aggParams);
+            $buckets = $aggResults['aggregations'][$key]['buckets'] ?? [];
+            $names = DB::table($config['table'])->pluck('name', 'id');
+
+            $responseFilters[$key] = collect($buckets)->map(function ($bucket) use ($names) {
+                return [
+                    'id' => $bucket['key'],
+                    'name' => $names[$bucket['key']] ?? 'unknown',
+                    'count' => $bucket['doc_count'],
+                ];
+            })->sortBy('name')->values();
+        }
+
+        return sendResponse(true, 200, 'Vehicle Informations & Filters Fetched Successfully!', [
             'count' => $count,
-            'data' => $vehicles
+            'data' => $vehicles,
+            'filters' => $responseFilters
         ], 200);
+
     } catch (\Exception $ex) {
         return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 500);
     }
 }
+
+    public function vehicleInformations(Request $request)
+    {
+        try {
+            $client = app('Elasticsearch');
+
+            $index = $request->input('data_source', 'active') === 'archived'
+                ? 'vehicle_record_archiveds'
+                : 'vehicle_records';
+
+            $page = (int) $request->input('page', 1);
+            $size = (int) $request->input('size', 10);
+            $from = ($page - 1) * $size;
+
+            $must = [['exists' => ['field' => 'sale_date']]];
+
+            // Domain Filter
+            if ($request->has('domain_id')) {
+                $domainIds = array_map('intval', (array) $request->input('domain_id'));
+                $must[] = ['terms' => ['domain_id' => $domainIds]];
+            }
+
+            // Buy Now Filter
+            if ($request->has('buy_now')) {
+                $buyNow = $request->input('buy_now');
+                if ($buyNow === true || $buyNow === 'true' || $buyNow === 1 || $buyNow === '1') {
+                    $buyNowId = BuyNow::where('name', 'buyNowWithPrice')->value('id');
+                    $must[] = ['term' => ['buy_now_id' => (int) $buyNowId]];
+                } else {
+                    $buyNowIds = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->map(fn($i) => (int) $i)->toArray();
+                    $must[] = ['terms' => ['buy_now_id' => $buyNowIds]];
+                }
+            }
+
+            // Year range
+            if ($request->has(['year_from', 'year_to'])) {
+                $must[] = ['range' => [
+                    'year' => [
+                        'gte' => (int) $request->input('year_from'),
+                        'lte' => (int) $request->input('year_to'),
+                    ]
+                ]];
+            }
+
+            // Odometer range
+            if ($request->has(['odometer_min', 'odometer_max'])) {
+                $must[] = ['range' => [
+                    'odometer_mi' => [
+                        'gte' => (int) str_replace(',', '', $request->input('odometer_min')),
+                        'lte' => (int) str_replace(',', '', $request->input('odometer_max')),
+                    ]
+                ]];
+            }
+
+            // Auction date range
+            if ($request->has('auction_date')) {
+                $dates = $request->input('auction_date');
+                if (is_array($dates) && count($dates) === 2) {
+                    $must[] = ['range' => [
+                        'sale_date' => [
+                            'gte' => \Carbon\Carbon::parse($dates[0])->format('Y-m-d'),
+                            'lte' => \Carbon\Carbon::parse($dates[1])->format('Y-m-d'),
+                        ]
+                    ]];
+                }
+            }
+
+            // Dynamic Filters
+            $filters = [
+                'manufacturers' => 'manufacturer_id',
+                'vehicle_models' => 'vehicle_model_id',
+                'vehicle_types' => 'vehicle_type_id',
+                'conditions' => 'condition_id',
+                'fuels' => 'fuel_id',
+                'seller_types' => 'seller_type_id',
+                'drive_wheels' => 'drive_wheel_id',
+                'transmissions' => 'transmission_id',
+                'detailed_titles' => 'detailed_title_id',
+                'damages' => 'damage_id',
+            ];
+
+            foreach ($filters as $key => $column) {
+                if ($request->has($key) && is_array($request->input($key))) {
+                    $values = array_map('intval', $request->input($key));
+                    $must[] = ['terms' => [$column => $values]];
+                }
+            }
+
+            // Sorting
+            $currentDate = \Carbon\Carbon::now()->toDateString();
+            $currentDateMillis = \Carbon\Carbon::parse($currentDate)->timestamp * 1000;
+            $saleDateOrder = $request->input('sale_date_order', 'sooner');
+
+            $sort = [
+                [
+                    '_script' => [
+                        'type' => 'number',
+                        'script' => [
+                            'source' => "doc['sale_date'].value.toInstant().toEpochMilli() >= params.date ? 1 : 0",
+                            'params' => ['date' => $currentDateMillis],
+                            'lang' => 'painless',
+                        ],
+                        'order' => 'desc'
+                    ]
+                ],
+                ['sale_date' => $saleDateOrder === 'farthest' ? 'desc' : 'asc']
+            ];
+
+            // Final ES Query
+            $params = [
+                'index' => $index,
+                'body' => [
+                    'from' => $from,
+                    'size' => $size,
+                    'query' => ['bool' => ['must' => $must]],
+                    'sort' => $sort,
+                    'track_total_hits' => true
+                ]
+            ];
+
+            $results = $client->search($params);
+
+            $vehicles = collect($results['hits']['hits'])->map(fn($hit) => $hit['_source']);
+            $count = $results['hits']['total']['value'] ?? 0;
+
+            return sendResponse(true, 200, 'Vehicle Informations Fetched Successfully!', [
+                'count' => $count,
+                'data' => $vehicles
+            ], 200);
+        } catch (\Exception $ex) {
+            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 500);
+        }
+    }
 
 
     /**
@@ -557,141 +732,141 @@ class VehicleController extends Controller
     }
 
     public function filterAttributes(Request $request)
-{
-    try {
-        $client = app('Elasticsearch');
+    {
+        try {
+            $client = app('Elasticsearch');
 
-        $index = $request->input('data_source', 'active') === 'archived'
-            ? 'vehicle_record_archiveds'
-            : 'vehicle_records';
+            $index = $request->input('data_source', 'active') === 'archived'
+                ? 'vehicle_record_archiveds'
+                : 'vehicle_records';
 
-        $filters = [
-            'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers'],
-            'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models'],
-            'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types'],
-            'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions'],
-            'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels'],
-            'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types'],
-            'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels'],
-            'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions'],
-            'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles'],
-            'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages'],
-            'buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows'],
-        ];
+            $filters = [
+                'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers'],
+                'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models'],
+                'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types'],
+                'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions'],
+                'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels'],
+                'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types'],
+                'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels'],
+                'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions'],
+                'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles'],
+                'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages'],
+                'buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows'],
+            ];
 
-        $searchAttribute = $request->input('search_attribute');
-        $searchValue = $request->input('search_value');
-        $currentHitAttribute = $request->input('current_hit_attribute');
-        $listing = $request->input('listing');
-        $validListings = array_keys($filters);
-        $activeFilterKey = in_array($listing, $validListings) ? $listing : null;
+            $searchAttribute = $request->input('search_attribute');
+            $searchValue = $request->input('search_value');
+            $currentHitAttribute = $request->input('current_hit_attribute');
+            $listing = $request->input('listing');
+            $validListings = array_keys($filters);
+            $activeFilterKey = in_array($listing, $validListings) ? $listing : null;
 
-        $must = [['exists' => ['field' => 'sale_date']]];
+            $must = [['exists' => ['field' => 'sale_date']]];
 
-        if ($request->has('domain_id')) {
-            $must[] = ['terms' => ['domain_id' => $request->input('domain_id')]];
-        }
-
-        if ($request->has('buy_now')) {
-            $buyNow = $request->input('buy_now');
-            if ($buyNow === true || $buyNow === 'true') {
-                $must[] = ['term' => ['buy_now_id' => BuyNow::where('name', 'buyNowWithPrice')->value('id')]];
-            } else {
-                $must[] = ['terms' => ['buy_now_id' => BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->toArray()]];
+            if ($request->has('domain_id')) {
+                $must[] = ['terms' => ['domain_id' => $request->input('domain_id')]];
             }
-        }
 
-        if ($request->has(['year_from', 'year_to'])) {
-            $must[] = ['range' => ['year' => ['gte' => (int) $request->year_from, 'lte' => (int) $request->year_to]]];
-        }
-
-        if ($request->has(['odometer_min', 'odometer_max'])) {
-            $must[] = ['range' => ['odometer_mi' => [
-                'gte' => (int) str_replace(',', '', $request->input('odometer_min')),
-                'lte' => (int) str_replace(',', '', $request->input('odometer_max')),
-            ]]];
-        }
-
-        if ($request->has('auction_date')) {
-            $dates = $request->input('auction_date');
-            if (is_array($dates) && count($dates) === 2) {
-                $must[] = ['range' => ['sale_date' => [
-                    'gte' => Carbon::parse($dates[0])->format('Y-m-d'),
-                    'lte' => Carbon::parse($dates[1])->format('Y-m-d'),
-                ]]];
-            }
-        }
-
-        $response = [];
-
-        foreach ($filters as $key => $config) {
-            if ($activeFilterKey && $key !== $activeFilterKey) continue;
-
-            $localMust = $must;
-
-            foreach ($filters as $filterKey => $filterDetails) {
-                if ($filterKey === $key) continue;
-                if ($request->has($filterKey) && is_array($request->input($filterKey))) {
-                    $localMust[] = ['terms' => [$filterDetails['column'] => $request->input($filterKey)]];
+            if ($request->has('buy_now')) {
+                $buyNow = $request->input('buy_now');
+                if ($buyNow === true || $buyNow === 'true') {
+                    $must[] = ['term' => ['buy_now_id' => BuyNow::where('name', 'buyNowWithPrice')->value('id')]];
+                } else {
+                    $must[] = ['terms' => ['buy_now_id' => BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->toArray()]];
                 }
             }
 
-            // Apply search on selected attribute
-            if (
-                $searchAttribute === $key &&
-                $searchValue &&
-                in_array($searchAttribute, $validListings)
-            ) {
-                // Get matching IDs from name search
-                $nameMatches = DB::table($config['table'])
-                    ->where('name', 'LIKE', "%{$searchValue}%")
-                    ->pluck('id')
-                    ->toArray();
-
-                $localMust[] = ['terms' => [$config['column'] => $nameMatches]];
+            if ($request->has(['year_from', 'year_to'])) {
+                $must[] = ['range' => ['year' => ['gte' => (int) $request->year_from, 'lte' => (int) $request->year_to]]];
             }
 
-            $params = [
-                'index' => $index,
-                'body' => [
-                    'size' => 0,
-                    'query' => ['bool' => ['must' => $localMust]],
-                    'aggs' => [
-                        $key => [
-                            'terms' => [
-                                'field' => $config['column'],
-                                'size' => 1000
+            if ($request->has(['odometer_min', 'odometer_max'])) {
+                $must[] = ['range' => ['odometer_mi' => [
+                    'gte' => (int) str_replace(',', '', $request->input('odometer_min')),
+                    'lte' => (int) str_replace(',', '', $request->input('odometer_max')),
+                ]]];
+            }
+
+            if ($request->has('auction_date')) {
+                $dates = $request->input('auction_date');
+                if (is_array($dates) && count($dates) === 2) {
+                    $must[] = ['range' => ['sale_date' => [
+                        'gte' => Carbon::parse($dates[0])->format('Y-m-d'),
+                        'lte' => Carbon::parse($dates[1])->format('Y-m-d'),
+                    ]]];
+                }
+            }
+
+            $response = [];
+
+            foreach ($filters as $key => $config) {
+                if ($activeFilterKey && $key !== $activeFilterKey) continue;
+
+                $localMust = $must;
+
+                foreach ($filters as $filterKey => $filterDetails) {
+                    if ($filterKey === $key) continue;
+                    if ($request->has($filterKey) && is_array($request->input($filterKey))) {
+                        $localMust[] = ['terms' => [$filterDetails['column'] => $request->input($filterKey)]];
+                    }
+                }
+
+                // Apply search on selected attribute
+                if (
+                    $searchAttribute === $key &&
+                    $searchValue &&
+                    in_array($searchAttribute, $validListings)
+                ) {
+                    // Get matching IDs from name search
+                    $nameMatches = DB::table($config['table'])
+                        ->where('name', 'LIKE', "%{$searchValue}%")
+                        ->pluck('id')
+                        ->toArray();
+
+                    $localMust[] = ['terms' => [$config['column'] => $nameMatches]];
+                }
+
+                $params = [
+                    'index' => $index,
+                    'body' => [
+                        'size' => 0,
+                        'query' => ['bool' => ['must' => $localMust]],
+                        'aggs' => [
+                            $key => [
+                                'terms' => [
+                                    'field' => $config['column'],
+                                    'size' => 1000
+                                ]
                             ]
                         ]
                     ]
-                ]
-            ];
-
-            $results = $client->search($params);
-            $buckets = $results['aggregations'][$key]['buckets'] ?? [];
-
-            $names = DB::table($config['table'])->pluck('name', 'id');
-
-            $response[$key] = collect($buckets)->map(function ($bucket) use ($names) {
-                return [
-                    'id' => $bucket['key'],
-                    'name' => $names[$bucket['key']] ?? 'unknown',
-                    'count' => $bucket['doc_count'],
                 ];
-            })->sortBy('name')->values();
-        }
 
-        if ($activeFilterKey) {
-            return sendResponse(true, 200, ucfirst(str_replace('_', ' ', $activeFilterKey)) . ' Fetched Successfully!', [
-                $activeFilterKey => $response[$activeFilterKey] ?? [],
-            ], 200);
-        }
+                $results = $client->search($params);
+                $buckets = $results['aggregations'][$key]['buckets'] ?? [];
 
-        return sendResponse(true, 200, 'Attributes Fetched Successfully!', $response, 200);
-    } catch (\Exception $ex) {
-        return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 500);
+                $names = DB::table($config['table'])->pluck('name', 'id');
+
+                $response[$key] = collect($buckets)->map(function ($bucket) use ($names) {
+                    return [
+                        'id' => $bucket['key'],
+                        'name' => $names[$bucket['key']] ?? 'unknown',
+                        'count' => $bucket['doc_count'],
+                    ];
+                })->sortBy('name')->values();
+            }
+
+            if ($activeFilterKey) {
+                return sendResponse(true, 200, ucfirst(str_replace('_', ' ', $activeFilterKey)) . ' Fetched Successfully!', [
+                    $activeFilterKey => $response[$activeFilterKey] ?? [],
+                ], 200);
+            }
+
+            return sendResponse(true, 200, 'Attributes Fetched Successfully!', $response, 200);
+        } catch (\Exception $ex) {
+            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 500);
+        }
     }
-}
 
 
     /**
