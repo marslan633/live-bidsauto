@@ -573,15 +573,19 @@ class VehicleController extends Controller
                 return sendResponse(false, 400, 'Bad Request', 'Invalid search type specified', 200);
             }
 
-            // Elasticsearch query
+            // Elasticsearch client
             $elasticsearch = app('Elasticsearch');
 
+            // Determine the field name for exact matching
+            $field = $type === 'vin' ? 'vin.keyword' : 'lot_id';
+
+            // Search in Elasticsearch
             $searchParams = [
                 'index' => $index,
                 'body' => [
                     'query' => [
                         'term' => [
-                            $type => [
+                            $field => [
                                 'value' => $id
                             ]
                         ]
@@ -594,17 +598,21 @@ class VehicleController extends Controller
             if (!empty($response['hits']['hits'])) {
                 $record = $response['hits']['hits'][0]['_source'];
 
-                // Optional: Load relations from MySQL if needed
+                // Fetch full record with relations from DB
                 $model = $data_source === 'archived' ? VehicleRecordArchived::class : VehicleRecord::class;
-                $fullRecord = $model::with([
+
+                $fullRecordQuery = $model::with([
                     'manufacturer', 'vehicleModel', 'generation', 'bodyType', 'color', 'engine',
                     'transmission', 'driveWheel', 'vehicleType', 'fuel', 'status', 'seller',
                     'sellerType', 'titleRelation', 'detailedTitle', 'damageMain', 'damageSecond',
                     'condition', 'image', 'country', 'state', 'city', 'location', 'sellingBranch', 'buyNowRelation',
-                ])->when(
-                    $data_source === 'archived' && filter_var($request->input('is_history', false), FILTER_VALIDATE_BOOLEAN),
-                    fn($q) => $q->with('saleHistories.domain', 'saleHistories.status', 'saleHistories.seller')
-                )->find($record['id']);
+                ]);
+
+                if ($data_source === 'archived' && filter_var($request->input('is_history', false), FILTER_VALIDATE_BOOLEAN)) {
+                    $fullRecordQuery->with('saleHistories.domain', 'saleHistories.status', 'saleHistories.seller');
+                }
+
+                $fullRecord = $fullRecordQuery->find($record['id']);
 
                 return sendResponse(true, 200, 'Car Detail Fetched Successfully!', $fullRecord, 200);
             }
