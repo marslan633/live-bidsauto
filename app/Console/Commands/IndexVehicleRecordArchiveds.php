@@ -3,10 +3,8 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Models\VehicleRecord;
 use App\Models\VehicleRecordArchived;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\App;
 
 
 class IndexVehicleRecordArchiveds extends Command

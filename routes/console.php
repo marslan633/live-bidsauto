@@ -44,7 +44,7 @@ if (config('app.app_kvm_three') === true) {
     //app(Schedule::class)->command('auction:restore-archived')->dailyAt('09:43')->withoutOverlapping();
 
     // app(Schedule::class)->command('index:vehicle-records')->dailyAt('11:32')->withoutOverlapping();
-    app(Schedule::class)->command('index:vehicle-record-archiveds')->dailyAt('11:10')->withoutOverlapping();
+    // app(Schedule::class)->command('index:vehicle-record-archiveds')->dailyAt('11:10')->withoutOverlapping();
 
 
     /**
