@@ -573,13 +573,11 @@ class VehicleController extends Controller
                 return sendResponse(false, 400, 'Bad Request', 'Invalid search type specified', 200);
             }
 
-            // Elasticsearch client
             $elasticsearch = app('Elasticsearch');
 
-            // Determine the field name for exact matching
+            // Use vin.keyword for exact match, lot_id as-is
             $field = $type === 'vin' ? 'vin.keyword' : 'lot_id';
 
-            // Search in Elasticsearch
             $searchParams = [
                 'index' => $index,
                 'body' => [
@@ -598,7 +596,6 @@ class VehicleController extends Controller
             if (!empty($response['hits']['hits'])) {
                 $record = $response['hits']['hits'][0]['_source'];
 
-                // Fetch full record with relations from DB
                 $model = $data_source === 'archived' ? VehicleRecordArchived::class : VehicleRecord::class;
 
                 $fullRecordQuery = $model::with([
@@ -622,6 +619,7 @@ class VehicleController extends Controller
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }
     }
+
 
     /**
      * Search vehicle information records throught lot_id or vin.
