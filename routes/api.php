@@ -105,9 +105,9 @@ Route::get('get-redis-key', function(Request $request){
 
 Route::get('uncompressed-data',[VehicleController::class, 'getUncompressData']);
 
+Route::get('/cron-run-histories', [CronRunHistoryController::class, 'index']);
 Route::post('/cron-run-histories', [CronRunHistoryController::class, 'store']);
 Route::put('/cron-run-histories/{id}', [CronRunHistoryController::class, 'update']);
-
 
 // Route::delete('/vehicle-record/{id}', [VehicleController::class, 'destroy']);
 Route::get('/get-vehicles-for-database', [VehicleController::class, 'getVechiclesForDatabase']);

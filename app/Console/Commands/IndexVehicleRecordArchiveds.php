@@ -17,19 +17,31 @@ class IndexVehicleRecordArchiveds extends Command
     $this->info('🚀 Indexing vehicle_record_archiveds started...');
 
     $elasticsearch = app('Elasticsearch');
-    $last30Minutes = Carbon::now()->subMinutes(30);
+    $minutes = intval(config('app.elastic_store_time'));
+    $last30Minutes = Carbon::now()->subMinutes($minutes);
 
-    VehicleRecordArchived::where('updated_at', '>=', $last30Minutes)
-        ->chunk(500, function ($vehicles) use ($elasticsearch) {
-            foreach ($vehicles as $vehicle) {
-                $elasticsearch->index([
-                    'index' => 'vehicle_record_archiveds',
-                    'id' => $vehicle->id,
-                    'body' => $vehicle->toArray(),
-                ]);
-            }
-        });
-
+    if(config('app.is_full_fetch') == true){
+        VehicleRecordArchived::chunk(500, function ($vehicles) use ($elasticsearch) {
+                foreach ($vehicles as $vehicle) {
+                    $elasticsearch->index([
+                        'index' => 'vehicle_record_archiveds',
+                        'id' => $vehicle->id,
+                        'body' => $vehicle->toArray(),
+                    ]);
+                }
+            });
+    }else{
+        VehicleRecordArchived::where('updated_at', '>=', $last30Minutes)
+            ->chunk(500, function ($vehicles) use ($elasticsearch) {
+                foreach ($vehicles as $vehicle) {
+                    $elasticsearch->index([
+                        'index' => 'vehicle_record_archiveds',
+                        'id' => $vehicle->id,
+                        'body' => $vehicle->toArray(),
+                    ]);
+                }
+            });
+    }
     $this->info('✅ Indexing vehicle_record_archiveds completed!');
 }
 
