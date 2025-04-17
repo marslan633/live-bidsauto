@@ -59,12 +59,12 @@ class IndexVehicleRecordArchiveds extends Command
         ]);
 
         if ($cronRunResponse->successful()) {
-            Log::info('STORE VEHICLES TO ELASTICSEARCH CREATED');
+            Log::info('STORE VEHICLE ARCHIVEDS TO ELASTICSEARCH CREATED');
             // Handle the successful API cronRunResponse
             $cronRun = $cronRunResponse->json()['id'] ?? null; // You can process the data as needed
             // Optionally, you can update the cron record with the API response or status
         } else {
-            Log::info('Error: STORE VEHICLES TO ELASTICSEARCH CREATED');
+            Log::info('Error: STORE VEHICLE ARCHIVEDS TO ELASTICSEARCH CREATED');
         }
 
     }catch(\Exception $e){
@@ -108,9 +108,9 @@ class IndexVehicleRecordArchiveds extends Command
         ]);
 
         if ($cronRunUpdateResponse->successful()) {
-            Log::info('STORE VEHICLES TO ELASTICSEARCH CREATED');
+            Log::info('STORE VEHICLE ARCHIVEDS TO ELASTICSEARCH CREATED');
         } else {
-            Log::info('ERROR: STORE VEHICLES TO ELASTICSEARCH CREATED');
+            Log::info('ERROR: STORE VEHICLE ARCHIVEDS TO ELASTICSEARCH CREATED');
 
 
         }
