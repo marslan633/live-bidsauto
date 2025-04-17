@@ -38,8 +38,8 @@ class IndexVehicleRecords extends Command
 
         if ($cronRunResponse->successful()) {
             $lastCron = $cronRunResponse->json();
-            if ($lastCron && $lastCron->end_time) {
-                $endTime = Carbon::parse($lastCron->end_time);
+            if ($lastCron && $lastCron['end_time']) {
+                $endTime = Carbon::parse($lastCron['end_time']);
                 $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
 
                 if ($timeDifference > 20) {
