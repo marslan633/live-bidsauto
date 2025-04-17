@@ -16,7 +16,7 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::get('/get-cron-run-histories', [CronRunHistoryController::class, 'getCronRunHistory']);
+Route::get('/get-cron-histroy', [CronRunHistoryController::class, 'getCronRunHistory']);
 
 
 Route::prefix('vehicles')->group(function () {
