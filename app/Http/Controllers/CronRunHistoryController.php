@@ -8,17 +8,19 @@ use App\Models\VehicleProcessCachedApiData;
 class CronRunHistoryController extends Controller
 {
 
-    public function getRecords(){
-       return response()->json(VehicleProcessCachedApiData::orderBy('created_at', 'asc')->limit(100)->get());
-    }
-
-    public function index(Request $request)
+    public function getCronRunHistory(Request $request)
     {
         return CronRunHistory::where('cron_name', $request->name)
             ->where('status', 'success')
             ->latest('start_time')
             ->first();
     }
+
+    public function getRecords(){
+       return response()->json(VehicleProcessCachedApiData::orderBy('created_at', 'asc')->limit(100)->get());
+    }
+
+
 
     /**
      * Store a new cron run history.
