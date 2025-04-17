@@ -66,7 +66,7 @@ class IndexVehicleRecords extends Command
         }
 
     }catch(\Exception $e){
-        Log::info("Error: STORE VEHICLES TO ELASTICSEARCH: ");
+        Log::info("Error: STORE VEHICLES TO ELASTICSEARCH: ", ['error' => $e->getMessage()]);
         return;
     }
 
