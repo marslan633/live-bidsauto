@@ -32,12 +32,11 @@ class IndexVehicleRecordArchiveds extends Command
      $cronRun = null;
 
      $url = config('app.cron_history_api_url') . '/cron-run-histories';
-     $apiUrl = config('app.cron_history_api_url') . '/get-vehicles-for-database';
 
 
      try{
         // Remote Connection to KVM4.1
-        $cronRunResponse = Http::timeout(120)->retry(3, 1000)->get(config('app.cron_history_api_url') . '/get-cron-run-histories?name=process_vehicle_archiveds_to_elasticsearch');
+        $cronRunResponse = Http::timeout(120)->retry(3, 1000)->get(config('app.cron_history_api_url') . '/cron-run-histories?name=process_vehicle_archiveds_to_elasticsearch');
 
         if ($cronRunResponse->successful()) {
             $lastCron = $cronRunResponse->json();

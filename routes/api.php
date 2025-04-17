@@ -16,9 +16,6 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::get('/get-cron-histroy', [CronRunHistoryController::class, 'getCronRunHistory']);
-
-
 Route::prefix('vehicles')->group(function () {
     Route::post('/', [VehicleController::class, 'vehicleInformations']);
     Route::get('/{id}', [VehicleController::class, 'searchVehicle']);
@@ -108,6 +105,7 @@ Route::get('get-redis-key', function(Request $request){
 
 Route::get('uncompressed-data',[VehicleController::class, 'getUncompressData']);
 
+Route::get('/cron-run-histories', [CronRunHistoryController::class, 'index']);
 Route::post('/cron-run-histories', [CronRunHistoryController::class, 'store']);
 Route::put('/cron-run-histories/{id}', [CronRunHistoryController::class, 'update']);
 

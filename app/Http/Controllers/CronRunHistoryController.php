@@ -8,7 +8,7 @@ use App\Models\VehicleProcessCachedApiData;
 class CronRunHistoryController extends Controller
 {
 
-    public function getCronRunHistory(Request $request)
+    public function index(Request $request)
     {
         return CronRunHistory::where('cron_name', $request->name)
             ->where('status', 'success')
