@@ -34,7 +34,7 @@ class IndexVehicleRecords extends Command
 
      try{
         // Remote Connection to KVM4.1
-        $cronRunResponse = Http::timeout(120)->retry(3, 1000)->get(config('app.cron_history_api_url') . '/cron-run-histories?name=process_vehicles_to_elasticsearch');
+        $cronRunResponse = Http::timeout(120)->retry(3, 1000)->get($url .'?name=process_vehicles_to_elasticsearch');
 
         if ($cronRunResponse->successful()) {
             $lastCron = $cronRunResponse->json();
