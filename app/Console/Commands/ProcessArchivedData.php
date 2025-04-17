@@ -67,11 +67,11 @@ class ProcessArchivedData extends Command
         // }
 
             // Apply the new conditions
-            if ($timeDifference > 20) {
-                $minutes += $timeDifference + 10;
-            } elseif ($timeDifference === 20) {
-                $minutes += $timeDifference + 5;
-            }
+            // if ($timeDifference > 20) {
+            //     $minutes += $timeDifference + 10;
+            // } elseif ($timeDifference === 20) {
+            //     $minutes += $timeDifference + 5;
+            // }
         }
 
         // if(config('app.env') !== 'production'){
