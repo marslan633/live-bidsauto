@@ -68,9 +68,7 @@ class IndexVehicleRecordArchiveds extends Command
         }
 
     }catch(\Exception $e){
-        // if($cronRun !== null){
-            $this->handleCronError($cronRun, "Error: STORE VEHICLES TO ELASTICSEARCH: " . $e->getMessage());
-        // }
+        Log::info("Error: STORE VEHICLES TO ELASTICSEARCH: ");
         return;
     }
 

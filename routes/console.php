@@ -41,16 +41,16 @@ if (config('app.app_kvm_three') === true) {
      */
     // app(Schedule::class)->command('process:process-cached-data-to-databases-without-queue')->everyTenMinutes()->withoutOverlapping();
 
+     /**
+    * Cron Job - Update the data (bid, final_bid_updated_at, status) of archived vehicle table on the base of third party api.
+    */
+    // app(Schedule::class)->command('process:cached-archived-data-to-database-without-queue')->everyTenMinutes()->withoutOverlapping();
+
     //app(Schedule::class)->command('auction:restore-archived')->dailyAt('09:43')->withoutOverlapping();
 
     // app(Schedule::class)->command('index:vehicle-records')->dailyAt('11:50')->withoutOverlapping();
     // app(Schedule::class)->command('index:vehicle-record-archiveds')->dailyAt('11:10')->withoutOverlapping();
 
-
-    /**
-    * Cron Job - Update the data (bid, final_bid_updated_at, status) of archived vehicle table on the base of third party api.
-    */
-    // app(Schedule::class)->command('process:cached-archived-data-to-database-without-queue')->everyTenMinutes()->withoutOverlapping();
 
     /**
      * Cron Job - Move expired auctions from VehicleRecord to VehicleRecordArchived table.
