@@ -25,7 +25,6 @@ class IndexVehicleRecords extends Command
 
      // Only fetch records updated in the last 30 minutes
      $minutes = intval(config('app.elastic_store_time'));
-     $minutes = Carbon::now()->subMinutes($minutes);
 
 
      $cronRun = null;
@@ -69,6 +68,8 @@ class IndexVehicleRecords extends Command
         Log::info("Error: STORE VEHICLES TO ELASTICSEARCH: ", ['error' => $e->getMessage()]);
         return;
     }
+
+    $minutes = Carbon::now()->subMinutes($minutes);
 
     if(config('app.is_full_fetch') == true){
          VehicleRecord::chunk(500, function ($vehicles) use ($elasticsearch) {
