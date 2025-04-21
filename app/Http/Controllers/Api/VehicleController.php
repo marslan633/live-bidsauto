@@ -291,8 +291,8 @@ class VehicleController extends Controller
 
             // Buy Now Filter
             if ($request->has('buy_now')) {
-                $buyNow = $request->input('buy_now');
-                if ($buyNow === true || $buyNow === 'true' || $buyNow === 1 || $buyNow === '1') {
+                $buyNow = filter_var($request->input('buy_now'), FILTER_VALIDATE_BOOLEAN);
+                if ($buyNow) {
                     $buyNowId = BuyNow::where('name', 'buyNowWithPrice')->value('id');
                     $must[] = ['term' => ['buy_now_id' => (int) $buyNowId]];
                 } else {
