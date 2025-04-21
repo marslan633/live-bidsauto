@@ -426,24 +426,32 @@ class VehicleController extends Controller
         if ($request->has('buy_now')) {
             $buyNow = $request->input('buy_now');
             if ($buyNow === true || $buyNow === 'true' || $buyNow === 1 || $buyNow === '1') {
-                // Consider buy_now_id > 1 as true
+                // Consider buy_now_id >= 1 as true
                 $must[] = [
                     'script' => [
                         'script' => [
-                            'source' => "doc.containsKey('buy_now_id') && !doc['buy_now_id'].empty && doc['buy_now_id'].value > 1",
+                            'source' => "
+                                if (!doc.containsKey('buy_now_id') || doc['buy_now_id'].empty) return false;
+                                def val = doc['buy_now_id'].value;
+                                return val >= 1;
+                            ",
                             'lang' => 'painless'
                         ]
                     ]
                 ];
             } else {
-                // Consider buy_now_id <= 1 or null as false
+                // Consider buy_now_id < 1 or null as false
                 $must[] = [
                     'bool' => [
                         'should' => [
                             [
                                 'script' => [
                                     'script' => [
-                                        'source' => "doc.containsKey('buy_now_id') && !doc['buy_now_id'].empty && doc['buy_now_id'].value <= 1",
+                                        'source' => "
+                                            if (!doc.containsKey('buy_now_id') || doc['buy_now_id'].empty) return true;
+                                            def val = doc['buy_now_id'].value;
+                                            return val < 1;
+                                        ",
                                         'lang' => 'painless'
                                     ]
                                 ]
@@ -561,6 +569,7 @@ class VehicleController extends Controller
         return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 500);
     }
 }
+
 
 
     /**
