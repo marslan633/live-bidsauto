@@ -294,10 +294,10 @@ class VehicleController extends Controller
                 $buyNow = $request->input('buy_now');
                 if ($buyNow === true || $buyNow === 'true' || $buyNow === 1 || $buyNow === '1') {
                     $buyNowId = BuyNow::where('name', 'buyNowWithPrice')->value('id');
-                    $must[] = ['term' => ['buy_now' => (int) $buyNowId]];
+                    $must[] = ['term' => ['buy_now_id' => (int) $buyNowId]];
                 } else {
                     $buyNowIds = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->map(fn($i) => (int) $i)->toArray();
-                    $must[] = ['terms' => ['buy_now' => $buyNowIds]];
+                    $must[] = ['terms' => ['buy_now_id' => $buyNowIds]];
                 }
             }
 
