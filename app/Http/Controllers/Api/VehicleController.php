@@ -294,46 +294,10 @@ class VehicleController extends Controller
                 $buyNow = $request->input('buy_now');
                 if ($buyNow === true || $buyNow === 'true' || $buyNow === 1 || $buyNow === '1') {
                     $buyNowId = BuyNow::where('name', 'buyNowWithPrice')->value('id');
-                    // $must[] = ['term' => ['buy_now_id' => (int) $buyNowId]];
-                    $must[] = [
-                        'range' => [
-                            'buy_now' => [
-                                'gte' => 1
-                            ]
-                        ]
-                    ];
+                    $must[] = ['term' => ['buy_now_id' => (int) $buyNowId]];
                 } else {
                     $buyNowIds = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->map(fn($i) => (int) $i)->toArray();
-                    // $must[] = ['terms' => ['buy_now_id' => $buyNowIds]];
-                    $must[] = [
-                        'bool' => [
-                            'should' => [
-                                [
-                                    'range' => [
-                                        'buy_now' => [
-                                            'gt' => 0
-                                        ]
-                                    ]
-                                ],
-                                [
-                                    'term' => [
-                                        'buy_now' => 0
-                                    ]
-                                ],
-                                [
-                                    'bool' => [
-                                        'must_not' => [
-                                            'exists' => [
-                                                'field' => 'buy_now'
-                                            ]
-                                        ]
-                                    ]
-                                ]
-                            ],
-                            'minimum_should_match' => 1
-                        ]
-                    ];
-
+                    $must[] = ['terms' => ['buy_now_id' => $buyNowIds]];
                 }
             }
 
@@ -910,43 +874,8 @@ class VehicleController extends Controller
                 $buyNow = $request->input('buy_now');
                 if ($buyNow === true || $buyNow === 'true') {
                     $must[] = ['term' => ['buy_now_id' => BuyNow::where('name', 'buyNowWithPrice')->value('id')]];
-                    // $must[] = [
-                    //     'range' => [
-                    //         'buy_now' => [
-                    //             'gte' => 1
-                    //         ]
-                    //     ]
-                    // ];
                 } else {
                     $must[] = ['terms' => ['buy_now_id' => BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->toArray()]];
-                    // $must[] = [
-                    //     'bool' => [
-                    //         'should' => [
-                    //             [
-                    //                 'range' => [
-                    //                     'buy_now' => [
-                    //                         'gt' => 0
-                    //                     ]
-                    //                 ]
-                    //             ],
-                    //             [
-                    //                 'term' => [
-                    //                     'buy_now' => 0
-                    //                 ]
-                    //             ],
-                    //             [
-                    //                 'bool' => [
-                    //                     'must_not' => [
-                    //                         'exists' => [
-                    //                             'field' => 'buy_now'
-                    //                         ]
-                    //                     ]
-                    //                 ]
-                    //             ]
-                    //         ],
-                    //         'minimum_should_match' => 1
-                    //     ]
-                    // ];
                 }
             }
 
