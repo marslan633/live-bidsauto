@@ -94,7 +94,6 @@ class VehicleController extends Controller
         }
     }
 
-
     public function vehicleInformationsWithFilters(Request $request)
     {
         try {
@@ -333,7 +332,6 @@ class VehicleController extends Controller
                             'minimum_should_match' => 1
                         ]
                     ];
-
                 }
             }
 
@@ -436,7 +434,6 @@ class VehicleController extends Controller
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 500);
         }
     }
-
 
     /**
      * Fetch Cars Information API.
@@ -741,8 +738,6 @@ class VehicleController extends Controller
         }
     }
 
-
-
     public function onefilterAttributes(Request $request)
     {
         try {
@@ -909,9 +904,44 @@ class VehicleController extends Controller
             if ($request->has('buy_now')) {
                 $buyNow = $request->input('buy_now');
                 if ($buyNow === true || $buyNow === 'true') {
-                    $must[] = ['term' => ['buy_now_id' => BuyNow::where('name', 'buyNowWithPrice')->value('id')]];
+                    // $must[] = ['term' => ['buy_now_id' => BuyNow::where('name', 'buyNowWithPrice')->value('id')]];
+                    $must[] = [
+                        'range' => [
+                            'buy_now' => [
+                                'gte' => 1
+                            ]
+                        ]
+                    ];
                 } else {
-                    $must[] = ['terms' => ['buy_now_id' => BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->toArray()]];
+                    // $must[] = ['terms' => ['buy_now_id' => BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->toArray()]];
+                    $must[] = [
+                        'bool' => [
+                            'should' => [
+                                [
+                                    'range' => [
+                                        'buy_now' => [
+                                            'gt' => 0
+                                        ]
+                                    ]
+                                ],
+                                [
+                                    'term' => [
+                                        'buy_now' => 0
+                                    ]
+                                ],
+                                [
+                                    'bool' => [
+                                        'must_not' => [
+                                            'exists' => [
+                                                'field' => 'buy_now'
+                                            ]
+                                        ]
+                                    ]
+                                ]
+                            ],
+                            'minimum_should_match' => 1
+                        ]
+                    ];
                 }
             }
 
