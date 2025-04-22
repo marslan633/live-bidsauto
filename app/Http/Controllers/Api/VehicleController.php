@@ -311,8 +311,13 @@ class VehicleController extends Controller
                                 [
                                     'range' => [
                                         'buy_now' => [
-                                            'lt' => 1
+                                            'gt' => 0
                                         ]
+                                    ]
+                                ],
+                                [
+                                    'term' => [
+                                        'buy_now' => 0
                                     ]
                                 ],
                                 [
@@ -328,6 +333,7 @@ class VehicleController extends Controller
                             'minimum_should_match' => 1
                         ]
                     ];
+
                 }
             }
 
