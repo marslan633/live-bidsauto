@@ -912,7 +912,7 @@ class VehicleController extends Controller
                     // $must[] = ['term' => ['buy_now' => BuyNow::where('name', 'buyNowWithPrice')->value('id')]];
                     $must[] = [
                         'range' => [
-                            'buy_now_id' => [
+                            'buy_now' => [
                                 'gt' => 0
                             ]
                         ]
