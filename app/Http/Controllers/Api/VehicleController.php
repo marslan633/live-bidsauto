@@ -918,13 +918,6 @@ class VehicleController extends Controller
                         'bool' => [
                             'should' => [
                                 [
-                                    'range' => [
-                                        'buy_now' => [
-                                            'gt' => 0
-                                        ]
-                                    ]
-                                ],
-                                [
                                     'term' => [
                                         'buy_now' => 0
                                     ]
@@ -1036,7 +1029,6 @@ class VehicleController extends Controller
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 500);
         }
     }
-
 
     /**
      * Filter Attributes and Manage Counts API.
