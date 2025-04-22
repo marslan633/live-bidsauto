@@ -903,7 +903,7 @@ class VehicleController extends Controller
 
             if ($request->has('buy_now')) {
                 $buyNow = $request->input('buy_now');
-                if ($buyNow === true || $buyNow === 'true') {
+                if ($buyNow === true || $buyNow === 'true' || $buyNow === 1 || $buyNow === '1') {
                     // $must[] = ['term' => ['buy_now_id' => BuyNow::where('name', 'buyNowWithPrice')->value('id')]];
                     $must[] = [
                         'range' => [
