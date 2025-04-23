@@ -14,9 +14,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Bus\Batchable;
 
-class ProcessCachedDataToDatabaseJob implements ShouldQueue, Batchable
+class ProcessCachedDataToDatabaseJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
     protected $cacheKey;
 
 
