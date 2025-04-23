@@ -240,12 +240,11 @@ function processLotData($lot)
     $lotConveredData = [];
 
 
-    if ($buyNowValue === 0 || is_null($buyNowValue)) {
+    if ($buyNowValue == 0 || is_null($buyNowValue)) {
         $lotConveredData['buy_now']  = 'buyNowWithoutPrice';
     } elseif (is_numeric($buyNowValue) && $buyNowValue > 0) {
         $lotConveredData['buy_now']  = 'buyNowWithPrice';
     }
-
 
     // $lotConveredData['new_domain'] = isset($lot['domain'])
     // ?
@@ -449,7 +448,6 @@ function processLotData($lot)
     $lotConvertedData['sale_date_updated_at'] = $lot['sale_date_updated_at'] ?? null;
     $lotConvertedData['bid'] = $lot['bid'] ?? null;
     $lotConvertedData['bid_updated_at'] = $lot['bid_updated_at'] ?? null;
-    $lotConvertedData['buy_now'] = $lot['buy_now'] ?? null;
     $lotConvertedData['buy_now_updated_at'] = $lot['buy_now_updated_at'] ?? null;
     $lotConvertedData['final_bid'] = $lot['final_bid'] ?? null;
     $lotConvertedData['final_bid_updated_at'] = $lot['final_bid_updated_at'] ?? null;

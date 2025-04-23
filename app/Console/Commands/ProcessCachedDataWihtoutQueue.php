@@ -47,8 +47,6 @@ class ProcessCachedDataWihtoutQueue extends Command
                 'updated_at' => now(),
             ])->_id;
 
-
-
             $cacheKeys = VehicleApiData::orderBy('created_at', 'desc')->limit(100)->get();
             if (count($cacheKeys) == 0) {
                 $this->info("No pending cache keys found.");
@@ -75,8 +73,9 @@ class ProcessCachedDataWihtoutQueue extends Command
                 }
 
                 $processDataForCache = [];
-                foreach ($data as $car) {
+                foreach ($data as $key =>  $car) {
                     $processedCar = convertAndStoreDataToRedis($car);
+                    Log::info('Processed Card Data ' . $key, ['processedCar' => json_encode($car)]);
                     $processDataForCache[] = $processedCar;
                 }
 
