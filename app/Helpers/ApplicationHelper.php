@@ -237,13 +237,13 @@ function processLotData($lot)
     // Determine buy_now_id based on buy_now value
     $buyNowValue = $lot['buy_now'] ?? null;
 
-    $lotConveredData = [];
+    $lotConvertedData = [];
 
 
     if ($buyNowValue == 0 || is_null($buyNowValue)) {
-        $lotConveredData['buy_now']  = 'buyNowWithoutPrice';
+        $lotConvertedData['buy_now']  = 'buyNowWithoutPrice';
     } elseif (is_numeric($buyNowValue) && $buyNowValue > 0) {
-        $lotConveredData['buy_now']  = 'buyNowWithPrice';
+        $lotConvertedData['buy_now']  = 'buyNowWithPrice';
     }
 
     // $lotConveredData['new_domain'] = isset($lot['domain'])
