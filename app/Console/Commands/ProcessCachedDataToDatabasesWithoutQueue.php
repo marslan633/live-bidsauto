@@ -550,27 +550,27 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
             }
 
             // ✅ Bulk Insert New Records
-            // if (!empty($newRecords)) {
-            //     DB::table('vehicle_records')->insert($newRecords);
-            // }
-
-            // // ✅ Bulk Update Existing Records
-            // if (!empty($updatedRecords)) {
-            //     foreach($updatedRecords as $item){
-            //         DB::table('vehicle_records')->where('id', $item['id'])->update($item);
-            //     }
-            //     // DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
-            // }
-
-
-            if (!empty($newRecords) || !empty($updatedRecords)) {
-                $mergedRecords = array_merge($newRecords, $updatedRecords);
-                DB::table('vehicle_records')->upsert(
-                    $mergedRecords,
-                    ['api_id'], // Unique key to determine insert or update
-                    array_keys($mergedRecords[0]) // Columns to update if exists
-                );
+            if (!empty($newRecords)) {
+                DB::table('vehicle_records')->insert($newRecords);
             }
+
+            // ✅ Bulk Update Existing Records
+            if (!empty($updatedRecords)) {
+                foreach($updatedRecords as $item){
+                    DB::table('vehicle_records')->where('id', $item['id'])->update($item);
+                }
+                // DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
+            }
+
+
+            // if (!empty($newRecords) || !empty($updatedRecords)) {
+            //     $mergedRecords = array_merge($newRecords, $updatedRecords);
+            //     DB::table('vehicle_records')->upsert(
+            //         $mergedRecords,
+            //         ['api_id'], // Unique key to determine insert or update
+            //         array_keys($mergedRecords[0]) // Columns to update if exists
+            //     );
+            // }
 
             $url = config('app.cron_history_api_url') . "/delete-my-vehicle/$cacheKey";
             $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->post($url, [
