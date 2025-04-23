@@ -8,6 +8,7 @@ use App\Models\{
 };
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 function sendResponse($status, $status_code, $message, $data, $code){
     return response()->json([
@@ -227,6 +228,8 @@ function convertAndStoreDataToRedis(array $car)
             ];
 
     return $convertedData;
+    Log::info('Converted Data', ['data' => $convertedData['buy_now']]);
+
 }
 
 
@@ -245,7 +248,7 @@ function processLotData($lot)
     } elseif (is_numeric($buyNowValue) && $buyNowValue > 0) {
         $lotConvertedData['buy_now']  = 'buyNowWithPrice';
     }
-
+    Log::info('ProcessLotData', ['data' => $lotConvertedData['buy_now']]);
     // $lotConveredData['new_domain'] = isset($lot['domain'])
     // ?
     //     [

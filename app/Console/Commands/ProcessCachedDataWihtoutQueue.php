@@ -73,9 +73,8 @@ class ProcessCachedDataWihtoutQueue extends Command
                 }
 
                 $processDataForCache = [];
-                foreach ($data as $key =>  $car) {
+                foreach ($data as $car) {
                     $processedCar = convertAndStoreDataToRedis($car);
-                    Log::info('Processed Card Data ' . $key, ['processedCar' => json_encode($car)]);
                     $processDataForCache[] = $processedCar;
                 }
 
