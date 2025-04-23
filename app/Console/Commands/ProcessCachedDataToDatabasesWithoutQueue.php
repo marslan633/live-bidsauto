@@ -442,7 +442,6 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                 ])
             : null;
 
-        Log::info('Buy now', ['data' => $car['vehicle_record']['buy_now']]);
 
         $data = [
             'manufacturer_id' => $manufacturer_id,
@@ -478,7 +477,7 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
             'sale_date_updated_at' => $car['vehicle_record']['sale_date_updated_at'] ?? null,
             'bid' => $car['vehicle_record']['bid'] ?? null,
             'bid_updated_at' => $car['vehicle_record']['bid_updated_at'] ?? null,
-            'buy_now' => $car['vehicle_record']['buy_now'] ?? null,
+            'buy_now' => $car['buy_now'] ?? null,
             'buy_now_updated_at' => $car['vehicle_record']['buy_now_updated_at'] ?? null,
             'final_bid' => $car['vehicle_record']['final_bid'] ?? null,
             'final_bid_updated_at' => $car['vehicle_record']['final_bid_updated_at'] ?? null,

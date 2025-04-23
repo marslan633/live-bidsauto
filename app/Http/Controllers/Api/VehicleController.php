@@ -401,7 +401,6 @@ class VehicleController extends Controller
         }
     }
 
-
     /**
      * Fetch Cars Information API.
      */
