@@ -78,7 +78,6 @@ class ProcessCachedDataWihtoutQueue extends Command
                     $processDataForCache[] = $processedCar;
                 }
 
-                Log::info('ComporessData',['compress', compressData($processDataForCache[0])]);
                 VehicleProcessCachedApiData::insert([
                     'cache_value' => compressData($processDataForCache),
                     'created_at' => now(),

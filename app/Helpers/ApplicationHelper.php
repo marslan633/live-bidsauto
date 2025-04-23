@@ -227,8 +227,8 @@ function convertAndStoreDataToRedis(array $car)
                 'name' => $unknownName
             ];
 
-    return $convertedData;
     Log::info('Converted Data', ['data' => $convertedData['buy_now']]);
+    return $convertedData;
 
 }
 
