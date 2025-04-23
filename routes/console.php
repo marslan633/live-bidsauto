@@ -27,7 +27,7 @@ if (config('app.app_kvm_one') === true) {
     //     // Log the failure of process:api-data
     //     Log::error('process:api-data failed.');
     // });
-    app(Schedule::class)->command('process:api-data')->dailyAt('12:20')->withoutOverlapping();
+    app(Schedule::class)->command('process:api-data')->dailyAt('07:15')->withoutOverlapping();
     app(Schedule::class)->command('process:cached-data-without-queue')->everyFiveMinutes()->withoutOverlapping();
 
     // app(Schedule::class)->command('process:archived-data')->everyFifteenMinutes()->withoutOverlapping();
@@ -39,7 +39,7 @@ if (config('app.app_kvm_three') === true) {
     /**
      * Cron Job - Process Vehicle Data from kvm4.2 redis cache and populate it into kvm4.3 Mysql.
      */
-    app(Schedule::class)->command('process:process-cached-data-to-databases-without-queue')->everyTenMinutes()->withoutOverlapping();
+    app(Schedule::class)->command('process:process-cached-data-to-databases')->everyTenMinutes()->withoutOverlapping();
 
 
     // app(Schedule::class)->command('index:vehicle-records')->dailyAt('11:50')->withoutOverlapping();
