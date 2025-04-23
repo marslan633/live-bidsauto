@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use App\Jobs\ProcessCachedDataToDatabaseJob;
 use Illuminate\Console\Command;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\{Http, Mail, Log};
+use Illuminate\Support\Facades\{Bus, Http, Mail, Log};
 use App\Mail\CronJobFailedMail;
 
 class ProcessCachedDataToDatabases extends Command
@@ -84,12 +84,12 @@ class ProcessCachedDataToDatabases extends Command
 
         // **Batch processing setup**
         // Initialize an empty array to hold the jobs
-        collect($data)->chunk(100)->each(function ($chunk) {
-            foreach ($chunk as $item) {
-                // Dispatch a job for each item in the chunk
-                ProcessCachedDataToDatabaseJob::dispatch((object)$item);
-            }
-        });
+        $batchJobs = collect($data)->chunk(100);
+        $batch = Bus::batch([])->dispatch();
+
+        foreach ($batchJobs as $chunk) {
+            $batch->add(new ProcessCachedDataToDatabaseJob($chunk));
+        }
 
         if($cronRun){
 
