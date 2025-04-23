@@ -441,7 +441,8 @@ class ProcessCachedDataToDatabasesWithoutQueue extends Command
                     'raw' => $car['vehicle_record']['locationRecord']['raw'] ?? '{}'
                 ])
             : null;
-            // Log::info('Location', ['data' => $location_id]);
+
+        Log::info('Buy now', ['data' => $car['vehicle_record']['buy_now']]);
 
         $data = [
             'manufacturer_id' => $manufacturer_id,
