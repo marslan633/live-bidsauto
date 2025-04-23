@@ -12,13 +12,11 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Bus\Batchable;
 
 class ProcessCachedDataToDatabaseJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
     protected $cacheKey;
-
 
     /**
      * Create a new job instance.
