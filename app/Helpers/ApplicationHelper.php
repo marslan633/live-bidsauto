@@ -241,11 +241,10 @@ function processLotData($lot)
 
     $lotConvertedData = [];
 
-
     if ($buyNowValue == 0 || is_null($buyNowValue)) {
-        $lotConvertedData['buy_now']  = 'buyNowWithoutPrice';
+        $lotConvertedData['buy_now_db']  = 1; // buyNowWithoutPrice;
     } elseif (is_numeric($buyNowValue) && $buyNowValue > 0) {
-        $lotConvertedData['buy_now']  = 'buyNowWithPrice';
+        $lotConvertedData['buy_now_db']  = 2; // buyNowWithPrice
     }
     Log::info('ProcessLotData', ['data' => $lotConvertedData['buy_now']]);
     // $lotConveredData['new_domain'] = isset($lot['domain'])
