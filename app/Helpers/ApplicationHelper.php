@@ -240,6 +240,7 @@ function processLotData($lot)
     $buyNowValue = $lot['buy_now'] ?? null;
 
     $lotConvertedData = [];
+    $lotConvertedData['buy_now'] = $lot['buy_now'] ?? null;
 
     if ($buyNowValue == 0 || is_null($buyNowValue)) {
         $lotConvertedData['buy_now_db']  = 1; // buyNowWithoutPrice;
