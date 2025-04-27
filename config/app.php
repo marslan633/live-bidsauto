@@ -19,6 +19,7 @@ return [
     'app_kvm_one' => env('APP_KVM_ONE', false),
     'app_kvm_two' => env('APP_KVM_TWO', false),
     'app_kvm_three' => env('APP_KVM_THREE', false),
+    'app_kvm_four' => env('APP_KVM_FOUR', false),
     'is_full_fetch' => env('IS_FULL_FETCH', false),
     'is_kvm_two' => env('IS_KVM_TWO', false),
     'batch_size' => env('BATCH_SIZE', 1000),
