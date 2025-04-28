@@ -77,7 +77,7 @@ class ProcessCachedDataWihtoutQueue extends Command
                     $processedCar = convertAndStoreDataToRedis($car);
                     $processDataForCache[] = $processedCar;
                 }
-
+                Log::info('Count', ['processDataForCache' => count($processDataForCache)]);
                 VehicleProcessCachedApiData::insert([
                     'cache_value' => compressData($processDataForCache),
                     'created_at' => now(),
