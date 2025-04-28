@@ -67,7 +67,7 @@ class ProcessCachedDataToDatabases extends Command
                 Log::info('Error: PROCESS CACHED DATA TO DATABASE CREATED FETCH API');
                 return;
             }
-            $data = $response->json()['data']['data'] ?? [];
+            $data = $response->json()['data'] ?? [];
 
             if (count($data) == 0) {
                 $this->info("No Data Pending to process");
