@@ -34,7 +34,7 @@ if (config('app.app_kvm_one') === true) {
 
 }
 
-if (config('app.app_kvm_three') === true) {
+if (config('app.app_kvm_four') === true) {
 
     app(Schedule::class)->command('index:vehicle-records')->everyFiveMinutes()->withoutOverlapping();
 
@@ -42,7 +42,7 @@ if (config('app.app_kvm_three') === true) {
 
 }
 
-if (config('app.app_kvm_four') === true) {
+if (config('app.app_kvm_three') === true) {
 
     /**
      * Cron Job - Process Vehicle Data from kvm4.2 redis cache and populate it into kvm4.3 Mysql.
