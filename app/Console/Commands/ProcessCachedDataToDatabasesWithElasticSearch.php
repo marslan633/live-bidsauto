@@ -61,7 +61,7 @@ class ProcessCachedDataToDatabasesWithElasticSearch extends Command
             // Fetch data from Elasticsearch index
             $response = $client->search([
                 'index' => 'vehicle_process_cached_api_data',
-                'size' => 50,
+                'size' => 100,
                 'sort' => ['created_at:desc']
             ]);
 
