@@ -163,9 +163,9 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                     'index' => 'vehicle_archived_api_data',
                     'id' => $this->cacheKey->_id,
                 ]);
-                Log::info("✅ Elasticsearch Processed document deleted for _id: $this->cacheKey->_id");
+                Log::info("✅ Elasticsearch Processed document deleted for _id: ". $this->cacheKey->_id);
             } else {
-                Log::warning("⚠️ Document not found for deletion with _id: $this->cacheKey->_id");
+                Log::warning("⚠️ Document not found for deletion with _id: ". $this->cacheKey->_id);
             }
 
 
