@@ -38,7 +38,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
             $data = unCompressData($this->cacheKey->cache_value);
             Log::info('Uncompressed Log', ['data', json_encode($data)]);
             if (!$data) {
-                Log::warning("No archived data found for key: {$this->cacheKey->id}");
+                Log::warning("No archived data found for key: {$this->cacheKey->_id}");
                 return;
             }
 
@@ -58,12 +58,12 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
             }
 
             // Log success and remove cache
-            Log::info("Data for cache key '{$this->cacheKey->id}' processed successfully.");
+            Log::info("Data for cache key '{$this->cacheKey->_id}' processed successfully.");
 
 
         } catch (\Exception $e) {
             // Log any errors encountered during processing
-            Log::info("Error processing data for cache key {$this->cacheKey->id}: " . $e->getMessage());
+            Log::info("Error processing data for cache key {$this->cacheKey->_id}: " . $e->getMessage());
 
         }
     }
@@ -155,17 +155,17 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
 
             $response = $client->exists([
                 'index' => 'vehicle_archived_api_data',
-                'id' => $this->cacheKey->id,
+                'id' => $this->cacheKey->_id,
             ]);
 
             if ($response) {
                 $client->delete([
                     'index' => 'vehicle_archived_api_data',
-                    'id' => $this->cacheKey->id,
+                    'id' => $this->cacheKey->_id,
                 ]);
-                Log::info("✅ Elasticsearch Processed document deleted for _id: $this->cacheKey->id");
+                Log::info("✅ Elasticsearch Processed document deleted for _id: $this->cacheKey->_id");
             } else {
-                Log::warning("⚠️ Document not found for deletion with _id: $this->cacheKey->id");
+                Log::warning("⚠️ Document not found for deletion with _id: $this->cacheKey->_id");
             }
 
 
