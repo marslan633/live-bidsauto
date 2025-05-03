@@ -28,17 +28,12 @@ if (config('app.app_kvm_one') === true) {
     //     Log::error('process:api-data failed.');
     // });
     // app(Schedule::class)->command('process:api-data')->dailyAt('15:40')->withoutOverlapping();
-    app(Schedule::class)->command('process:cached-data-without-queue')->everyFiveMinutes()->withoutOverlapping();
+    // app(Schedule::class)->command('process:cached-data-without-queue')->everyFiveMinutes()->withoutOverlapping();
+
+    // app(Schedule::class)->command('process:api-data')->dailyAt('15:40')->withoutOverlapping();
+    // app(Schedule::class)->command('process:cached-data-with-elasticsearch')->everyFiveMinutes()->withoutOverlapping();
 
     // app(Schedule::class)->command('process:archived-data')->everyFifteenMinutes()->withoutOverlapping();
-
-}
-
-if (config('app.app_kvm_four') === true) {
-
-    app(Schedule::class)->command('index:vehicle-records')->everyFiveMinutes()->withoutOverlapping();
-
-    // app(Schedule::class)->command('index:vehicle-record-archiveds')->dailyAt('11:10')->withoutOverlapping();
 
 }
 
@@ -47,7 +42,8 @@ if (config('app.app_kvm_three') === true) {
     /**
      * Cron Job - Process Vehicle Data from kvm4.2 redis cache and populate it into kvm4.3 Mysql.
      */
-    app(Schedule::class)->command('process:process-cached-data-to-databases')->everyTenMinutes()->withoutOverlapping();
+    app(Schedule::class)->command('process:process-cached-data-to-databases-with-elasticsearch')->everyTenMinutes()->withoutOverlapping();
+    // app(Schedule::class)->command('process:process-cached-data-to-databases')->everyTenMinutes()->withoutOverlapping();
 
 
     /**
@@ -79,3 +75,12 @@ if (config('app.app_kvm_three') === true) {
     */
     // app(Schedule::class)->command('cron:cache-process-buy-now')->everyTenMinutes()->withoutOverlapping();
 }
+
+if (config('app.app_kvm_four') === true) {
+
+    app(Schedule::class)->command('index:vehicle-records')->everyFiveMinutes()->withoutOverlapping();
+
+    // app(Schedule::class)->command('index:vehicle-record-archiveds')->dailyAt('11:10')->withoutOverlapping();
+
+}
+
