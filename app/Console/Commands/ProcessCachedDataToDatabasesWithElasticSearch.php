@@ -91,8 +91,8 @@ class ProcessCachedDataToDatabasesWithElasticSearch extends Command
         // Initialize an empty array to hold the jobs
         collect($data)->chunk(100)->each(function ($chunk) {
             foreach ($chunk as $item) {
-                Log::info('Data For Database', ['item' => json_encode($item)]);
-                // ProcessCachedDataToDatabaseJobWithElasticSearch::dispatch((object)$item);
+                // Log::info('Data For Database', ['item' => json_encode($item)]);
+                ProcessCachedDataToDatabaseJobWithElasticSearch::dispatch((object)$item);
             }
         });
         if($cronRun){
