@@ -483,7 +483,6 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 // DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
             }
 
-            try {
                 $client = app('Elasticsearch');
 
                 $client->delete([
@@ -492,11 +491,6 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 ]);
 
                 Log::info("✅ Elasticsearch Processed document deleted for _id: $cacheKey");
-
-            } catch (\Exception $ex) {
-                Log::warning("⚠️ Failed to delete Processed document from Elasticsearch for _id: $cacheKey. " . $ex->getMessage());
-            }
-
 
 
         } catch (\Exception $e) {
