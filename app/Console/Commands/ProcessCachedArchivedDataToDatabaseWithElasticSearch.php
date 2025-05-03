@@ -2,105 +2,104 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\ProcessCachedDataToDatabaseJob;
-use App\Jobs\ProcessCachedDataToDatabaseJobWithElasticSearch;
+use App\Jobs\ProcessCachedArchivedDataJob;
+use App\Jobs\ProcessCachedArchivedDataJobWithElasticSearch;
 use Illuminate\Console\Command;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\{Http, Mail, Log};
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
+use App\Models\CronRunHistory;
+use App\Models\VehicleArchivedApiData;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
-class ProcessCachedDataToDatabasesWithElasticSearch extends Command
+class ProcessCachedArchivedDataToDatabaseWithElasticSearch extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'process:process-cached-data-to-databases-with-elasticsearch';
+    protected $signature = 'process:cached-archived-data-to-database-with-elasticsearch';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Process cached data into database';
-
+    protected $description = 'Fetch data from cache and save it into the database';
     /**
      * Execute the console command.
      */
     public function handle()
     {
         $startDateTime = Carbon::now();
-        $this->info("Process started at: " . $startDateTime);
-        $this->info("API URL " . config('app.cron_history_api_url'));
-        Log::info("Process started at: " . $startDateTime);
-
         $cronRun = null;
-
         $client = app('Elasticsearch');
 
-        try{
+        try {
 
             $params = [
                 'index' => 'cron_run_histories',
                 'body'  => [
-                    'cron_name'   => 'process_cached_data_to_database',
+                    'cron_name'   => 'process_cached_archived_data',
                     'start_time'  => $startDateTime->toIso8601String(),
                     'status'      => 'running',
                     'created_at'  => now()->toIso8601String(),
                     'updated_at'  => now()->toIso8601String(),
                 ]
             ];
-
             $response = $client->index($params);
 
             if ($response['_id']) {
-                Log::info('PROCESS CACHED DATA TO DATABASE CREATED');
+                Log::info('PROCESS CACHED ARCHIVED DATA TO DATABASE CREATED');
                 // Handle the successful API cronRunResponse
                 $cronRun = $response['_id'];
                 // Optionally, you can update the cron record with the API response or status
             } else {
-                Log::info('Error: PROCESS CACHED DATA TO DATABASE CREATED');
+                Log::info('Error: PROCESS CACHED ARCHIVED DATA TO DATABASE CREATED');
             }
 
-            // Fetch data from Elasticsearch index
             $response = $client->search([
-                'index' => 'vehicle_process_cached_api_data',
+                'index' => 'vehicle_archived_api_data',
                 'size' => 100,
                 'sort' => ['created_at:desc']
             ]);
 
             $hits = $response['hits']['hits'];
 
-            if (count($hits) === 0) {
-                $this->info("No Data Pending to process");
-                Log::info('NO DATA: vehicle_process_cached_api_data index empty');
+
+            if (count($hits) == 0) {
+                $this->info("No Data Archived Pending to process");
+                Log::info('NOT DATA:PROCESS CACHED ARCHIVED DATA TO DATABASE CREATED');
                 return;
             }
 
-            // Extract source
-            $data = array_map(function ($item) {
+             // Extract source
+             $data = array_map(function ($item) {
                 $source = $item['_source'];
                 $source['_id'] = $item['_id']; // Keep doc ID if needed
                 return $source;
             }, $hits);
 
-        }catch(\Exception $e){
-            // if($cronRun !== null){
-                $this->handleCronError($cronRun, "Error fetching cache keys: " . $e->getMessage());
-            // }
+        } catch (\Exception $e) {
+            Log::info("Error fetching cache keys: ", ['data' => json_encode($e->getMessage())]);
+            $this->handleCronError($cronRun, "Error fetching cache keys: " . $e->getMessage());
             return;
         }
 
-        // **Batch processing setup**
-        // Initialize an empty array to hold the jobs
+
+
         collect($data)->chunk(100)->each(function ($chunk) {
             foreach ($chunk as $item) {
-                // Log::info('Data For Database', ['item' => json_encode($item)]);
-                ProcessCachedDataToDatabaseJobWithElasticSearch::dispatch((object)$item);
+                // Dispatch a job for each item in the chunk
+                ProcessCachedArchivedDataJobWithElasticSearch::dispatch((object)$item);
             }
         });
+
         if($cronRun){
+
             $client->update([
                 'index' => 'cron_run_histories',
                 'id'    => $cronRun, // previously captured _id
@@ -114,10 +113,10 @@ class ProcessCachedDataToDatabasesWithElasticSearch extends Command
             ]);
 
             Log::info('PROCESS CACHED DATA TO DATABASE UPDATED');
-        }else{
-
+        } else {
             Log::info('ERROR: PROCESS CACHED DATA TO DATABASE UPDATED');
         }
+
 
 
     }
@@ -128,23 +127,26 @@ class ProcessCachedDataToDatabasesWithElasticSearch extends Command
     private function handleCronError($cronRun, $errorMessage)
     {
         Log::error($errorMessage);
-            $client = app('Elasticsearch');
 
-            $client->update([
-                'index' => 'cron_run_histories',
-                'id'    => $cronRun, // previously captured _id
-                'body'  => [
-                    'doc' => [
-                        'end_time'    => now()->toIso8601String(),
-                        'status'      => 'failed',
-                        'updated_at'  => now()->toIso8601String(),
-                    ]
+        $client = app('Elasticsearch');
+
+        $client->update([
+            'index' => 'cron_run_histories',
+            'id'    => $cronRun, // previously captured _id
+            'body'  => [
+                'doc' => [
+                    'end_time'    => now()->toIso8601String(),
+                    'status'      => 'success',
+                    'error_message' => $errorMessage,
+                    'updated_at'  => now()->toIso8601String(),
                 ]
-            ]);
+            ]
+        ]);
 
         $adminEmails = explode(',', env('ADMIN_EMAIL'));
-        Mail::to($adminEmails)->send(new CronJobFailedMail($errorMessage, 'process_cached_data'));
+        Mail::to($adminEmails)->send(new CronJobFailedMail($errorMessage, 'process_cached_archived_data'));
     }
+
 
 
 }

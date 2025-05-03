@@ -84,8 +84,6 @@ class ProcessCachedArchivedDataToDatabase extends Command
             return;
         }
 
-
-
         collect($data)->chunk(100)->each(function ($chunk) {
             foreach ($chunk as $item) {
                 // Dispatch a job for each item in the chunk
