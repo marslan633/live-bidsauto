@@ -30,7 +30,7 @@ if (config('app.app_kvm_one') === true) {
     // app(Schedule::class)->command('process:api-data')->dailyAt('15:40')->withoutOverlapping();
     // app(Schedule::class)->command('process:cached-data-without-queue')->everyFiveMinutes()->withoutOverlapping();
 
-    // app(Schedule::class)->command('process:api-data')->dailyAt('15:40')->withoutOverlapping();
+    // app(Schedule::class)->command('process:api-data-with-elasticsearch')->dailyAt('15:40')->withoutOverlapping();
     // app(Schedule::class)->command('process:cached-data-with-elasticsearch')->everyFiveMinutes()->withoutOverlapping();
 
     // app(Schedule::class)->command('process:archived-data')->everyFifteenMinutes()->withoutOverlapping();
