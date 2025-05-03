@@ -29,11 +29,12 @@ if (config('app.app_kvm_one') === true) {
     // });
     // app(Schedule::class)->command('process:api-data')->dailyAt('15:40')->withoutOverlapping();
     // app(Schedule::class)->command('process:cached-data-without-queue')->everyFiveMinutes()->withoutOverlapping();
+    // app(Schedule::class)->command('process:archived-data')->everyFifteenMinutes()->withoutOverlapping();
 
     // app(Schedule::class)->command('process:api-data-with-elasticsearch')->dailyAt('15:40')->withoutOverlapping();
     // app(Schedule::class)->command('process:cached-data-with-elasticsearch')->everyFiveMinutes()->withoutOverlapping();
+    // app(Schedule::class)->command('process:archived-data-with-elasticsearch')->everyFifteenMinutes()->withoutOverlapping();
 
-    // app(Schedule::class)->command('process:archived-data')->everyFifteenMinutes()->withoutOverlapping();
 
 }
 
@@ -44,7 +45,6 @@ if (config('app.app_kvm_three') === true) {
      */
     // app(Schedule::class)->command('process:process-cached-data-to-databases-with-elasticsearch')->everyTenMinutes()->withoutOverlapping();
     // app(Schedule::class)->command('process:process-cached-data-to-databases')->everyTenMinutes()->withoutOverlapping();
-
 
     /**
     * Cron Job - Update the data (bid, final_bid_updated_at, status) of archived vehicle table on the base of third party api.

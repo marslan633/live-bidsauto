@@ -6,9 +6,6 @@ use Illuminate\Console\Command;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
-use App\Models\CronRunHistory;
-use App\Models\VehicleApiData;
-use App\Models\VehicleProcessCachedApiData;
 use Illuminate\Support\Facades\Log;
 
 class ProcessCachedDataWithElasticSearch extends Command
@@ -35,16 +32,24 @@ class ProcessCachedDataWithElasticSearch extends Command
         // $this->info("Process started at: " . $startDateTime);
         // Log::info("Process started at: " . $startDateTime);
         $client = app('Elasticsearch');
+        $cronRun = null;
+
         try {
 
             // Always Will Run On Default Server
-            $cronRun = CronRunHistory::create([
-                'cron_name' => 'process_cached_data',
-                'start_time' => $startDateTime,
-                'status' => 'running',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ])->_id;
+            $params = [
+                'index' => 'cron_run_histories',
+                'body'  => [
+                    'cron_name'   => 'process_cached_data',
+                    'start_time'  => $startDateTime->toIso8601String(),
+                    'status'      => 'running',
+                    'created_at'  => now()->toIso8601String(),
+                    'updated_at'  => now()->toIso8601String(),
+                ]
+            ];
+
+            $response = $client->index($params);
+            $cronRun = $response['_id'];
 
              // Fetch 200 recent documents from Elasticsearch
              $response = $client->search([
@@ -113,10 +118,16 @@ class ProcessCachedDataWithElasticSearch extends Command
         }
 
 
-        CronRunHistory::where('_id', $cronRun)->update([
-            'end_time' => now(),
-            'status' => 'success',
-            'updated_at' => now(),
+        $client->update([
+            'index' => 'cron_run_histories',
+            'id'    => $cronRun, // previously captured _id
+            'body'  => [
+                'doc' => [
+                    'end_time'    => now()->toIso8601String(),
+                    'status'      => 'success',
+                    'updated_at'  => now()->toIso8601String(),
+                ]
+            ]
         ]);
 
     }
@@ -128,11 +139,17 @@ class ProcessCachedDataWithElasticSearch extends Command
     {
         Log::error($errorMessage);
         // Always Run on Defautl Server
-        CronRunHistory::where('_id', $cronRun)->update([
-            'end_time' => now(),
-            'status' => 'failed',
-            'error_message' => $errorMessage,
-            'updated_at' => now(),
+        $client->update([
+            'index' => 'cron_run_histories',
+            'id'    => $cronRun, // existing document ID
+            'body'  => [
+                'doc' => [
+                    'end_time'       => now()->toIso8601String(),
+                    'status'         => 'failed',
+                    'error_message'  => $errorMessage,
+                    'updated_at'     => now()->toIso8601String(),
+                ]
+            ]
         ]);
 
         $adminEmails = explode(',', env('ADMIN_EMAIL'));

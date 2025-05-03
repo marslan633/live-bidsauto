@@ -37,22 +37,27 @@ class ProcessCachedDataToDatabasesWithElasticSearch extends Command
 
         $cronRun = null;
 
-        $url = config('app.cron_history_api_url') . '/cron-run-histories';
-        $apiUrl = config('app.cron_history_api_url') . '/get-vehicles-for-database';
         $client = app('Elasticsearch');
 
         try{
-            // Remote Connection to KVM4.1
-            $cronRunResponse = Http::timeout(120)->retry(3, 1000)->post($url, [
-                'cron_name' => 'process_cached_data_to_database',
-                'start_time' => now(),
-                'status' => 'running',
-            ]);
 
-            if ($cronRunResponse->successful()) {
+            $params = [
+                'index' => 'cron_run_histories',
+                'body'  => [
+                    'cron_name'   => 'process_cached_data_to_database',
+                    'start_time'  => $startDateTime->toIso8601String(),
+                    'status'      => 'running',
+                    'created_at'  => now()->toIso8601String(),
+                    'updated_at'  => now()->toIso8601String(),
+                ]
+            ];
+
+            $response = $client->index($params);
+
+            if ($response) {
                 Log::info('PROCESS CACHED DATA TO DATABASE CREATED');
                 // Handle the successful API cronRunResponse
-                $cronRun = $cronRunResponse->json()['id'] ?? null; // You can process the data as needed
+                $cronRun = $response['_id'];
                 // Optionally, you can update the cron record with the API response or status
             } else {
                 Log::info('Error: PROCESS CACHED DATA TO DATABASE CREATED');
@@ -96,23 +101,22 @@ class ProcessCachedDataToDatabasesWithElasticSearch extends Command
             }
         });
         if($cronRun){
-
-            $updateUrl = $url . "/$cronRun";
-             // Remote Connection to KVM4.1
-             $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->put($updateUrl, [
-                'end_time' => Carbon::now(),
-                'status' => 'success',
-                'updated_at' => now(),
+            $client->update([
+                'index' => 'cron_run_histories',
+                'id'    => $cronRun, // previously captured _id
+                'body'  => [
+                    'doc' => [
+                        'end_time'    => now()->toIso8601String(),
+                        'status'      => 'success',
+                        'updated_at'  => now()->toIso8601String(),
+                    ]
+                ]
             ]);
 
-            if ($cronRunUpdateResponse->successful()) {
-                Log::info('PROCESS CACHED DATA TO DATABASE UPDATED');
-            } else {
-                Log::info('ERROR: PROCESS CACHED DATA TO DATABASE UPDATED');
+            Log::info('PROCESS CACHED DATA TO DATABASE UPDATED');
+        }else{
 
-
-            }
-
+            Log::info('ERROR: PROCESS CACHED DATA TO DATABASE UPDATED');
         }
 
 
@@ -124,21 +128,19 @@ class ProcessCachedDataToDatabasesWithElasticSearch extends Command
     private function handleCronError($cronRun, $errorMessage)
     {
         Log::error($errorMessage);
-        $url = config('app.cron_history_api_url') . '/cron-run-histories';
-        $updateUrl = $url . "/$cronRun";
-             // Remote Connection to KVM4.1
-             $cronRunUpdateResponse = Http::timeout(120)->retry(3, 1000)->put($updateUrl, [
-                'end_time' => Carbon::now(),
-                'status' => 'failed',
-                'updated_at' => now(),
+            $client = app('Elasticsearch');
+
+            $client->update([
+                'index' => 'cron_run_histories',
+                'id'    => $cronRun, // previously captured _id
+                'body'  => [
+                    'doc' => [
+                        'end_time'    => now()->toIso8601String(),
+                        'status'      => 'failed',
+                        'updated_at'  => now()->toIso8601String(),
+                    ]
+                ]
             ]);
-
-            if ($cronRunUpdateResponse->successful()) {
-                Log::info('PROCESS CACHED DATA TO DATABASE UPDATED FAILED');
-            } else {
-                Log::info('ERROR: PROCESS CACHED DATA TO DATABASE UPDATED FAILED');
-            }
-
 
         $adminEmails = explode(',', env('ADMIN_EMAIL'));
         Mail::to($adminEmails)->send(new CronJobFailedMail($errorMessage, 'process_cached_data'));

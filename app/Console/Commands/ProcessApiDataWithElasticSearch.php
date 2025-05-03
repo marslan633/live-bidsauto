@@ -19,51 +19,63 @@ class ProcessApiDataWithElasticSearch extends Command
 
     public function handle()
     {
-        $startTime = microtime(true);
         $startDateTime = Carbon::now();
 
-        // if (!Redis::ping()) {
-        //     $this->error("❌ Redis is NOT connected!");
-        //     return;
-        // }
-
         // **Get Last Successful Cron Job Status**
-        $lastCron = CronRunHistory::where('cron_name', 'process_vehicle_data')
-            ->where('status', 'success')
-            ->latest('start_time')
-            ->first();
+        $client = app('Elasticsearch');
 
-        $minutes = 400; // Default minutes value
+        $response = $client->search([
+            'index' => 'cron_run_histories',
+            'body' => [
+                'size' => 1,
+                'query' => [
+                    'bool' => [
+                        'must' => [
+                            ['term' => ['cron_name' => 'process_vehicle_data']],
+                            ['term' => ['status' => 'success']]
+                        ]
+                    ]
+                ],
+                'sort' => [
+                    ['start_time' => ['order' => 'desc']]
+                ]
+            ]
+        ]);
 
-        if ($lastCron && $lastCron->end_time) {
-            $endTime = Carbon::parse($lastCron->end_time);
-            $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
+        $hits = $response['hits']['hits'];
 
-            // if (config('app.env') !== 'production') {
-            //     $this->info("⏳ Time Difference: {$timeDifference}");
-            //     Log::info("⏳ Time Difference: {$timeDifference}");
-            // }
+        $minutes = 400;
 
-            if ($timeDifference > 20) {
-                $minutes = $timeDifference + 10;
-            } elseif ($timeDifference === 20) {
-                $minutes = $timeDifference + 5;
+        if (!empty($hits)) {
+            $lastCron = $hits[0]['_source'];
+            if (!empty($lastCron['end_time'])) {
+                $endTime = Carbon::parse($lastCron['end_time']);
+                $timeDifference = max(0, $endTime->diffInMinutes(now()));
+
+                if ($timeDifference > 20) {
+                    $minutes = $timeDifference + 10;
+                } elseif ($timeDifference === 20) {
+                    $minutes = $timeDifference + 5;
+                }
             }
         }
 
-        // if (config('app.env') !== 'production') {
-        //     $this->info('🚀 Process started at: '.$startDateTime);
-        //     Log::info('🚀 Process started at: '.$startDateTime);
-        // }
 
-        // **Store Cron Job Status**
-        $cronRun = CronRunHistory::create([
-            'cron_name' => 'process_vehicle_data',
-            'start_time' => $startDateTime,
-            'status' => 'running',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ])->id;
+        $params = [
+            'index' => 'cron_run_histories',
+            'body' => [
+                'cron_name'   => 'process_vehicle_data',
+                'start_time'  => $startDateTime->toIso8601String(),
+                'status'      => 'running',
+                'created_at'  => now()->toIso8601String(),
+                'updated_at'  => now()->toIso8601String(),
+            ],
+        ];
+
+        $response = $client->index($params);
+
+        // Get the Elasticsearch auto-generated ID
+        $cronRun = $response['_id'];
 
         $perPage = 1000;
         $baseUrl = 'http://carstat.dev/api/cars';
@@ -118,17 +130,7 @@ class ProcessApiDataWithElasticSearch extends Command
                         $client->bulk($params);
                     });
 
-                    // Log::info('Stored Cached Data', ['total_records' => count($data)]);
-
-                    // if (config('app.env') !== 'production') {
-                    //     $this->info('🎉 Data successfully stored in the database.');
-                    // }
-                } else {
-                    // if (config('app.env') !== 'production') {
-                    //     $this->info('⚠️ No new data available.');
-                    // }
                 }
-
                 // **Get 'next' page URL**
                 $nextUrl = $response->json()['links']['next'] ?? null;
                 $this->info('Next URL.', $nextUrl);
@@ -137,10 +139,16 @@ class ProcessApiDataWithElasticSearch extends Command
             } while ($nextUrl !== null);
 
             // **Mark Cron as Success**
-            CronRunHistory::where('_id', $cronRun)->update([
-                'end_time' => now(),
-                'status' => 'success',
-                'updated_at' => now(),
+            $client->update([
+                'index' => 'cron_run_histories',
+                'id'    => $cronRun, // This is the _id returned earlier
+                'body'  => [
+                    'doc' => [
+                        'end_time'    => now()->toIso8601String(),
+                        'status'      => 'success',
+                        'updated_at'  => now()->toIso8601String(),
+                    ]
+                ]
             ]);
 
 
@@ -148,11 +156,17 @@ class ProcessApiDataWithElasticSearch extends Command
             $this->error('❌ Error: '.$e->getMessage());
             // \Log::error("❌ Error: " . $e->getMessage());
 
-            CronRunHistory::where('_id', $cronRun)->update([
-                'end_time' => now(),
-                'status' => 'failed',
-                'error_message' => $e->getMessage(),
-                'updated_at' => now(),
+            $client->update([
+                'index' => 'cron_run_histories',
+                'id'    => $cronRun, // This is the Elasticsearch document _id
+                'body'  => [
+                    'doc' => [
+                        'end_time'       => now()->toIso8601String(),
+                        'status'         => 'failed',
+                        'error_message'  => $e->getMessage(),
+                        'updated_at'     => now()->toIso8601String(),
+                    ]
+                ]
             ]);
 
         }
