@@ -27,7 +27,7 @@ class IndexVehicleRecords extends Command
 
         $cronRun = null;
 
-        $url = config('app.cron_history_api_url') . '/cron-run-histories';
+        // $url = config('app.cron_history_api_url') . '/cron-run-histories';
 
         try{
             // Remote Connection to KVM4.1
@@ -48,7 +48,7 @@ class IndexVehicleRecords extends Command
             // }
 
             $response = $client->search([
-                'index' => 'process_vehicles_to_elasticsearch',
+                'index' => 'cron_run_histories',
                 'body' => [
                     'size' => 1,
                     'query' => [
