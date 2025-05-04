@@ -122,7 +122,7 @@ class ProcessArchivedDataWithElasticSearch extends Command
                         $dataCollection->chunk(200)->each(function ($chunk) {
                             $this->info('Data Being Inserted For Archvied');
                             // Prepare the chunk for insertion
-                            $client = app('Elasticsearch');
+                            $client = app('ElasticsearchKvmOne');
 
                              // Prepare the chunk as one document
                             $insertData = [
