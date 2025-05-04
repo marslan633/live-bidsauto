@@ -19,7 +19,8 @@ class IndexVehicleRecords extends Command
         $this->info("API URL " . config('app.cron_history_api_url'));
         Log::info("Index Vehicles Process started at: " . $startDateTime);
 
-        $client = app('Elasticsearch');
+        $clientKvmOne = app('ElasticsearchKvmOne');
+        $clientKvmFour = app('ElasticsearchKvmFour');
 
         // Only fetch records updated in the last 30 minutes
         $minutes = intval(config('app.elastic_store_time'));
@@ -47,7 +48,7 @@ class IndexVehicleRecords extends Command
             //     }
             // }
 
-            $response = $client->search([
+            $response = $clientKvmOne->search([
                 'index' => 'cron_run_histories',
                 'body' => [
                     'size' => 1,
@@ -107,7 +108,7 @@ class IndexVehicleRecords extends Command
                 ],
             ];
 
-            $response = $client->index($params);
+            $response = $clientKvmOne->index($params);
 
             // Get the Elasticsearch auto-generated ID
             $cronRun = $response['_id'];
@@ -120,9 +121,9 @@ class IndexVehicleRecords extends Command
         $minutes = Carbon::now()->subMinutes($minutes);
 
         if(config('app.is_full_fetch') == true){
-            VehicleRecord::chunk(500, function ($vehicles) use ($client) {
+            VehicleRecord::chunk(500, function ($vehicles) use ($clientKvmFour) {
                 foreach ($vehicles as $vehicle) {
-                    $client->index([
+                    $clientKvmFour->index([
                         'index' => 'vehicle_records',
                         'id' => $vehicle->id,
                         'body' => $vehicle->toArray(),
@@ -131,9 +132,9 @@ class IndexVehicleRecords extends Command
             });
         }else{
             VehicleRecord::where('updated_at', '>=', $minutes)
-            ->chunk(500, function ($vehicles) use ($client) {
+            ->chunk(500, function ($vehicles) use ($clientKvmFour) {
                 foreach ($vehicles as $vehicle) {
-                    $client->index([
+                    $clientKvmFour->index([
                         'index' => 'vehicle_records',
                         'id' => $vehicle->id,
                         'body' => $vehicle->toArray(),
@@ -144,7 +145,7 @@ class IndexVehicleRecords extends Command
 
         if($cronRun){
 
-            $client->update([
+            $clientKvmOne->update([
                 'index' => 'cron_run_histories',
                 'id'    => $cronRun,
                 'body'  => [
@@ -161,7 +162,7 @@ class IndexVehicleRecords extends Command
                 Log::info('ERROR: STORE VEHICLES TO ELASTICSEARCH CREATED');
 
 
-            }
+        }
 
 
 

@@ -36,7 +36,7 @@ class ProcessCachedArchivedDataToDatabaseWithElasticSearch extends Command
     {
         $startDateTime = Carbon::now();
         $cronRun = null;
-        $client = app('Elasticsearch');
+        $client = app('ElasticsearchKvmOne');
 
         try {
 
@@ -128,7 +128,7 @@ class ProcessCachedArchivedDataToDatabaseWithElasticSearch extends Command
     {
         Log::error($errorMessage);
 
-        $client = app('Elasticsearch');
+        $client = app('ElasticsearchKvmOne');
 
         $client->update([
             'index' => 'cron_run_histories',
@@ -136,7 +136,7 @@ class ProcessCachedArchivedDataToDatabaseWithElasticSearch extends Command
             'body'  => [
                 'doc' => [
                     'end_time'    => now()->toIso8601String(),
-                    'status'      => 'success',
+                    'status'      => 'failed',
                     'error_message' => $errorMessage,
                     'updated_at'  => now()->toIso8601String(),
                 ]

@@ -31,7 +31,7 @@ class ProcessCachedDataWithElasticSearch extends Command
         $startDateTime = Carbon::now();
         // $this->info("Process started at: " . $startDateTime);
         // Log::info("Process started at: " . $startDateTime);
-        $client = app('Elasticsearch');
+        $client = app('ElasticsearchKvmOne');
         $cronRun = null;
 
         try {
@@ -139,6 +139,8 @@ class ProcessCachedDataWithElasticSearch extends Command
     {
         Log::error($errorMessage);
         // Always Run on Defautl Server
+        $client = app('ElasticsearchKvmOne');
+
         $client->update([
             'index' => 'cron_run_histories',
             'id'    => $cronRun, // existing document ID

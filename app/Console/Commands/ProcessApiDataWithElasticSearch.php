@@ -22,7 +22,7 @@ class ProcessApiDataWithElasticSearch extends Command
         $startDateTime = Carbon::now();
 
         // **Get Last Successful Cron Job Status**
-        $client = app('Elasticsearch');
+        $client = app('ElasticsearchKvmOne');
 
         $response = $client->search([
             'index' => 'cron_run_histories',
@@ -110,7 +110,7 @@ class ProcessApiDataWithElasticSearch extends Command
 
                     // Chunk the collection into smaller collections of 200 items each
                     $dataCollection->chunk(200)->each(function ($chunk) {
-                        $client = app('Elasticsearch');
+                        $client = app('ElasticsearchKvmOne');
                         $params = ['body' => []];
                         $now = now();
                         $expiry = Carbon::now()->addDays(7);

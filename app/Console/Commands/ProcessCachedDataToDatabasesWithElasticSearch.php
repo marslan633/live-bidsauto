@@ -37,7 +37,8 @@ class ProcessCachedDataToDatabasesWithElasticSearch extends Command
 
         $cronRun = null;
 
-        $client = app('Elasticsearch');
+        $clientkvmOne = app('ElasticsearchKvmOne');
+
 
         try{
 
@@ -52,7 +53,7 @@ class ProcessCachedDataToDatabasesWithElasticSearch extends Command
                 ]
             ];
 
-            $response = $client->index($params);
+            $response = $clientkvmOne->index($params);
 
             if ($response['_id']) {
                 Log::info('PROCESS CACHED DATA TO DATABASE CREATED');
@@ -64,7 +65,7 @@ class ProcessCachedDataToDatabasesWithElasticSearch extends Command
             }
 
             // Fetch data from Elasticsearch index
-            $response = $client->search([
+            $response = $clientkvmOne->search([
                 'index' => 'vehicle_process_cached_api_data',
                 'size' => 100,
                 'sort' => ['created_at:desc']
@@ -101,7 +102,7 @@ class ProcessCachedDataToDatabasesWithElasticSearch extends Command
             }
         });
         if($cronRun){
-            $client->update([
+            $clientkvmOne->update([
                 'index' => 'cron_run_histories',
                 'id'    => $cronRun, // previously captured _id
                 'body'  => [
@@ -128,9 +129,9 @@ class ProcessCachedDataToDatabasesWithElasticSearch extends Command
     private function handleCronError($cronRun, $errorMessage)
     {
         Log::error($errorMessage);
-            $client = app('Elasticsearch');
+            $clientkvmOne = app('ElasticsearchKvmOne');
 
-            $client->update([
+            $clientkvmOne->update([
                 'index' => 'cron_run_histories',
                 'id'    => $cronRun, // previously captured _id
                 'body'  => [
