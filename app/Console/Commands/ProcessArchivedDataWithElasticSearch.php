@@ -37,7 +37,7 @@ class ProcessArchivedDataWithElasticSearch extends Command
     public function handle()
     {
         $startDateTime = Carbon::now();
-        $client = app('Elasticsearch');
+        $client = app('ElasticsearchKvmOne');
 
         $response = $client->search([
             'index' => 'cron_run_histories',
