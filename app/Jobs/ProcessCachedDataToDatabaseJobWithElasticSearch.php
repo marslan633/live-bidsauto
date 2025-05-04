@@ -115,7 +115,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 // DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
             }
 
-                $client = app('Elasticsearch');
+                $client = app('ElasticsearchKvmOne');
 
                 $response = $client->exists([
                     'index' => 'vehicle_process_cached_api_data',
