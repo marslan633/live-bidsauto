@@ -115,37 +115,35 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 // DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
             }
 
+                try{
+                    $client = app('ElasticsearchKvmOne');
 
-        } catch (\Exception $e) {
+                    $response = $client->exists([
+                        'index' => 'vehicle_process_cached_api_data',
+                        'id' => $cacheKey,
+                    ]);
+
+                    if ($response) {
+                        try{
+                            $client->delete([
+                                'index' => 'vehicle_process_cached_api_data',
+                                'id' => $cacheKey,
+                            ]);
+                            Log::info("✅ Elasticsearch Processed document deleted for _id: $cacheKey");
+                        }  catch (\Throwable $e) {
+                            Log::warning("⚠️ Failed to delete document: " . $e->getMessage());
+                        }
+                    } else {
+                        Log::warning("⚠️ Document not found for deletion with _id: $cacheKey");
+                    }
+                }catch (\Throwable $e) {
+                    Log::error("❌ Elasticsearch exists check failed: " . $e->getMessage());
+                }
+        } catch (\Throwable $e) {
 
             // Mark cache as pending in case of failure
 
             Log::info("Batch insert failed: " . $e->getMessage());
-        }
-
-        try{
-            $client = app('ElasticsearchKvmOne');
-
-            $response = $client->exists([
-                'index' => 'vehicle_process_cached_api_data',
-                'id' => $cacheKey,
-            ]);
-
-            if ($response) {
-                try{
-                    $client->delete([
-                        'index' => 'vehicle_process_cached_api_data',
-                        'id' => $cacheKey,
-                    ]);
-                    Log::info("✅ Elasticsearch Processed document deleted for _id: $cacheKey");
-                }  catch (\Exception $e) {
-                    Log::warning("⚠️ Failed to delete document: " . $e->getMessage());
-                }
-            } else {
-                Log::warning("⚠️ Document not found for deletion with _id: $cacheKey");
-            }
-        }catch (\Exception $e) {
-            Log::error("❌ Elasticsearch exists check failed: " . $e->getMessage());
         }
     }
 
