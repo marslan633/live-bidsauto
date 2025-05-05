@@ -115,21 +115,29 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 // DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
             }
 
-                $client = app('ElasticsearchKvmOne');
+                try{
+                    $client = app('ElasticsearchKvmOne');
 
-                $response = $client->exists([
-                    'index' => 'vehicle_process_cached_api_data',
-                    'id' => $cacheKey,
-                ]);
-
-                if ($response) {
-                    $client->delete([
+                    $response = $client->exists([
                         'index' => 'vehicle_process_cached_api_data',
                         'id' => $cacheKey,
                     ]);
-                    Log::info("✅ Elasticsearch Processed document deleted for _id: $cacheKey");
-                } else {
-                    Log::warning("⚠️ Document not found for deletion with _id: $cacheKey");
+
+                    if ($response) {
+                        try{
+                            $client->delete([
+                                'index' => 'vehicle_process_cached_api_data',
+                                'id' => $cacheKey,
+                            ]);
+                            Log::info("✅ Elasticsearch Processed document deleted for _id: $cacheKey");
+                        }  catch (\Exception $e) {
+                            Log::warning("⚠️ Failed to delete document: " . $e->getMessage());
+                        }
+                    } else {
+                        Log::warning("⚠️ Document not found for deletion with _id: $cacheKey");
+                    }
+                }catch (\Exception $e) {
+                    Log::error("❌ Elasticsearch exists check failed: " . $e->getMessage());
                 }
         } catch (\Exception $e) {
 
