@@ -16,7 +16,6 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-
     public $cacheKey;
     public function __construct($cacheKey)
     {
@@ -151,7 +150,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
 
 
 
-            $client = app('Elasticsearch');
+            $client = app('ElasticsearchKvmOne');
 
             $response = $client->exists([
                 'index' => 'vehicle_archived_api_data',

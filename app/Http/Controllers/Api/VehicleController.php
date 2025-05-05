@@ -98,7 +98,7 @@ class VehicleController extends Controller
     public function vehicleInformationsWithFilters(Request $request)
     {
         try {
-            $client = app('Elasticsearch');
+            $client = app('ElasticsearchKvmFour');
 
             $index = $request->input('data_source', 'active') === 'archived'
                 ? 'vehicle_record_archiveds'
@@ -271,7 +271,7 @@ class VehicleController extends Controller
     public function vehicleInformations(Request $request)
     {
         try {
-            $client = app('Elasticsearch');
+            $client = app('ElasticsearchKvmFour');
 
             $index = $request->input('data_source', 'active') === 'archived'
                 ? 'vehicle_record_archiveds'
@@ -709,7 +709,7 @@ class VehicleController extends Controller
     public function onefilterAttributes(Request $request)
     {
         try {
-            $client = app('Elasticsearch');
+            $client = app('ElasticsearchKvmFour');
 
             $index = $request->input('data_source', 'active') === 'archived'
                 ? 'vehicle_record_archiveds'
@@ -836,7 +836,7 @@ class VehicleController extends Controller
     public function filterAttributes(Request $request)
     {
         try {
-            $client = app('Elasticsearch');
+            $client = app('ElasticsearchKvmFour');
 
             $index = $request->input('data_source', 'active') === 'archived'
                 ? 'vehicle_record_archiveds'

@@ -27,7 +27,7 @@ class IndexVehicleRecordArchivedsJob implements ShouldQueue
         $startDateTime = Carbon::now();
         Log::info("Index Vehicles Process started at: " . $startDateTime);
 
-        $elasticsearch = app('Elasticsearch');
+        $elasticsearch = app('ElasticsearchKvmOne');
         $url = config('app.cron_history_api_url') . '/cron-run-histories';
 
         try {

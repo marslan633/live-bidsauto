@@ -36,7 +36,7 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
      */
     public function handle()
     {
-        $client = app('Elasticsearch');
+        $client = app('ElasticsearchKvmOne');
 
         try {
             $url = config('app.cron_history_api_url') . '/cron-run-histories';
@@ -66,7 +66,6 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
             } else {
                 Log::info('Error: PROCESS AUCTION ARCHIVED DATA TO DATABASE CREATED');
             }
-
             $updateUrl = $url . "/$cronRun";
             $batchSize = intval(config('app.batch_size'));
             // $expiredRecords = VehicleRecord::whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [now()])->get();
@@ -136,7 +135,7 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
             Log::error("Error in auction:archive cron job - " . $e->getMessage());
 
             // Remote Connection to KVM4.1
-            $client = app('Elasticsearch');
+            $client = app('ElasticsearchKvmOne');
 
             $client->update([
                 'index' => 'cron_run_histories',
