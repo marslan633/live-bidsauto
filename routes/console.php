@@ -36,9 +36,9 @@ if (config('app.app_kvm_one') === true) {
     app(Schedule::class)->command('process:cached-data-with-elasticsearch')->everyFiveMinutes()->withoutOverlapping();
     // app(Schedule::class)->command('process:archived-data-with-elasticsearch')->everyFifteenMinutes()->withoutOverlapping();
 
-    app(Schedule::class)->command('process:delete-cached-data-with-elasticsearch')->everyHour()->withoutOverlapping();
+    app(Schedule::class)->command('process:delete-cached-data-with-elasticsearch')->hourly()->withoutOverlapping();
 
-    app(Schedule::class)->command('process:delete-cached-archived-data-with-elasticsearch')->everyHour()->withoutOverlapping();
+    app(Schedule::class)->command('process:delete-cached-archived-data-with-elasticsearch')->hourly()->withoutOverlapping();
 }
 
 if (config('app.app_kvm_three') === true) {
