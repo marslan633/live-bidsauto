@@ -27,6 +27,7 @@ if (config('app.app_kvm_one') === true) {
     //     // Log the failure of process:api-data
     //     Log::error('process:api-data failed.');
     // });
+
     // app(Schedule::class)->command('process:api-data')->dailyAt('15:40')->withoutOverlapping();
     // app(Schedule::class)->command('process:cached-data-without-queue')->everyFiveMinutes()->withoutOverlapping();
     // app(Schedule::class)->command('process:archived-data')->everyFifteenMinutes()->withoutOverlapping();
@@ -34,6 +35,10 @@ if (config('app.app_kvm_one') === true) {
     app(Schedule::class)->command('process:api-data-with-elasticsearch')->dailyAt('09:50')->withoutOverlapping();
     app(Schedule::class)->command('process:cached-data-with-elasticsearch')->everyFiveMinutes()->withoutOverlapping();
     // app(Schedule::class)->command('process:archived-data-with-elasticsearch')->everyFifteenMinutes()->withoutOverlapping();
+
+    app(Schedule::class)->command('process:delete-cached-data-with-elasticsearch')->everyTwoHours()->withoutOverlapping();
+
+    app(Schedule::class)->command('process:delete-cached-archived-data-with-elasticsearch')->everyTwoHours()->withoutOverlapping();
 }
 
 if (config('app.app_kvm_three') === true) {
@@ -41,10 +46,9 @@ if (config('app.app_kvm_three') === true) {
     /**
      * Cron Job - Process Vehicle Data from kvm4.2 redis cache and populate it into kvm4.3 Mysql.
      */
-    app(Schedule::class)->command('process:process-cached-data-to-databases-with-elasticsearch')->everyFiveMinutes()->withoutOverlapping();
+    app(Schedule::class)->command('process:process-cached-data-to-databases-with-elasticsearch')->everyTenMinutes()->withoutOverlapping();
     // app(Schedule::class)->command('process:cached-archived-data-to-database-with-elasticsearch')->everyTenMinutes()->withoutOverlapping();
     // app(Schedule::class)->command('process:expired-auction-archive-with-elasticsearch')->hourly()->withoutOverlapping();
-
 
     // app(Schedule::class)->command('process:process-cached-data-to-databases')->everyTenMinutes()->withoutOverlapping();
 

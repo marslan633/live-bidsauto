@@ -129,6 +129,7 @@ class ProcessArchivedDataWithElasticSearch extends Command
                                 'cache_value' => compressData($chunk->toArray()),
                                 'created_at'  => now()->toIso8601String(),
                                 'updated_at'  => now()->toIso8601String(),
+                                'status' => 'pending',
                                 'expires_at'  => Carbon::now()->addDays(7)->toIso8601String()
                             ];
 

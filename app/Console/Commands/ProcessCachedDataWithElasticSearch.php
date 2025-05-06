@@ -99,6 +99,7 @@ class ProcessCachedDataWithElasticSearch extends Command
                     'index' => 'vehicle_process_cached_api_data',
                     'body' => [
                         'cache_value' => compressData($processDataForCache),
+                        'status' => 'pending',
                         'created_at' => now()->format('Y-m-d H:i:s'),
                         'updated_at' => now()->format('Y-m-d H:i:s'),
                         'expires_at' => Carbon::now()->addDays(7)->format('Y-m-d H:i:s'),

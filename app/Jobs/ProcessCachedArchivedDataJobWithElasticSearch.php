@@ -150,23 +150,35 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
 
 
 
-            $client = app('ElasticsearchKvmOne');
+            try{
+                $client = app('ElasticsearchKvmOne');
 
-            $response = $client->exists([
-                'index' => 'vehicle_archived_api_data',
-                'id' => $this->cacheKey->_id,
-            ]);
-
-            if ($response) {
-                $client->delete([
+                $response = $client->exists([
                     'index' => 'vehicle_archived_api_data',
                     'id' => $this->cacheKey->_id,
                 ]);
-                Log::info("✅ Elasticsearch Processed document deleted for _id: ". $this->cacheKey->_id);
-            } else {
-                Log::warning("⚠️ Document not found for deletion with _id: ". $this->cacheKey->_id);
-            }
 
+                if ($response) {
+                    try{
+                        $client->update([
+                            'index' => 'vehicle_archived_api_data',
+                            'id' => $this->cacheKey->_id,
+                            'body' => [
+                                'doc' => [
+                                    'status' => 'completed'
+                                ]
+                            ]
+                        ]);
+                        Log::info("✅ Elasticsearch Processed document status updated for _id: " . $this->cacheKey->_id);
+                    }  catch (\Throwable $e) {
+                        Log::warning("⚠️ Failed to update document: " . $e->getMessage());
+                    }
+                } else {
+                    Log::warning("⚠️ Document not found for update with _id: " . $this->cacheKey->_id);
+                }
+            }catch (\Throwable $e) {
+                Log::error("❌ Elasticsearch exists check failed: " . $e->getMessage());
+            }
 
 
             Log::info('Vehicle Process Cached Api Data Delete');
