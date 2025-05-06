@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Elasticsearch\Client;
+use Carbon\Carbon;
 
 class DeleteCachedArchivedDataWithElasticsearch extends Command
 {
@@ -19,18 +20,11 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
      *
      * @var string
      */
-    protected $description = 'Delete records with status "completed" from Elasticsearch index "vehicle_archived_api_data"';
-
-    /**
-     * The Elasticsearch client instance.
-     *
-     * @var Client
-     */
+    protected $description = 'Delete records with status "completed" from Elasticsearch index "vehicle_archived_api_data" within a time range of 30 minutes to 1 hour ago';
 
     /**
      * Create a new command instance.
      *
-     * @param Client $client
      * @return void
      */
     public function __construct()
@@ -45,16 +39,42 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
      */
     public function handle()
     {
-        $this->info('Starting to delete completed status records from vehicle_archived_api_data...');
+        $this->info('Starting to delete completed status records from vehicle_archived_api_data within the time range of 30 minutes to 1 hour ago...');
+
+        // Elasticsearch client
         $client = app('ElasticsearchKvmOne');
+
         try {
-            // Search for documents with status 'completed'
+            // Calculate time range
+            $now = Carbon::now();
+            $startTime = $now->subMinutes(60)->toDateTimeString(); // 1 hour ago
+            $endTime = $now->subMinutes(30)->toDateTimeString(); // 30 minutes ago
+
+            // Search for documents with status 'completed' and time range
             $params = [
                 'index' => 'vehicle_archived_api_data',
                 'body'  => [
                     'query' => [
-                        'match' => [
-                            'status' => 'completed'
+                        'bool' => [
+                            'must' => [
+                                // Match status 'completed'
+                                [
+                                    'match' => [
+                                        'status' => 'completed'
+                                    ]
+                                ]
+                            ],
+                            'filter' => [
+                                // Range filter for created_at or updated_at
+                                [
+                                    'range' => [
+                                        'created_at' => [
+                                            'gte' => $startTime,  // 1 hour ago
+                                            'lte' => $endTime    // 30 minutes ago
+                                        ]
+                                    ]
+                                ]
+                            ]
                         ]
                     ]
                 ]
@@ -64,7 +84,7 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
 
             // If no records found, return a message
             if ($results['hits']['total']['value'] == 0) {
-                $this->info('No records found with status "completed".');
+                $this->info('No records found with status "completed" within the time range.');
                 return;
             }
 
