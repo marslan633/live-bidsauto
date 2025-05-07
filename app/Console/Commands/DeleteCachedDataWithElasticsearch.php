@@ -21,7 +21,7 @@ class DeleteCachedDataWithElasticsearch extends Command
      *
      * @var string
      */
-    protected $description = 'Delete records older than 30 minutes from Elasticsearch index "vehicle_process_cached_api_data"';
+    protected $description = 'Delete records with status "completed" and older than 30 minutes from Elasticsearch index "vehicle_process_cached_api_data"';
 
     /**
      * Create a new command instance.
@@ -40,7 +40,7 @@ class DeleteCachedDataWithElasticsearch extends Command
      */
     public function handle()
     {
-        $this->info('Starting to delete records older than 30 minutes from vehicle_process_cached_api_data...');
+        $this->info('Starting to delete records older than 30 minutes and with status "completed" from vehicle_process_cached_api_data...');
 
         // Elasticsearch client
         $client = app('ElasticsearchKvmOne');
@@ -50,22 +50,35 @@ class DeleteCachedDataWithElasticsearch extends Command
         $startTime = $now->subMinutes(30)->toDateTimeString(); // 30 minutes ago
 
         // Log the start time and current time for debugging purposes
-        Log::info('Deleting records older than 30 minutes', [
+        Log::info('Deleting records older than 30 minutes with status "completed"', [
             'start_time' => $startTime,
             'now' => $now->toDateTimeString(),
         ]);
 
         try {
-            // Search for documents older than 30 minutes using range query with scroll enabled
+            // Search for documents older than 30 minutes and with status "completed"
             $params = [
                 'index' => 'vehicle_process_cached_api_data',
                 'scroll' => '1m', // Set scroll time context
                 'size' => 200, // Fetch 200 records at a time
                 'body' => [
                     'query' => [
-                        'range' => [
-                            'updated_at' => [
-                                'lte' => $startTime // Delete records older than 30 minutes
+                        'bool' => [
+                            'must' => [
+                                [
+                                    'match' => [
+                                        'status' => 'completed'  // Filter by completed status
+                                    ]
+                                ]
+                            ],
+                            'filter' => [
+                                [
+                                    'range' => [
+                                        'updated_at' => [
+                                            'lte' => $startTime // Delete records older than 30 minutes
+                                        ]
+                                    ]
+                                ]
                             ]
                         ]
                     ]
