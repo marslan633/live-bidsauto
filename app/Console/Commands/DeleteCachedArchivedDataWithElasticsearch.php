@@ -70,7 +70,7 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
                             'filter' => [
                                 [
                                     'range' => [
-                                        'created_at' => [
+                                        'updated_at' => [
                                             'gte' => $startTime,  // 1 hour ago
                                             'lte' => $endTime    // 30 minutes ago
                                         ]
