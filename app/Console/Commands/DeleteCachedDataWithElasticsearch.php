@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
@@ -45,12 +44,12 @@ class DeleteCachedDataWithElasticsearch extends Command
         // Elasticsearch client
         $client = app('ElasticsearchKvmOne');
 
-        // Time range: 1 hour ago to 30 minutes ago (in UTC)
+        // Time range: 1 hour ago to 30 minutes ago
         $now = Carbon::now()->utc();
-        $startTime = $now->subMinutes(60)->toDateTimeString();  // 1 hour ago
-        $endTime = $now->subMinutes(30)->toDateTimeString();    // 30 minutes ago
+        $startTime = $now->subMinutes(60)->toDateTimeString(); // 1 hour ago
+        $endTime = $now->subMinutes(30)->toDateTimeString();   // 30 minutes ago
 
-        // Log the start and end times for debugging
+        // Log the time range for debugging purposes
         Log::info('Deleting records between', ['start' => $startTime, 'end' => $endTime]);
 
         try {
@@ -62,8 +61,8 @@ class DeleteCachedDataWithElasticsearch extends Command
                         'bool' => [
                             'must' => [
                                 [
-                                    'term' => [
-                                        'status' => 'completed'  // Changed to 'term' for exact match
+                                    'match' => [
+                                        'status' => 'completed'
                                     ]
                                 ]
                             ],
@@ -82,10 +81,9 @@ class DeleteCachedDataWithElasticsearch extends Command
                 ]
             ];
 
-            // Execute search query
             $response = $client->search($params);
 
-            // Get the total number of hits
+            // Get the count of the hits
             $hitCount = isset($response['hits']['total']['value']) ? $response['hits']['total']['value'] : $response['hits']['total'];
 
             if ($hitCount == 0) {
@@ -93,7 +91,7 @@ class DeleteCachedDataWithElasticsearch extends Command
                 return;
             }
 
-            // Prepare bulk delete request
+            // Iterate over the results and delete them
             $deleteParams = [];
             foreach ($response['hits']['hits'] as $hit) {
                 $deleteParams[] = [
@@ -106,14 +104,8 @@ class DeleteCachedDataWithElasticsearch extends Command
 
             // Perform bulk delete
             if (!empty($deleteParams)) {
-                $bulkResponse = $client->bulk(['body' => $deleteParams]);
-
-                // Log the result of the bulk delete operation
-                if (isset($bulkResponse['errors']) && $bulkResponse['errors']) {
-                    $this->error('Bulk delete encountered errors: ' . json_encode($bulkResponse['items']));
-                } else {
-                    $this->info('Deleted ' . count($deleteParams) . ' records.');
-                }
+                $client->bulk(['body' => $deleteParams]);
+                $this->info('Deleted ' . count($deleteParams) . ' records.');
             }
 
         } catch (\Exception $e) {
