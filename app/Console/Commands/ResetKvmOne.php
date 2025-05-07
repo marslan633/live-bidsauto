@@ -67,10 +67,11 @@ class ResetKvmOne extends Command
             foreach ($indicesToDelete as $index) {
                 $this->info("Checking if index $index exists...");
 
-                // Check if index exists
+                // Check if index exists before attempting deletion
                 if ($client->indices()->exists(['index' => $index])) {
-                    $this->info("Deleting index: $index...");
+                    $this->info("Index $index exists. Deleting...");
                     $client->indices()->delete(['index' => $index]);
+                    $this->info("Index $index deleted successfully.");
                 } else {
                     $this->info("Index $index does not exist. Skipping deletion.");
                 }
