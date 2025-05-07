@@ -66,6 +66,7 @@ class ResetKvmOne extends Command
             ];
 
             foreach ($indicesToDelete as $index) {
+                // Check if the index exists before deleting
                 if ($this->indexExists($client, $index)) {
                     $this->info("Deleting index: $index...");
                     $client->indices()->delete(['index' => $index]);
@@ -145,7 +146,8 @@ class ResetKvmOne extends Command
     private function indexExists($client, string $index)
     {
         try {
-            return $client->indices()->exists(['index' => $index]);
+            $response = $client->indices()->exists(['index' => $index]);
+            return $response;
         } catch (\Exception $e) {
             Log::error("Error checking if index $index exists: " . $e->getMessage());
             return false;
