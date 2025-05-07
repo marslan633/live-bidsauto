@@ -63,9 +63,25 @@ class ProcessCachedArchivedDataToDatabaseWithElasticSearch extends Command
 
             $response = $client->search([
                 'index' => 'vehicle_archived_api_data',
-                'size' => 100,
-                'sort' => ['created_at:desc']
+                'size' => 100, // Number of records to return
+                'sort' => [
+                    'created_at:desc' // Sort by created_at in descending order
+                ],
+                'body' => [
+                    'query' => [
+                        'bool' => [
+                            'must' => [
+                                [
+                                    'match' => [
+                                        'status' => 'pending' // Match only records with status 'pending'
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
             ]);
+
 
             $hits = $response['hits']['hits'];
 
