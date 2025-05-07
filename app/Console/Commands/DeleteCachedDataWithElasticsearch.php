@@ -46,7 +46,7 @@ class DeleteCachedDataWithElasticsearch extends Command
         $client = app('ElasticsearchKvmOne');
 
         // Time range: 30 minutes ago to now
-        $now = Carbon::now()->utc();
+        $now = Carbon::now()->utc(); // Ensure you're using UTC to match Elasticsearch
         $startTime = $now->subMinutes(30)->toDateTimeString(); // 30 minutes ago
 
         // Log the start time and current time for debugging purposes
@@ -56,7 +56,7 @@ class DeleteCachedDataWithElasticsearch extends Command
         ]);
 
         try {
-            // Search for documents older than 30 minutes
+            // Search for documents older than 30 minutes using range query
             $params = [
                 'index' => 'vehicle_api_data',
                 'body'  => [
@@ -70,9 +70,11 @@ class DeleteCachedDataWithElasticsearch extends Command
                 ]
             ];
 
+            // Perform search query
             $response = $client->search($params);
             Log::info('Elasticsearch response', ['response' => json_encode($response)]);
 
+            // Get the count of the hits
             $hitCount = $response['hits']['total']['value'] ?? 0;
 
             if ($hitCount == 0) {
@@ -80,29 +82,45 @@ class DeleteCachedDataWithElasticsearch extends Command
                 return;
             }
 
-            // Prepare delete operations
-            $deleteParams = [];
-            foreach ($response['hits']['hits'] as $hit) {
-                $deleteParams[] = [
-                    'delete' => [
-                        '_index' => 'vehicle_api_data',
-                        '_id' => $hit['_id']
-                    ]
-                ];
-            }
+            // Use Scroll for large datasets
+            $scrollTime = '1m'; // Scroll context timeout
+            $scrollId = $response['_scroll_id'];
 
-            Log::info('Preparing to delete', ['deleteCount' => count($deleteParams)]);
+            // Continue scrolling and deleting until no more results are returned
+            do {
+                $hits = $response['hits']['hits'];
 
-            // Perform bulk delete
-            if (!empty($deleteParams)) {
-                $bulkResponse = $client->bulk(['body' => $deleteParams]);
-
-                if (isset($bulkResponse['errors']) && $bulkResponse['errors']) {
-                    Log::error('Bulk delete errors', ['response' => json_encode($bulkResponse)]);
-                } else {
-                    $this->info('Successfully deleted records.');
+                // Prepare delete operations
+                $deleteParams = [];
+                foreach ($hits as $hit) {
+                    $deleteParams[] = [
+                        'delete' => [
+                            '_index' => 'vehicle_api_data',
+                            '_id' => $hit['_id']
+                        ]
+                    ];
                 }
-            }
+
+                // Perform bulk delete
+                if (!empty($deleteParams)) {
+                    $bulkResponse = $client->bulk(['body' => $deleteParams]);
+
+                    if (isset($bulkResponse['errors']) && $bulkResponse['errors']) {
+                        Log::error('Bulk delete errors', ['response' => json_encode($bulkResponse)]);
+                    } else {
+                        $this->info('Successfully deleted ' . count($deleteParams) . ' records.');
+                    }
+                }
+
+                // Fetch next batch of results using scroll
+                $response = $client->scroll([
+                    'scroll_id' => $scrollId,
+                    'scroll' => $scrollTime
+                ]);
+
+            } while (count($hits) > 0);
+
+            $this->info('Completed deleting records.');
 
         } catch (\Exception $e) {
             Log::error('Error deleting records: ' . $e->getMessage());
