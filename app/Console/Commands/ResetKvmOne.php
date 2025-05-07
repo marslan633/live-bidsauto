@@ -53,11 +53,10 @@ class ResetKvmOne extends Command
             $this->info('Removing laravel.log...');
             File::delete(storage_path('logs/laravel.log'));
 
-            // Step 2: Elasticsearch client using the app binding
-            $client = app('ElasticsearchKvmOne'); // Ensure this resolves to the correct Elasticsearch client
+            // Step 2: Elasticsearch client
+            $client = app('ElasticsearchKvmOne');
 
-            // Step 3: Delete Elasticsearch indices
-            $this->info('Deleting existing Elasticsearch indices...');
+            // Step 3: Check and delete Elasticsearch indices if they exist
             $indicesToDelete = [
                 'vehicle_api_data',
                 'vehicle_process_cached_api_data',
@@ -66,8 +65,10 @@ class ResetKvmOne extends Command
             ];
 
             foreach ($indicesToDelete as $index) {
-                // Check if the index exists before deleting
-                if ($this->indexExists($client, $index)) {
+                $this->info("Checking if index $index exists...");
+
+                // Check if index exists
+                if ($client->indices()->exists(['index' => $index])) {
                     $this->info("Deleting index: $index...");
                     $client->indices()->delete(['index' => $index]);
                 } else {
@@ -75,7 +76,7 @@ class ResetKvmOne extends Command
                 }
             }
 
-            // Step 4: Create Elasticsearch indices
+            // Step 4: Create Elasticsearch indices if they do not exist
             $this->info('Creating Elasticsearch indices with the specified mappings...');
             $this->createIndex($client, 'vehicle_api_data', [
                 'mappings' => [
@@ -137,24 +138,6 @@ class ResetKvmOne extends Command
     }
 
     /**
-     * Helper method to check if an Elasticsearch index exists.
-     *
-     * @param Client $client
-     * @param string $index
-     * @return bool
-     */
-    private function indexExists($client, string $index)
-    {
-        try {
-            $response = $client->indices()->exists(['index' => $index]);
-            return $response;
-        } catch (\Exception $e) {
-            Log::error("Error checking if index $index exists: " . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
      * Helper method to create an Elasticsearch index.
      *
      * @param Client $client
@@ -165,11 +148,16 @@ class ResetKvmOne extends Command
     private function createIndex($client, string $index, array $body)
     {
         try {
-            $client->indices()->create([
-                'index' => $index,
-                'body' => $body
-            ]);
-            $this->info("Index $index created successfully.");
+            // Check if the index already exists
+            if (!$client->indices()->exists(['index' => $index])) {
+                $client->indices()->create([
+                    'index' => $index,
+                    'body' => $body
+                ]);
+                $this->info("Index $index created successfully.");
+            } else {
+                $this->info("Index $index already exists. Skipping creation.");
+            }
         } catch (\Exception $e) {
             $this->error("Failed to create index $index: " . $e->getMessage());
         }
