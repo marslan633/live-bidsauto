@@ -85,6 +85,7 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
             $scrollId = $response['_scroll_id'];
 
             // Continue fetching and deleting documents until there are no more hits
+            $totalDeleted = 0;
             do {
                 $hits = $response['hits']['hits'];
                 if (count($hits) == 0) {
@@ -105,7 +106,9 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
                 // Perform bulk delete
                 if (!empty($deleteParams)) {
                     $client->bulk(['body' => $deleteParams]);
-                    $this->info('Deleted ' . count($deleteParams) . ' records.');
+                    $deletedCount = count($deleteParams);
+                    $totalDeleted += $deletedCount;
+                    $this->info("Deleted $deletedCount records.");
                 }
 
                 // Fetch next batch of results using scroll
@@ -116,7 +119,7 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
 
             } while (count($hits) > 0);
 
-            $this->info('Completed deleting records.');
+            $this->info("Completed deleting $totalDeleted records.");
 
         } catch (\Exception $e) {
             Log::error('Error deleting records: ' . $e->getMessage());

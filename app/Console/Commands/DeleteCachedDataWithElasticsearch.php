@@ -59,8 +59,8 @@ class DeleteCachedDataWithElasticsearch extends Command
                         'bool' => [
                             'must' => [
                                 [
-                                    'match' => [
-                                        'status' => 'completed'
+                                    'term' => [
+                                        'status' => 'completed'  // Changed to 'term' for exact match
                                     ]
                                 ]
                             ],
@@ -79,8 +79,10 @@ class DeleteCachedDataWithElasticsearch extends Command
                 ]
             ];
 
+            // Execute search query
             $response = $client->search($params);
 
+            // Get the total number of hits
             $hitCount = isset($response['hits']['total']['value']) ? $response['hits']['total']['value'] : $response['hits']['total'];
 
             if ($hitCount == 0) {
@@ -88,7 +90,7 @@ class DeleteCachedDataWithElasticsearch extends Command
                 return;
             }
 
-            // Iterate over the results and delete them
+            // Prepare bulk delete request
             $deleteParams = [];
             foreach ($response['hits']['hits'] as $hit) {
                 $deleteParams[] = [
@@ -101,8 +103,14 @@ class DeleteCachedDataWithElasticsearch extends Command
 
             // Perform bulk delete
             if (!empty($deleteParams)) {
-                $client->bulk(['body' => $deleteParams]);
-                $this->info('Deleted ' . count($deleteParams) . ' records.');
+                $bulkResponse = $client->bulk(['body' => $deleteParams]);
+
+                // Log the result of the bulk delete operation
+                if (isset($bulkResponse['errors']) && $bulkResponse['errors']) {
+                    $this->error('Bulk delete encountered errors: ' . json_encode($bulkResponse['items']));
+                } else {
+                    $this->info('Deleted ' . count($deleteParams) . ' records.');
+                }
             }
 
         } catch (\Exception $e) {
