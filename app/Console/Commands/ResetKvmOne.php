@@ -67,13 +67,19 @@ class ResetKvmOne extends Command
             foreach ($indicesToDelete as $index) {
                 $this->info("Checking if index $index exists...");
 
-                // Check if index exists before attempting deletion
-                if ($client->indices()->exists(['index' => $index])) {
-                    $this->info("Index $index exists. Deleting...");
-                    $client->indices()->delete(['index' => $index]);
-                    $this->info("Index $index deleted successfully.");
-                } else {
-                    $this->info("Index $index does not exist. Skipping deletion.");
+                try {
+                    // Check if index exists before attempting deletion
+                    if ($client->indices()->exists(['index' => $index])) {
+                        $this->info("Index $index exists. Deleting...");
+                        $client->indices()->delete(['index' => $index]);
+                        $this->info("Index $index deleted successfully.");
+                    } else {
+                        $this->info("Index $index does not exist. Skipping deletion.");
+                    }
+                } catch (\Throwable $e) {
+                    // Catch any exception or error related to deleting the index
+                    Log::error("Error while checking or deleting index $index: " . $e->getMessage());
+                    $this->error("Error while checking or deleting index $index: " . $e->getMessage());
                 }
             }
 
@@ -132,7 +138,7 @@ class ResetKvmOne extends Command
             ]);
 
             $this->info('KVM One reset completed successfully!');
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Error during KVM One reset: ' . $e->getMessage());
             $this->error('Error during KVM One reset: ' . $e->getMessage());
         }
@@ -159,7 +165,7 @@ class ResetKvmOne extends Command
             } else {
                 $this->info("Index $index already exists. Skipping creation.");
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->error("Failed to create index $index: " . $e->getMessage());
         }
     }
