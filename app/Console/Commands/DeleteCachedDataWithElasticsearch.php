@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
@@ -48,7 +49,11 @@ class DeleteCachedDataWithElasticsearch extends Command
         $now = Carbon::now()->utc();
         $startTime = $now->subMinutes(30)->toDateTimeString(); // 30 minutes ago
 
-        Log::info('Deleting records older than 30 minutes', ['start' => $startTime]);
+        // Log the start time and current time for debugging purposes
+        Log::info('Deleting records older than 30 minutes', [
+            'start_time' => $startTime,
+            'now' => $now->toDateTimeString(),
+        ]);
 
         try {
             // Search for documents older than 30 minutes
