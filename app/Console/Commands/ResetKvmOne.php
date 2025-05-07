@@ -56,19 +56,19 @@ class ResetKvmOne extends Command
             // Step 2: Elasticsearch client
             $client = app('ElasticsearchKvmOne');
 
-            // Step 3: Check and delete Elasticsearch indices if they exist
-            $indicesToDelete = [
+            // Step 3: Check and delete Elasticsearch indices if they exist, then recreate
+            $indicesToDeleteAndCreate = [
                 'vehicle_api_data',
                 'vehicle_process_cached_api_data',
                 'vehicle_archived_api_data',
                 'cron_run_histories'
             ];
 
-            foreach ($indicesToDelete as $index) {
+            foreach ($indicesToDeleteAndCreate as $index) {
                 $this->info("Checking if index $index exists...");
 
                 try {
-                    // Check if index exists before attempting deletion
+                    // Check if index exists
                     if ($client->indices()->exists(['index' => $index])) {
                         $this->info("Index $index exists. Deleting...");
                         $client->indices()->delete(['index' => $index]);
@@ -76,66 +76,15 @@ class ResetKvmOne extends Command
                     } else {
                         $this->info("Index $index does not exist. Skipping deletion.");
                     }
+
+                    // After deletion or if it didn't exist, recreate the index
+                    $this->info("Recreating index $index...");
+                    $this->createIndex($client, $index);
                 } catch (\Throwable $e) {
-                    // Catch any exception or error related to deleting the index
-                    Log::error("Error while checking or deleting index $index: " . $e->getMessage());
-                    $this->error("Error while checking or deleting index $index: " . $e->getMessage());
+                    Log::error("Error while processing index $index: " . $e->getMessage());
+                    $this->error("Error while processing index $index: " . $e->getMessage());
                 }
             }
-
-            // Step 4: Create Elasticsearch indices if they do not exist
-            $this->info('Creating Elasticsearch indices with the specified mappings...');
-            $this->createIndex($client, 'vehicle_api_data', [
-                'mappings' => [
-                    'properties' => [
-                        'cache_value' => ['type' => 'text'],
-                        'created_at' => ['type' => 'date', 'format' => 'yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis'],
-                        'expires_at' => ['type' => 'date', 'format' => 'yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis']
-                    ]
-                ]
-            ]);
-
-            $this->createIndex($client, 'vehicle_process_cached_api_data', [
-                'mappings' => [
-                    'properties' => [
-                        'cache_value' => ['type' => 'text'],
-                        'created_at' => ['type' => 'date', 'format' => 'yyyy-MM-dd HH:mm:ss'],
-                        'updated_at' => ['type' => 'date', 'format' => 'yyyy-MM-dd HH:mm:ss'],
-                        'expires_at' => ['type' => 'date', 'format' => 'yyyy-MM-dd HH:mm:ss'],
-                        'status' => ['type' => 'keyword']
-                    ]
-                ]
-            ]);
-
-            $this->createIndex($client, 'vehicle_archived_api_data', [
-                'mappings' => [
-                    'properties' => [
-                        'cache_value' => ['type' => 'text'],
-                        'created_at' => ['type' => 'keyword'],
-                        'updated_at' => ['type' => 'date'],
-                        'expires_at' => ['type' => 'date'],
-                        'status' => ['type' => 'keyword']
-                    ]
-                ]
-            ]);
-
-            $this->createIndex($client, 'cron_run_histories', [
-                'mappings' => [
-                    'properties' => [
-                        'cron_name' => ['type' => 'keyword'],
-                        'start_time' => ['type' => 'date'],
-                        'end_time' => ['type' => 'date'],
-                        'status' => ['type' => 'keyword'],
-                        'error_message' => ['type' => 'text']
-                    ]
-                ],
-                'settings' => [
-                    'index' => [
-                        'number_of_shards' => 1,
-                        'number_of_replicas' => 0
-                    ]
-                ]
-            ]);
 
             $this->info('KVM One reset completed successfully!');
         } catch (\Throwable $e) {
@@ -147,26 +96,93 @@ class ResetKvmOne extends Command
     /**
      * Helper method to create an Elasticsearch index.
      *
-     * @param Client $client
+     * @param $client
      * @param string $index
-     * @param array $body
      * @return void
      */
-    private function createIndex($client, string $index, array $body)
+    private function createIndex($client, string $index)
     {
+        $indexMappings = $this->getIndexMappings($index);
+
         try {
-            // Check if the index already exists
-            if (!$client->indices()->exists(['index' => $index])) {
-                $client->indices()->create([
-                    'index' => $index,
-                    'body' => $body
-                ]);
-                $this->info("Index $index created successfully.");
-            } else {
-                $this->info("Index $index already exists. Skipping creation.");
-            }
+            // Create the index with specified mappings
+            $client->indices()->create([
+                'index' => $index,
+                'body' => $indexMappings
+            ]);
+            $this->info("Index $index created successfully.");
         } catch (\Throwable $e) {
             $this->error("Failed to create index $index: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get the mappings for each index.
+     *
+     * @param string $index
+     * @return array
+     */
+    private function getIndexMappings(string $index)
+    {
+        switch ($index) {
+            case 'vehicle_api_data':
+                return [
+                    'mappings' => [
+                        'properties' => [
+                            'cache_value' => ['type' => 'text'],
+                            'created_at' => ['type' => 'date', 'format' => 'yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis'],
+                            'expires_at' => ['type' => 'date', 'format' => 'yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis']
+                        ]
+                    ]
+                ];
+
+            case 'vehicle_process_cached_api_data':
+                return [
+                    'mappings' => [
+                        'properties' => [
+                            'cache_value' => ['type' => 'text'],
+                            'created_at' => ['type' => 'date', 'format' => 'yyyy-MM-dd HH:mm:ss'],
+                            'updated_at' => ['type' => 'date', 'format' => 'yyyy-MM-dd HH:mm:ss'],
+                            'expires_at' => ['type' => 'date', 'format' => 'yyyy-MM-dd HH:mm:ss'],
+                            'status' => ['type' => 'keyword']
+                        ]
+                    ]
+                ];
+
+            case 'vehicle_archived_api_data':
+                return [
+                    'mappings' => [
+                        'properties' => [
+                            'cache_value' => ['type' => 'text'],
+                            'created_at' => ['type' => 'keyword'],
+                            'updated_at' => ['type' => 'date'],
+                            'expires_at' => ['type' => 'date'],
+                            'status' => ['type' => 'keyword']
+                        ]
+                    ]
+                ];
+
+            case 'cron_run_histories':
+                return [
+                    'mappings' => [
+                        'properties' => [
+                            'cron_name' => ['type' => 'keyword'],
+                            'start_time' => ['type' => 'date'],
+                            'end_time' => ['type' => 'date'],
+                            'status' => ['type' => 'keyword'],
+                            'error_message' => ['type' => 'text']
+                        ]
+                    ],
+                    'settings' => [
+                        'index' => [
+                            'number_of_shards' => 1,
+                            'number_of_replicas' => 0
+                        ]
+                    ]
+                ];
+
+            default:
+                return [];
         }
     }
 }
