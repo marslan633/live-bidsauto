@@ -20,7 +20,7 @@ class DeleteCachedDataWithElasticsearch extends Command
      *
      * @var string
      */
-    protected $description = 'Delete records with status "completed" from Elasticsearch index "vehicle_api_data" within a time range of 30 minutes to 1 hour ago';
+    protected $description = 'Delete records older than 30 minutes from Elasticsearch index "vehicle_api_data"';
 
     /**
      * Create a new command instance.
@@ -39,42 +39,26 @@ class DeleteCachedDataWithElasticsearch extends Command
      */
     public function handle()
     {
-        $this->info('Starting to delete completed status records from vehicle_api_data within the time range of 30 minutes to 1 hour ago...');
+        $this->info('Starting to delete records older than 30 minutes from vehicle_api_data...');
 
         // Elasticsearch client
         $client = app('ElasticsearchKvmOne');
 
-        // Time range: 1 hour ago to 30 minutes ago
+        // Time range: 30 minutes ago to now
         $now = Carbon::now()->utc();
-        $startTime = $now->subMinutes(60)->toDateTimeString(); // 1 hour ago
-        $endTime = $now->subMinutes(30)->toDateTimeString();   // 30 minutes ago
+        $startTime = $now->subMinutes(30)->toDateTimeString(); // 30 minutes ago
 
-        // Log the time range for debugging purposes
-        Log::info('Deleting records between', ['start' => $startTime, 'end' => $endTime]);
+        Log::info('Deleting records older than 30 minutes', ['start' => $startTime]);
 
         try {
-            // Search for documents with status 'completed' and within the time range
+            // Search for documents older than 30 minutes
             $params = [
                 'index' => 'vehicle_api_data',
                 'body'  => [
                     'query' => [
-                        'bool' => [
-                            'must' => [
-                                [
-                                    'match' => [
-                                        'status' => 'completed'
-                                    ]
-                                ]
-                            ],
-                            'filter' => [
-                                [
-                                    'range' => [
-                                        'updated_at' => [
-                                            'gte' => $startTime,
-                                            'lte' => $endTime
-                                        ]
-                                    ]
-                                ]
+                        'range' => [
+                            'updated_at' => [
+                                'lte' => $startTime // Delete records older than 30 minutes
                             ]
                         ]
                     ]
@@ -82,16 +66,16 @@ class DeleteCachedDataWithElasticsearch extends Command
             ];
 
             $response = $client->search($params);
+            Log::info('Elasticsearch response', ['response' => json_encode($response)]);
 
-            // Get the count of the hits
-            $hitCount = isset($response['hits']['total']['value']) ? $response['hits']['total']['value'] : $response['hits']['total'];
+            $hitCount = $response['hits']['total']['value'] ?? 0;
 
             if ($hitCount == 0) {
-                $this->info('No records found with status "completed" within the time range.');
+                $this->info('No records found older than 30 minutes.');
                 return;
             }
 
-            // Iterate over the results and delete them
+            // Prepare delete operations
             $deleteParams = [];
             foreach ($response['hits']['hits'] as $hit) {
                 $deleteParams[] = [
@@ -102,10 +86,17 @@ class DeleteCachedDataWithElasticsearch extends Command
                 ];
             }
 
+            Log::info('Preparing to delete', ['deleteCount' => count($deleteParams)]);
+
             // Perform bulk delete
             if (!empty($deleteParams)) {
-                $client->bulk(['body' => $deleteParams]);
-                $this->info('Deleted ' . count($deleteParams) . ' records.');
+                $bulkResponse = $client->bulk(['body' => $deleteParams]);
+
+                if (isset($bulkResponse['errors']) && $bulkResponse['errors']) {
+                    Log::error('Bulk delete errors', ['response' => json_encode($bulkResponse)]);
+                } else {
+                    $this->info('Successfully deleted records.');
+                }
             }
 
         } catch (\Exception $e) {
