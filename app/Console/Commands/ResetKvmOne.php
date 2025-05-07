@@ -66,8 +66,12 @@ class ResetKvmOne extends Command
             ];
 
             foreach ($indicesToDelete as $index) {
-                $this->info("Deleting index: $index...");
-                $client->indices()->delete(['index' => $index]);
+                if ($this->indexExists($client, $index)) {
+                    $this->info("Deleting index: $index...");
+                    $client->indices()->delete(['index' => $index]);
+                } else {
+                    $this->info("Index $index does not exist. Skipping deletion.");
+                }
             }
 
             // Step 4: Create Elasticsearch indices
@@ -128,6 +132,23 @@ class ResetKvmOne extends Command
         } catch (\Exception $e) {
             Log::error('Error during KVM One reset: ' . $e->getMessage());
             $this->error('Error during KVM One reset: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Helper method to check if an Elasticsearch index exists.
+     *
+     * @param Client $client
+     * @param string $index
+     * @return bool
+     */
+    private function indexExists($client, string $index)
+    {
+        try {
+            return $client->indices()->exists(['index' => $index]);
+        } catch (\Exception $e) {
+            Log::error("Error checking if index $index exists: " . $e->getMessage());
+            return false;
         }
     }
 
