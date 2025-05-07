@@ -21,7 +21,7 @@ class DeleteCachedDataWithElasticsearch extends Command
      *
      * @var string
      */
-    protected $description = 'Delete records older than 30 minutes from Elasticsearch index "vehicle_api_data"';
+    protected $description = 'Delete records older than 30 minutes from Elasticsearch index "vehicle_process_cached_api_data"';
 
     /**
      * Create a new command instance.
@@ -40,7 +40,7 @@ class DeleteCachedDataWithElasticsearch extends Command
      */
     public function handle()
     {
-        $this->info('Starting to delete records older than 30 minutes from vehicle_api_data...');
+        $this->info('Starting to delete records older than 30 minutes from vehicle_process_cached_api_data...');
 
         // Elasticsearch client
         $client = app('ElasticsearchKvmOne');
@@ -58,7 +58,7 @@ class DeleteCachedDataWithElasticsearch extends Command
         try {
             // Search for documents older than 30 minutes using range query
             $params = [
-                'index' => 'vehicle_api_data',
+                'index' => 'vehicle_process_cached_api_data',
                 'body'  => [
                     'query' => [
                         'range' => [
@@ -95,7 +95,7 @@ class DeleteCachedDataWithElasticsearch extends Command
                 foreach ($hits as $hit) {
                     $deleteParams[] = [
                         'delete' => [
-                            '_index' => 'vehicle_api_data',
+                            '_index' => 'vehicle_process_cached_api_data',
                             '_id' => $hit['_id']
                         ]
                     ];
