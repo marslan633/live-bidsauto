@@ -45,10 +45,13 @@ class DeleteCachedDataWithElasticsearch extends Command
         // Elasticsearch client
         $client = app('ElasticsearchKvmOne');
 
-        // Time range: 1 hour ago to 30 minutes ago
-        $now = Carbon::now();
-        $startTime = $now->subMinutes(60)->toDateTimeString();
-        $endTime = $now->subMinutes(30)->toDateTimeString();
+        // Time range: 1 hour ago to 30 minutes ago (in UTC)
+        $now = Carbon::now()->utc();
+        $startTime = $now->subMinutes(60)->toDateTimeString();  // 1 hour ago
+        $endTime = $now->subMinutes(30)->toDateTimeString();    // 30 minutes ago
+
+        // Log the start and end times for debugging
+        Log::info('Deleting records between', ['start' => $startTime, 'end' => $endTime]);
 
         try {
             // Search for documents with status 'completed' and within the time range
