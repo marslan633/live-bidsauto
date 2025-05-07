@@ -3,10 +3,9 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Elasticsearch\Client;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class ResetKvmOne extends Command
 {
@@ -54,8 +53,8 @@ class ResetKvmOne extends Command
             $this->info('Removing laravel.log...');
             File::delete(storage_path('logs/laravel.log'));
 
-            // Step 2: Elasticsearch client
-            $client = app('ElasticsearchKvmOne');
+            // Step 2: Elasticsearch client using the app binding
+            $client = app('ElasticsearchKvmOne'); // Ensure this resolves to the correct Elasticsearch client
 
             // Step 3: Delete Elasticsearch indices
             $this->info('Deleting existing Elasticsearch indices...');
@@ -140,7 +139,7 @@ class ResetKvmOne extends Command
      * @param array $body
      * @return void
      */
-    private function createIndex(Client $client, string $index, array $body)
+    private function createIndex($client, string $index, array $body)
     {
         try {
             $client->indices()->create([
