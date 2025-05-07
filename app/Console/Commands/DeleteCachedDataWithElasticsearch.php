@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Elasticsearch\Client;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class DeleteCachedDataWithElasticsearch extends Command
 {
@@ -44,20 +45,19 @@ class DeleteCachedDataWithElasticsearch extends Command
         // Elasticsearch client
         $client = app('ElasticsearchKvmOne');
 
-        try {
-            // Calculate time range
-            $now = Carbon::now();
-            $startTime = $now->subMinutes(60)->toDateTimeString(); // 1 hour ago
-            $endTime = $now->subMinutes(30)->toDateTimeString(); // 30 minutes ago
+        // Time range: 1 hour ago to 30 minutes ago
+        $now = Carbon::now();
+        $startTime = $now->subMinutes(60)->toDateTimeString();
+        $endTime = $now->subMinutes(30)->toDateTimeString();
 
-            // Search for documents with status 'completed' and time range
+        try {
+            // Search for documents with status 'completed' and within the time range
             $params = [
                 'index' => 'vehicle_api_data',
                 'body'  => [
                     'query' => [
                         'bool' => [
                             'must' => [
-                                // Match status 'completed'
                                 [
                                     'match' => [
                                         'status' => 'completed'
@@ -65,12 +65,11 @@ class DeleteCachedDataWithElasticsearch extends Command
                                 ]
                             ],
                             'filter' => [
-                                // Range filter for created_at or updated_at
                                 [
                                     'range' => [
                                         'created_at' => [
-                                            'gte' => $startTime,  // 1 hour ago
-                                            'lte' => $endTime    // 30 minutes ago
+                                            'gte' => $startTime,
+                                            'lte' => $endTime
                                         ]
                                     ]
                                 ]
@@ -80,27 +79,34 @@ class DeleteCachedDataWithElasticsearch extends Command
                 ]
             ];
 
-            $results = $client->search($params);
+            $response = $client->search($params);
 
-            // If no records found, return a message
-            if ($results['hits']['total']['value'] == 0) {
+            $hitCount = isset($response['hits']['total']['value']) ? $response['hits']['total']['value'] : $response['hits']['total'];
+
+            if ($hitCount == 0) {
                 $this->info('No records found with status "completed" within the time range.');
                 return;
             }
 
             // Iterate over the results and delete them
-            foreach ($results['hits']['hits'] as $hit) {
-                $client->delete([
-                    'index' => 'vehicle_api_data',
-                    'id'    => $hit['_id']
-                ]);
-
-                $this->info('Deleted record with ID: ' . $hit['_id']);
+            $deleteParams = [];
+            foreach ($response['hits']['hits'] as $hit) {
+                $deleteParams[] = [
+                    'delete' => [
+                        '_index' => 'vehicle_api_data',
+                        '_id' => $hit['_id']
+                    ]
+                ];
             }
 
-            $this->info('Completed deleting records.');
+            // Perform bulk delete
+            if (!empty($deleteParams)) {
+                $client->bulk(['body' => $deleteParams]);
+                $this->info('Deleted ' . count($deleteParams) . ' records.');
+            }
 
         } catch (\Exception $e) {
+            Log::error('Error deleting records: ' . $e->getMessage());
             $this->error('Error deleting records: ' . $e->getMessage());
         }
     }

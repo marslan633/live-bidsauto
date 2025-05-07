@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Elasticsearch\Client;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class DeleteCachedArchivedDataWithElasticsearch extends Command
 {
@@ -44,20 +45,22 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
         // Elasticsearch client
         $client = app('ElasticsearchKvmOne');
 
-        try {
-            // Calculate time range
-            $now = Carbon::now();
-            $startTime = $now->subMinutes(60)->toDateTimeString(); // 1 hour ago
-            $endTime = $now->subMinutes(30)->toDateTimeString(); // 30 minutes ago
+        // Time range: 1 hour ago to 30 minutes ago
+        $now = Carbon::now();
+        $startTime = $now->subMinutes(60)->toDateTimeString();
+        $endTime = $now->subMinutes(30)->toDateTimeString();
 
-            // Search for documents with status 'completed' and time range
-            $params = [
+        try {
+            // Initial search query with scroll
+            $scrollTime = '1m'; // The scroll context will last for 1 minute
+            $response = $client->search([
                 'index' => 'vehicle_archived_api_data',
-                'body'  => [
+                'scroll' => $scrollTime,
+                'size' => 200,  // Adjust the size as needed
+                'body' => [
                     'query' => [
                         'bool' => [
                             'must' => [
-                                // Match status 'completed'
                                 [
                                     'match' => [
                                         'status' => 'completed'
@@ -65,7 +68,6 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
                                 ]
                             ],
                             'filter' => [
-                                // Range filter for created_at or updated_at
                                 [
                                     'range' => [
                                         'created_at' => [
@@ -78,29 +80,46 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
                         ]
                     ]
                 ]
-            ];
+            ]);
 
-            $results = $client->search($params);
+            $scrollId = $response['_scroll_id'];
 
-            // If no records found, return a message
-            if ($results['hits']['total']['value'] == 0) {
-                $this->info('No records found with status "completed" within the time range.');
-                return;
-            }
+            // Continue fetching and deleting documents until there are no more hits
+            do {
+                $hits = $response['hits']['hits'];
+                if (count($hits) == 0) {
+                    break;
+                }
 
-            // Iterate over the results and delete them
-            foreach ($results['hits']['hits'] as $hit) {
-                $client->delete([
-                    'index' => 'vehicle_archived_api_data',
-                    'id'    => $hit['_id']
+                // Prepare bulk delete params
+                $deleteParams = [];
+                foreach ($hits as $hit) {
+                    $deleteParams[] = [
+                        'delete' => [
+                            '_index' => 'vehicle_archived_api_data',
+                            '_id' => $hit['_id']
+                        ]
+                    ];
+                }
+
+                // Perform bulk delete
+                if (!empty($deleteParams)) {
+                    $client->bulk(['body' => $deleteParams]);
+                    $this->info('Deleted ' . count($deleteParams) . ' records.');
+                }
+
+                // Fetch next batch of results using scroll
+                $response = $client->scroll([
+                    'scroll_id' => $scrollId,
+                    'scroll' => $scrollTime
                 ]);
 
-                $this->info('Deleted record with ID: ' . $hit['_id']);
-            }
+            } while (count($hits) > 0);
 
             $this->info('Completed deleting records.');
 
         } catch (\Exception $e) {
+            Log::error('Error deleting records: ' . $e->getMessage());
             $this->error('Error deleting records: ' . $e->getMessage());
         }
     }
