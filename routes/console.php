@@ -32,13 +32,13 @@ if (config('app.app_kvm_one') === true) {
     // app(Schedule::class)->command('process:cached-data-without-queue')->everyFiveMinutes()->withoutOverlapping();
     // app(Schedule::class)->command('process:archived-data')->everyFifteenMinutes()->withoutOverlapping();
 
-    app(Schedule::class)->command('process:api-data-with-elasticsearch')->dailyAt('09:40')->withoutOverlapping();
+    // app(Schedule::class)->command('process:api-data-with-elasticsearch')->dailyAt('09:40')->withoutOverlapping();
     // app(Schedule::class)->command('process:cached-data-with-elasticsearch')->everyFiveMinutes()->withoutOverlapping();
-    app(Schedule::class)->command('process:archived-data-with-elasticsearch')->everyFiveMinutes()->withoutOverlapping();
+    // app(Schedule::class)->command('process:archived-data-with-elasticsearch')->everyFiveMinutes()->withoutOverlapping();
 
-    app(Schedule::class)->command('process:delete-cached-data-with-elasticsearch')->hourly()->withoutOverlapping();
+    // app(Schedule::class)->command('process:delete-cached-data-with-elasticsearch')->hourly()->withoutOverlapping();
 
-    app(Schedule::class)->command('process:delete-cached-archived-data-with-elasticsearch')->hourly()->withoutOverlapping();
+    // app(Schedule::class)->command('process:delete-cached-archived-data-with-elasticsearch')->hourly()->withoutOverlapping();
 }
 
 if (config('app.app_kvm_three') === true) {
@@ -48,7 +48,7 @@ if (config('app.app_kvm_three') === true) {
      */
     // app(Schedule::class)->command('process:process-cached-data-to-databases-with-elasticsearch')->everyTenMinutes()->withoutOverlapping();
     // app(Schedule::class)->command('process:cached-archived-data-to-database-with-elasticsearch')->everyTenMinutes()->withoutOverlapping();
-    app(Schedule::class)->command('process:expired-auction-archive-with-elasticsearch')->hourly()->everyFifteenMinutes();
+    // app(Schedule::class)->command('process:expired-auction-archive-with-elasticsearch')->hourly()->everyFifteenMinutes();
 
     // app(Schedule::class)->command('process:process-cached-data-to-databases')->everyTenMinutes()->withoutOverlapping();
 
@@ -85,9 +85,10 @@ if (config('app.app_kvm_three') === true) {
 
 if (config('app.app_kvm_four') === true) {
 
-    app(Schedule::class)->command('index:vehicle-records')->dailyAt('10:02')->withoutOverlapping();
+    // app(Schedule::class)->command('index:vehicle-records')->dailyAt('10:02')->withoutOverlapping();
 
     // app(Schedule::class)->command('index:vehicle-record-archiveds')->dailyAt('11:10')->withoutOverlapping();
+    // app(Schedule::class)->command('index:sale-auction-histories')->dailyAt('11:10')->withoutOverlapping();
 
 }
 

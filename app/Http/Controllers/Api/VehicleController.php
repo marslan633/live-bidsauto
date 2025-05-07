@@ -579,7 +579,87 @@ class VehicleController extends Controller
     /**
      * Search vehicle information records throught lot_id or vin.
      */
-    public function searchVehicle(Request $request, $id)
+    /**
+ * Search vehicle information records through lot_id or vin using Elasticsearch.
+ */
+public function searchVehicle(Request $request, $id)
+{
+    try {
+        // Determine the Elasticsearch index based on the 'data_source' parameter
+        $data_source = $request->input('data_source', 'active'); // Default to 'active'
+        $index = $data_source === 'archived' ? 'vehicle_record_archiveds' : 'vehicle_records';
+
+        // Initialize the Elasticsearch client
+        $client = app('ElasticsearchKvmFour');
+
+        // Prepare Elasticsearch query
+        $params = [
+            'index' => $index,
+            'body'  => [
+                'query' => [
+                    'bool' => [
+                        'should' => [
+                            [
+                                'match' => [
+                                    'lot_id' => $id
+                                ]
+                            ],
+                            [
+                                'match' => [
+                                    'vin' => $id
+                                ]
+                            ]
+                        ]
+                    ]
+                ],
+                'size' => 1 // To get the first matching record
+            ]
+        ];
+
+        // Search Elasticsearch
+        $response = $client->search($params);
+
+        // Check if any document matches
+        if (isset($response['hits']['hits']) && count($response['hits']['hits']) > 0) {
+            $record = $response['hits']['hits'][0]['_source'];
+
+            // Optionally, if you want to include related data like manufacturer, model, etc.,
+            // you can use Elasticsearch's "nested" or "join" features for better performance.
+            // If you need to get specific related data (like "manufacturer", "vehicleModel"),
+            // you can fetch that in a separate query or modify this response.
+
+            // Check if we need to include SaleAuctionHistory data
+            $includeHistory = filter_var($request->input('is_history', false), FILTER_VALIDATE_BOOLEAN);
+            if ($includeHistory) {
+                // Query to get the sale history related to this vehicle
+                $saleHistoryParams = [
+                    'index' => 'sale_auction_histories',
+                    'body'  => [
+                        'query' => [
+                            'match' => [
+                                'vin' => $record['vin']
+                            ]
+                        ]
+                    ]
+                ];
+                $saleHistoryResponse = $client->search($saleHistoryParams);
+                $saleHistories = $saleHistoryResponse['hits']['hits'] ?? [];
+
+                $record['sale_histories'] = $saleHistories;
+            }
+
+            // Return response with the record found
+            return sendResponse(true, 200, 'Car Detail Fetched Successfully!', $record, 200);
+        } else {
+            return sendResponse(false, 404, 'Not Found', 'Car detail not found', 200);
+        }
+    } catch (\Exception $ex) {
+        return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+    }
+}
+
+
+    public function searchVehicleOld(Request $request, $id)
     {
         try {
             // Determine the model based on the 'type' parameter
@@ -616,7 +696,10 @@ class VehicleController extends Controller
 
             // If querying from archived data and is_history is true, include SaleAuctionHistory
             $includeHistory = filter_var($request->input('is_history', false), FILTER_VALIDATE_BOOLEAN);
-            if ($data_source === 'archived' && $includeHistory) {
+            // if ($data_source === 'archived' && $includeHistory) {
+            //     $query->with('saleHistories.domain', 'saleHistories.status', 'saleHistories.seller');
+            // }
+            if ($includeHistory) {
                 $query->with('saleHistories.domain', 'saleHistories.status', 'saleHistories.seller');
             }
 
