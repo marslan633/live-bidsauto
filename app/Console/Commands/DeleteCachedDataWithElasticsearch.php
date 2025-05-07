@@ -56,10 +56,12 @@ class DeleteCachedDataWithElasticsearch extends Command
         ]);
 
         try {
-            // Search for documents older than 30 minutes using range query
+            // Search for documents older than 30 minutes using range query with scroll enabled
             $params = [
                 'index' => 'vehicle_process_cached_api_data',
-                'body'  => [
+                'scroll' => '1m', // Set scroll time context
+                'size' => 200, // Fetch 200 records at a time
+                'body' => [
                     'query' => [
                         'range' => [
                             'updated_at' => [
@@ -74,21 +76,20 @@ class DeleteCachedDataWithElasticsearch extends Command
             $response = $client->search($params);
             Log::info('Elasticsearch response', ['response' => json_encode($response)]);
 
-            // Get the count of the hits
-            $hitCount = $response['hits']['total']['value'] ?? 0;
-
-            if ($hitCount == 0) {
-                $this->info('No records found older than 30 minutes.');
+            // Get the scroll ID from the response
+            $scrollId = $response['_scroll_id'] ?? null;
+            if (!$scrollId) {
+                $this->error('Scroll ID is missing in the response.');
                 return;
             }
-
-            // Use Scroll for large datasets
-            $scrollTime = '1m'; // Scroll context timeout
-            $scrollId = $response['_scroll_id'];
 
             // Continue scrolling and deleting until no more results are returned
             do {
                 $hits = $response['hits']['hits'];
+
+                if (count($hits) == 0) {
+                    break;
+                }
 
                 // Prepare delete operations
                 $deleteParams = [];
@@ -115,7 +116,7 @@ class DeleteCachedDataWithElasticsearch extends Command
                 // Fetch next batch of results using scroll
                 $response = $client->scroll([
                     'scroll_id' => $scrollId,
-                    'scroll' => $scrollTime
+                    'scroll' => '1m'
                 ]);
 
             } while (count($hits) > 0);
