@@ -45,13 +45,13 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 $batchData[] = $this->prepareCarData((array) $car);
             }
 
-            // if (count($batchData) > 0) {
-            //     Log::info('Batch Inserted');
-            //     $this->insertBatch($batchData, $this->cacheKey->_id);
-            //     $batchData = []; // Reset batch
-            // }else{
-            //     Log::info('Batch Condition Not Meet');
-            // }
+            if (count($batchData) > 0) {
+                Log::info('Batch Inserted');
+                $this->insertBatch($batchData, $this->cacheKey->_id);
+                $batchData = []; // Reset batch
+            }else{
+                Log::info('Batch Condition Not Meet');
+            }
 
         } catch (\Exception $e) {
             Log::error("Error processing key {$this->cacheKey->_id}: " . $e->getMessage());
@@ -516,6 +516,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             'location_id' => $location_id,
             'image_id' => $imageId,
         ];
+
         Log::info('Lot ID', ['lot_id' => $car['vehicle_record']['lot_id'] ?? null, 'vin' => $car['vehicle_record']['vin'] ?? null]);
         // Log::info('Returned Array Data', ['data' => json_encode($data)]);
         return $data;
