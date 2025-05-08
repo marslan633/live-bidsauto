@@ -516,7 +516,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             'location_id' => $location_id,
             'image_id' => $imageId,
         ];
-        Log::info('Lot ID', ['lot_id' => $car['vehicle_record']['lot_id'] ?? null]);
+        Log::info('Lot ID', ['lot_id' => $car['vehicle_record']['lot_id'] ?? null, 'vin' => $car['vehicle_record']['vin'] ?? null]);
         // Log::info('Returned Array Data', ['data' => json_encode($data)]);
         return $data;
 
