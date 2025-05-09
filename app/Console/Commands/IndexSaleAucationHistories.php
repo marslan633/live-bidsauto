@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\StoreSaleAuctionHistoryToElasticsearch;
 use App\Models\SaleAuctionHistory;
 use Illuminate\Console\Command;
 use App\Models\VehicleRecordArchived;
