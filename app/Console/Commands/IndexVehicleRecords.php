@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\StoreVehicleToElasticsearch;
 use Illuminate\Console\Command;
 use App\Models\VehicleRecord;
 use Carbon\Carbon;
@@ -123,24 +124,11 @@ class IndexVehicleRecords extends Command
 
         $query = $isFullFetch ? VehicleRecord::query() : VehicleRecord::where('updated_at', '>=', $minutes);
 
-        $query->chunkById(1000, function ($vehicles) use ($clientKvmFour) {
-            $bulkData = [];
-
-            foreach ($vehicles as $vehicle) {
-                $bulkData[] = [
-                    'index' => [
-                        '_index' => 'vehicle_records',
-                        '_id' => $vehicle->id
-                    ]
-                ];
-
-                $bulkData[] = $vehicle->toArray();
-            }
-
-            if (!empty($bulkData)) {
-                $clientKvmFour->bulk(['body' => $bulkData]);
-            }
+        $query->chunkById(1000, function ($vehicles) {
+            dispatch(new StoreVehicleToElasticsearch($vehicles));
         });
+
+        $this->info('✅ Indexing vehicle_records job dispatched!');
 
         // if(config('app.is_full_fetch') == true){
         //     VehicleRecord::chunk(500, function ($vehicles) use ($clientKvmFour) {

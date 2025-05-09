@@ -40,7 +40,7 @@ if (config('app.app_kvm_one') === true) {
 
     // app(Schedule::class)->command('process:delete-cached-archived-data-with-elasticsearch')->hourly()->withoutOverlapping();
 
-    app(Schedule::class)->command('index:vehicle-records-one')->dailyAt('10:55')->withoutOverlapping();
+    // app(Schedule::class)->command('index:vehicle-records-one')->dailyAt('10:55')->withoutOverlapping();
 }
 
 if (config('app.app_kvm_three') === true) {
