@@ -21,7 +21,6 @@ class StoreVehicleArchivedToElasticsearch implements ShouldQueue
      *
      * @var string
      */
-    public $jobName = 'store_archived_vehicle_records_to_elasticsearch_job';
 
     /**
      * Create a new job instance.
@@ -30,6 +29,7 @@ class StoreVehicleArchivedToElasticsearch implements ShouldQueue
      */
     public function __construct($vehicles)
     {
+        $this->queue = 'store_archived_vehicle_records_to_elasticsearch_job';
         $this->vehicles = $vehicles;
     }
 

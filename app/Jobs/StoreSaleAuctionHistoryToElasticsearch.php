@@ -21,7 +21,6 @@ class StoreSaleAuctionHistoryToElasticsearch implements ShouldQueue
      *
      * @var string
      */
-    public $jobName = 'store_sale_auction_history_records_to_elasticsearch_job';
 
     /**
      * Create a new job instance.
@@ -30,6 +29,7 @@ class StoreSaleAuctionHistoryToElasticsearch implements ShouldQueue
      */
     public function __construct($histories)
     {
+        $this->queue = 'store_sale_auction_history_records_to_elasticsearch_job';
         $this->histories = $histories;
     }
 

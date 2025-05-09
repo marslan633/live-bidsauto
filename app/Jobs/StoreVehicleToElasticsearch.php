@@ -15,7 +15,6 @@ class StoreVehicleToElasticsearch implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected $vehicles;
-    public $jobName = 'store_vehicle_records_to_elasticsearch_job';
     /**
      * Create a new job instance.
      *
@@ -23,6 +22,7 @@ class StoreVehicleToElasticsearch implements ShouldQueue
      */
     public function __construct($vehicles)
     {
+        $this->queue = 'store_vehicle_records_to_elasticsearch_job';
         $this->vehicles = $vehicles;
     }
 
