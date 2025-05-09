@@ -128,28 +128,15 @@ class IndexSaleAucationHistories extends Command
         }
         $minutes = Carbon::now()->subMinutes($minutes);
 
-        if(config('app.is_full_fetch') == true){
-            SaleAuctionHistory::chunk(500, function ($vehicles) use ($clientKvmFour) {
-                foreach ($vehicles as $vehicle) {
-                    $clientKvmFour->index([
-                        'index' => 'sale_auction_histories',
-                        'id' => $vehicle->id,
-                        'body' => $vehicle->toArray(),
-                    ]);
-                }
-            });
-        }else{
-            SaleAuctionHistory::where('updated_at', '>=', $minutes)
-            ->chunk(500, function ($vehicles) use ($clientKvmFour) {
-                foreach ($vehicles as $vehicle) {
-                    $clientKvmFour->index([
-                        'index' => 'sale_auction_histories',
-                        'id' => $vehicle->id,
-                        'body' => $vehicle->toArray(),
-                    ]);
-                }
-            });
-        }
+        $isFullFetch = config('app.is_full_fetch', false);
+
+        $query = $isFullFetch ? SaleAuctionHistory::query() : SaleAuctionHistory::where('updated_at', '>=', $minutes);
+
+        $query->chunkById(1000, function ($histories) {
+            dispatch(new StoreSaleAuctionHistoryToElasticsearch($histories));
+        });
+
+        $this->info('✅ Indexing sale_auction_histories job dispatched!');
 
         if($cronRun){
 
