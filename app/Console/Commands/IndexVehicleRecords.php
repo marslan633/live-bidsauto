@@ -119,29 +119,51 @@ class IndexVehicleRecords extends Command
         }
 
         $minutes = Carbon::now()->subMinutes($minutes);
+        $isFullFetch = config('app.is_full_fetch', false);
 
-        if(config('app.is_full_fetch') == true){
-            VehicleRecord::chunk(500, function ($vehicles) use ($clientKvmFour) {
-                foreach ($vehicles as $vehicle) {
-                    $clientKvmFour->index([
-                        'index' => 'vehicle_records',
-                        'id' => $vehicle->id,
-                        'body' => $vehicle->toArray(),
-                    ]);
-                }
-            });
-        }else{
-            VehicleRecord::where('updated_at', '>=', $minutes)
-            ->chunk(500, function ($vehicles) use ($clientKvmFour) {
-                foreach ($vehicles as $vehicle) {
-                    $clientKvmFour->index([
-                        'index' => 'vehicle_records',
-                        'id' => $vehicle->id,
-                        'body' => $vehicle->toArray(),
-                    ]);
-                }
-            });
-        }
+        $query = $isFullFetch ? VehicleRecord::query() : VehicleRecord::where('updated_at', '>=', $minutes);
+
+        $query->chunkById(1000, function ($vehicles) use ($clientKvmFour) {
+            $bulkData = [];
+
+            foreach ($vehicles as $vehicle) {
+                $bulkData[] = [
+                    'index' => [
+                        '_index' => 'vehicle_records',
+                        '_id' => $vehicle->id
+                    ]
+                ];
+
+                $bulkData[] = $vehicle->toArray();
+            }
+
+            if (!empty($bulkData)) {
+                $clientKvmFour->bulk(['body' => $bulkData]);
+            }
+        });
+
+        // if(config('app.is_full_fetch') == true){
+        //     VehicleRecord::chunk(500, function ($vehicles) use ($clientKvmFour) {
+        //         foreach ($vehicles as $vehicle) {
+        //             $clientKvmFour->index([
+        //                 'index' => 'vehicle_records',
+        //                 'id' => $vehicle->id,
+        //                 'body' => $vehicle->toArray(),
+        //             ]);
+        //         }
+        //     });
+        // }else{
+        //     VehicleRecord::where('updated_at', '>=', $minutes)
+        //     ->chunk(500, function ($vehicles) use ($clientKvmFour) {
+        //         foreach ($vehicles as $vehicle) {
+        //             $clientKvmFour->index([
+        //                 'index' => 'vehicle_records',
+        //                 'id' => $vehicle->id,
+        //                 'body' => $vehicle->toArray(),
+        //             ]);
+        //         }
+        //     });
+        // }
 
         if($cronRun){
 
