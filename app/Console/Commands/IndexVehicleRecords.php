@@ -124,7 +124,7 @@ class IndexVehicleRecords extends Command
 
         $query = $isFullFetch ? VehicleRecord::query() : VehicleRecord::where('updated_at', '>=', $minutes);
 
-        $query->chunkById(1000, function ($vehicles) {
+        $query->chunkById(500, function ($vehicles) {
             dispatch(new StoreVehicleToElasticsearch($vehicles));
         });
 
