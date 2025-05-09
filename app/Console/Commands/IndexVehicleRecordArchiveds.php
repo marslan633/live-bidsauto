@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\StoreVehicleArchivedToElasticsearch;
 use Illuminate\Console\Command;
 use App\Models\VehicleRecordArchived;
 use Carbon\Carbon;
@@ -127,28 +128,15 @@ class IndexVehicleRecordArchiveds extends Command
         }
         $minutes = Carbon::now()->subMinutes($minutes);
 
-        if(config('app.is_full_fetch') == true){
-            VehicleRecordArchived::chunk(500, function ($vehicles) use ($clientKvmFour) {
-                foreach ($vehicles as $vehicle) {
-                    $clientKvmFour->index([
-                        'index' => 'vehicle_record_archiveds',
-                        'id' => $vehicle->id,
-                        'body' => $vehicle->toArray(),
-                    ]);
-                }
-            });
-        }else{
-            VehicleRecordArchived::where('updated_at', '>=', $minutes)
-            ->chunk(500, function ($vehicles) use ($clientKvmFour) {
-                foreach ($vehicles as $vehicle) {
-                    $clientKvmFour->index([
-                        'index' => 'vehicle_record_archiveds',
-                        'id' => $vehicle->id,
-                        'body' => $vehicle->toArray(),
-                    ]);
-                }
-            });
-        }
+        $isFullFetch = config('app.is_full_fetch', false);
+
+        $query = $isFullFetch ? VehicleRecordArchived::query() : VehicleRecordArchived::where('updated_at', '>=', $minutes);
+
+        $query->chunkById(1000, function ($vehicles) {
+            dispatch(new StoreVehicleArchivedToElasticsearch($vehicles));
+        });
+
+        $this->info('✅ Indexing vehicle_record_archiveds job dispatched!');
 
         if($cronRun){
 

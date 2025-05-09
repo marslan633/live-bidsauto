@@ -10,12 +10,19 @@ use Illuminate\Queue\SerializesModels;
 use Elasticsearch\ClientBuilder;
 use Illuminate\Support\Facades\Log;
 
-class StoreVehicleToElasticsearch implements ShouldQueue
+class StoreVehicleArchivedToElasticsearch implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected $vehicles;
-    public $jobName = 'store_vehicle_records_to_elasticsearch_job';
+
+    /**
+     * The name of the job.
+     *
+     * @var string
+     */
+    public $jobName = 'store_archived_vehicle_records_to_elasticsearch_job';
+
     /**
      * Create a new job instance.
      *
@@ -37,13 +44,13 @@ class StoreVehicleToElasticsearch implements ShouldQueue
 
         $bulkData = [];
         foreach ($this->vehicles as $vehicle) {
-            $bulkData[] = ['index' => ['_index' => 'vehicle_records', '_id' => $vehicle->id]];
+            $bulkData[] = ['index' => ['_index' => 'vehicle_record_archiveds', '_id' => $vehicle->id]];
             $bulkData[] = $vehicle->toArray();
         }
 
         if (!empty($bulkData)) {
             $client->bulk(['body' => $bulkData]);
-            Log::info('Vehicle records indexed in Elasticsearch by job.');
+            Log::info('Archived vehicle records indexed in Elasticsearch by job.');
         }
     }
 }
