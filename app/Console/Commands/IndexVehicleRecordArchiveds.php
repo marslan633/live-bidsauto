@@ -130,11 +130,35 @@ class IndexVehicleRecordArchiveds extends Command
 
         $isFullFetch = config('app.is_full_fetch', false);
 
-        $query = $isFullFetch ? VehicleRecordArchived::query() : VehicleRecordArchived::where('updated_at', '>=', $minutes);
+        // Set the chunk size to 10,000
+        $chunkSize = 10000;
+        $dispatchChunkSize = 300;
+        // Set the starting point for the query
+        $start = 0;
 
-        $query->chunkById(1000, function ($vehicles) {
-            dispatch(new StoreVehicleArchivedToElasticsearch($vehicles));
-        });
+        // Check if it’s a full fetch or an incremental fetch
+        $query = $isFullFetch
+            ? VehicleRecordArchived::query()
+            : VehicleRecordArchived::query()->where('updated_at', '>=', $minutes);
+
+         // Loop through the records in chunks of 10,000
+         while (true) {
+            // Fetch 10,000 records at a time using skip and take
+            $vehicles = $query->skip($start)->take($chunkSize)->get();
+
+            // If no records are fetched, exit the loop (we've reached the end)
+            if ($vehicles->isEmpty()) {
+                break;
+            }
+
+            // Dispatch the job for this chunk
+            $vehicles->chunk($dispatchChunkSize)->each(function ($chunk) {
+                dispatch(new StoreVehicleArchivedToElasticsearch($chunk));
+            });
+
+            // Increase the starting point for the next chunk (i.e., skip the previous 10,000 records)
+            $start += $chunkSize;
+        }
 
         $this->info('✅ Indexing vehicle_record_archiveds job dispatched!');
 
