@@ -20,7 +20,7 @@ class DeleteExpiredData extends Command
      *
      * @var string
      */
-    protected $description = 'Delete records where sale_date is less than the current date and time from Elasticsearch index "vehicle_records"';
+    protected $description = 'Delete records where sale_date is less than the current date from Elasticsearch index "vehicle_records"';
 
     /**
      * Create a new command instance.
@@ -46,7 +46,7 @@ class DeleteExpiredData extends Command
 
         // Get current date and time (in UTC)
         $now = Carbon::now()->utc(); // Ensure you're using UTC to match Elasticsearch
-        $currentDateTime = $now->toDateTimeString(); // Current date and time in ISO8601 format (e.g., 2025-05-10T12:34:56)
+        $currentDateTime = $now->toIso8601String(); // Current date and time in ISO8601 format (e.g., 2025-05-10T18:35:01+00:00)
 
         // Log the current time for debugging purposes
         Log::info('Deleting records where sale_date < current date and time', [
