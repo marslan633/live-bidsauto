@@ -127,14 +127,15 @@ class IndexVehicleRecords extends Command
         $dispatchChunkSize = 300;
         // Set the starting point for the query
         $start = 0;
-
+        $query = VehicleRecord::query();
         // Check if it’s a full fetch or an incremental fetch
         if ($isFullFetch) {
             // Full fetch: fetch all records without any filter
-            $query = VehicleRecord::query();
+            $query->whereNotNull('sale_date');
         } else {
             // Fetch records that were updated after $minutes
-            $query = VehicleRecord::where('updated_at', '>=', $minutes);
+            $query->where('updated_at', '>=', $minutes)
+          ->whereNotNull('sale_date');
         }
 
         // Loop through the records in chunks of 10,000

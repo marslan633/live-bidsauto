@@ -42,7 +42,11 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
 
             $batchData = [];
             foreach ($data as $car) {
-                $batchData[] = $this->prepareCarData((array) $car);
+                $preparedData = $this->prepareCarData((array) $car);
+
+                if($preparedData){
+                    $batchData[] = $preparedData;
+                }
             }
 
             if (count($batchData) > 0) {
@@ -519,6 +523,11 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
 
         Log::info('Lot ID', ['lot_id' => $car['vehicle_record']['lot_id'] ?? null, 'vin' => $car['vehicle_record']['vin'] ?? null]);
         // Log::info('Returned Array Data', ['data' => json_encode($data)]);
+
+        if (preg_match('/[A-Za-z]/', $car['vehicle_record']['lot_id'])) {
+            // Skip this record if it contains any letters
+            return null;
+        }
         return $data;
 
     }

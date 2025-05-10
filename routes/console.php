@@ -92,5 +92,6 @@ if (config('app.app_kvm_four') === true) {
     // app(Schedule::class)->command('index:vehicle-record-archiveds')->dailyAt('11:10')->withoutOverlapping();
     // app(Schedule::class)->command('index:sale-auction-histories')->dailyAt('11:10')->withoutOverlapping();
 
+    // app(Schedule::class)->command('process:delete-cached-data-with-elasticsearch')->hourly()->withoutOverlapping();
 }
 
