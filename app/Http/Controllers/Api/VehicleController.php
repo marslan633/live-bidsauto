@@ -577,86 +577,87 @@ class VehicleController extends Controller
     }
 
     /**
-     * Search vehicle information records throught lot_id or vin.
+         * Search vehicle information records throught lot_id or vin.
+         */
+        /**
+     * Search vehicle information records through lot_id or vin using Elasticsearch.
      */
-    /**
- * Search vehicle information records through lot_id or vin using Elasticsearch.
- */
-public function searchVehicle(Request $request, $id)
-{
-    try {
-        // Determine the Elasticsearch index based on the 'data_source' parameter
-        $data_source = $request->input('data_source', 'active'); // Default to 'active'
-        $index = $data_source === 'archived' ? 'vehicle_record_archiveds' : 'vehicle_records';
+    public function searchVehicle(Request $request, $id)
+    {
+        try {
+            // Determine the Elasticsearch index based on the 'data_source' parameter
+            $data_source = $request->input('data_source', 'active'); // Default to 'active'
+            $index = $data_source === 'archived' ? 'vehicle_record_archiveds' : 'vehicle_records';
 
-        // Initialize the Elasticsearch client
-        $client = app('ElasticsearchKvmFour');
+            // Initialize the Elasticsearch client
+            $client = app('ElasticsearchKvmFour');
 
-        // Prepare Elasticsearch query
-        $params = [
-            'index' => $index,
-            'body'  => [
-                'query' => [
-                    'bool' => [
-                        'should' => [
-                            [
-                                'match' => [
-                                    'lot_id' => $id
-                                ]
-                            ],
-                            [
-                                'match' => [
-                                    'vin' => $id
+            // Prepare Elasticsearch query
+            $params = [
+                'index' => $index,
+                'body'  => [
+                    'query' => [
+                        'bool' => [
+                            'should' => [
+                                [
+                                    'term' => [
+                                        'lot_id' => $id // Use 'term' query for exact match
+                                    ]
+                                ],
+                                [
+                                    'term' => [
+                                        'vin' => $id // Use 'term' query for exact match of VIN
+                                    ]
                                 ]
                             ]
                         ]
-                    ]
-                ],
-                'size' => 1 // To get the first matching record
-            ]
-        ];
+                    ],
+                    'size' => 1 // To get the first matching record
+                ]
+            ];
 
-        // Search Elasticsearch
-        $response = $client->search($params);
+            // Search Elasticsearch
+            $response = $client->search($params);
 
-        // Check if any document matches
-        if (isset($response['hits']['hits']) && count($response['hits']['hits']) > 0) {
-            $record = $response['hits']['hits'][0]['_source'];
+            // Check if any document matches
+            if (isset($response['hits']['hits']) && count($response['hits']['hits']) > 0) {
+                $record = $response['hits']['hits'][0]['_source'];
 
-            // Optionally, if you want to include related data like manufacturer, model, etc.,
-            // you can use Elasticsearch's "nested" or "join" features for better performance.
-            // If you need to get specific related data (like "manufacturer", "vehicleModel"),
-            // you can fetch that in a separate query or modify this response.
+                // Optionally, if you want to include related data like manufacturer, model, etc.,
+                // you can use Elasticsearch's "nested" or "join" features for better performance.
+                // If you need to get specific related data (like "manufacturer", "vehicleModel"),
+                // you can fetch that in a separate query or modify this response.
 
-            // Check if we need to include SaleAuctionHistory data
-            $includeHistory = filter_var($request->input('is_history', false), FILTER_VALIDATE_BOOLEAN);
-            if ($includeHistory) {
-                // Query to get the sale history related to this vehicle
-                $saleHistoryParams = [
-                    'index' => 'sale_auction_histories',
-                    'body'  => [
-                        'query' => [
-                            'match' => [
-                                'vin' => $record['vin']
+                // Check if we need to include SaleAuctionHistory data
+                $includeHistory = filter_var($request->input('is_history', false), FILTER_VALIDATE_BOOLEAN);
+                if ($includeHistory) {
+                    // Query to get the sale history related to this vehicle
+                    $saleHistoryParams = [
+                        'index' => 'sale_auction_histories',
+                        'body'  => [
+                            'query' => [
+                                'term' => [
+                                    'vin' => $record['vin'] // Use 'term' for exact match
+                                ]
                             ]
                         ]
-                    ]
-                ];
-                $saleHistoryResponse = $client->search($saleHistoryParams);
-                $saleHistories = $saleHistoryResponse['hits']['hits'] ?? [];
+                    ];
+                    $saleHistoryResponse = $client->search($saleHistoryParams);
+                    $saleHistories = $saleHistoryResponse['hits']['hits'] ?? [];
 
-                $record['sale_histories'] = $saleHistories;
+                    $record['sale_histories'] = $saleHistories;
+                }
+
+                // Return response with the record found
+                return sendResponse(true, 200, 'Car Detail Fetched Successfully!', $record, 200);
+            } else {
+                return sendResponse(false, 404, 'Not Found', 'Car detail not found', 200);
             }
-
-            // Return response with the record found
-            return sendResponse(true, 200, 'Car Detail Fetched Successfully!', $record, 200);
-        } else {
-            return sendResponse(false, 404, 'Not Found', 'Car detail not found', 200);
+        } catch (\Exception $ex) {
+            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }
-    } catch (\Exception $ex) {
-        return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
     }
-}
+
 
 
     public function searchVehicleOld(Request $request, $id)
