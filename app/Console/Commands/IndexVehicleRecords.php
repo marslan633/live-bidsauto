@@ -124,7 +124,7 @@ class IndexVehicleRecords extends Command
 
         // Set the chunk size to 10,000
         $chunkSize = 10000;
-        $dispatchChunkSize = 300;
+        $dispatchChunkSize = 500;
         // Set the starting point for the query
         $start = 0;
 
