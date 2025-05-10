@@ -122,13 +122,41 @@ class IndexVehicleRecords extends Command
         $minutes = Carbon::now()->subMinutes($minutes);
         $isFullFetch = config('app.is_full_fetch', false);
 
-        $query = $isFullFetch ? VehicleRecord::query() : VehicleRecord::where('updated_at', '>=', $minutes);
+        // Set the chunk size to 10,000
+        $chunkSize = 10000;
+        $dispatchChunkSize = 100;
+        // Set the starting point for the query
+        $start = 0;
 
-        $query->chunkById(500, function ($vehicles) {
-            dispatch(new StoreVehicleToElasticsearch($vehicles));
-        });
+        // Check if it’s a full fetch or an incremental fetch
+        if ($isFullFetch) {
+            // Full fetch: fetch all records without any filter
+            $query = VehicleRecord::query();
+        } else {
+            // Fetch records that were updated after $minutes
+            $query = VehicleRecord::where('updated_at', '>=', $minutes);
+        }
 
-        $this->info('✅ Indexing vehicle_records job dispatched!');
+        // Loop through the records in chunks of 10,000
+        while (true) {
+            // Fetch 10,000 records at a time using skip and take
+            $vehicles = $query->skip($start)->take($chunkSize)->get();
+
+            // If no records are fetched, exit the loop (we've reached the end)
+            if ($vehicles->isEmpty()) {
+                break;
+            }
+
+            // Dispatch the job for this chunk
+            $vehicles->chunk($dispatchChunkSize)->each(function ($chunk) {
+                dispatch(new StoreVehicleToElasticsearch($chunk));
+            });
+
+            // Increase the starting point for the next chunk (i.e., skip the previous 10,000 records)
+            $start += $chunkSize;
+        }
+
+        $this->info('✅ Indexing vehicle_records completed!');
 
         // if(config('app.is_full_fetch') == true){
         //     VehicleRecord::chunk(500, function ($vehicles) use ($clientKvmFour) {
