@@ -583,62 +583,6 @@ class VehicleController extends Controller
      * Search vehicle information records through lot_id or vin using Elasticsearch.
      */
     public function searchVehicle(Request $request, $id)
-{
-    try {
-        // Determine the Elasticsearch index based on the 'data_source' parameter
-        $data_source = $request->input('data_source', 'active'); // Default to 'active'
-        $index = $data_source === 'archived' ? 'vehicle_record_archiveds' : 'vehicle_records';
-
-        // Initialize the Elasticsearch client
-        $client = app('ElasticsearchKvmFour');
-
-        // Prepare Elasticsearch query
-        $params = [
-            'index' => $index,
-            'body'  => [
-                'query' => [
-                    'bool' => [
-                        'should' => [
-                            [
-                                'term' => [
-                                    'lot_id' => $id // Use 'term' query for exact match of lot_id
-                                ]
-                            ],
-                            [
-                                'term' => [
-                                    'vin.keyword' => $id // Use 'vin.keyword' for exact match of vin (keyword field)
-                                ]
-                            ]
-                        ]
-                    ]
-                ],
-                'size' => 1 // To get the first matching record
-            ]
-        ];
-
-        // Search Elasticsearch
-        $response = $client->search($params);
-
-        // Check if any document matches
-        if (isset($response['hits']['hits']) && count($response['hits']['hits']) > 0) {
-            $record = $response['hits']['hits'][0]['_source'];
-
-            // Return response with the record found
-            return sendResponse(true, 200, 'Car Detail Fetched Successfully!', $record, 200);
-        } else {
-            return sendResponse(false, 404, 'Not Found', 'Car detail not found', 200);
-        }
-    } catch (\Exception $ex) {
-        return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
-    }
-}
-
-
-
-
-
-
-    public function searchVehicleOld(Request $request, $id)
     {
         try {
             // Determine the model based on the 'type' parameter
