@@ -55,40 +55,35 @@ class DeleteExpiredData extends Command
         ]);
 
         try {
-            // Pagination settings
-            $pageSize = 1000; // Number of records per page
-            $from = 0; // Start from the first record
-
-            // Continue fetching records in pages until no more are returned
-            do {
-                // Search for documents where sale_date is less than the current date and time
-                $params = [
-                    'index' => 'vehicle_records',
-                    'size' => $pageSize, // Fetch 1000 records at a time
-                    'from' => $from, // Paginate by 'from' value
-                    'body' => [
-                        'query' => [
-                            'range' => [
-                                'sale_date' => [
-                                    'lt' => $currentDateTime // Delete records where sale_date < current date and time
-                                ]
+            // Initial search query to get the first batch of results
+            $params = [
+                'index' => 'vehicle_records',
+                'scroll' => '1m', // Keep the scroll context open for 1 minute
+                'size' => 1000, // Fetch 1000 records at a time
+                'body' => [
+                    'query' => [
+                        'range' => [
+                            'sale_date' => [
+                                'lt' => $currentDateTime // Delete records where sale_date < current date and time
                             ]
                         ]
                     ]
-                ];
+                ]
+            ];
 
-                // Perform search query
-                $response = $client->search($params);
-                Log::info('Elasticsearch response', ['response' => json_encode($response)]);
+            // Perform the search query to get the first batch
+            $response = $client->search($params);
+            $scrollId = $response['_scroll_id'];
 
-                // Check if there are any records to delete
+            // Continue scrolling and deleting until no more results are returned
+            do {
                 $hits = $response['hits']['hits'];
 
                 if (count($hits) == 0) {
                     break;
                 }
 
-                // Prepare delete operations
+                // Prepare delete operations for the current batch
                 $deleteParams = [];
                 foreach ($hits as $hit) {
                     $deleteParams[] = [
@@ -110,8 +105,11 @@ class DeleteExpiredData extends Command
                     }
                 }
 
-                // Increment the 'from' value for the next page of records
-                $from += $pageSize;
+                // Fetch the next batch of results using scroll
+                $response = $client->scroll([
+                    'scroll_id' => $scrollId,
+                    'scroll' => '1m' // Keep scrolling for 1 minute
+                ]);
 
             } while (count($hits) > 0);
 
