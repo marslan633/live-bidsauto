@@ -588,7 +588,7 @@ class VehicleController extends Controller
         // Determine the index based on the 'data_source' parameter
         $data_source = $request->input('data_source', 'active'); // Default to 'active'
         $index = $data_source === 'archived' ? 'vehicle_record_archiveds' : 'vehicle_records';
-
+        $client = app('ElasticsearchKvmFour');
         // Base query
         $query = [
             'index' => $index,
@@ -625,12 +625,12 @@ class VehicleController extends Controller
                 ]
             ];
 
-            $historyResponse = Elasticsearch::search($historyQuery);
+            $historyResponse = $client->search($historyQuery);
             $query['body']['_source'] = true; // Exclude history from main query
         }
 
         // Execute the main search query
-        $response = Elasticsearch::search($query);
+        $response = $client->search($query);
 
         if (!empty($response['hits']['hits'])) {
             $record = $response['hits']['hits'][0]['_source'];
@@ -648,6 +648,7 @@ class VehicleController extends Controller
         return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
     }
 }
+
 
 
     /**
