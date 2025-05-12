@@ -588,7 +588,7 @@ class VehicleController extends Controller
             // Determine the index based on the 'data_source' parameter
             $data_source = $request->input('data_source', 'active'); // Default to 'active'
             $index = $data_source === 'archived' ? 'vehicle_record_archiveds' : 'vehicle_records';
-
+            $client = app('ElasticsearchKvmFour');
             // Base query
             $query = [
                 'index' => $index,
