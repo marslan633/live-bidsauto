@@ -87,7 +87,7 @@ if (config('app.app_kvm_three') === true) {
 
 if (config('app.app_kvm_four') === true) {
 
-    app(Schedule::class)->command('index:vehicle-records')->dailyAt('06:30')->withoutOverlapping();
+    app(Schedule::class)->command('index:vehicle-records')->dailyAt('09:48')->withoutOverlapping();
 
     // app(Schedule::class)->command('index:vehicle-record-archiveds')->dailyAt('19:53')->withoutOverlapping();
     // app(Schedule::class)->command('index:sale-auction-histories')->dailyAt('20:27')->withoutOverlapping();
