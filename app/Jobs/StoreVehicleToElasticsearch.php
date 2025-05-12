@@ -35,7 +35,7 @@ class StoreVehicleToElasticsearch implements ShouldQueue
     public function handle()
     {
         $client = app('ElasticsearchKvmFour');
-
+        Log::info('Starting Store Vehicle To Elastic Search Job');
         $bulkData = [];
         foreach ($this->vehicles as $vehicle) {
             // Eager load all relationships to avoid N+1 problem
@@ -100,5 +100,7 @@ class StoreVehicleToElasticsearch implements ShouldQueue
         } else {
             Log::info('No vehicles found for indexing.');
         }
+        Log::info('End Store Vehicle To Elastic Search Job');
+
     }
 }
