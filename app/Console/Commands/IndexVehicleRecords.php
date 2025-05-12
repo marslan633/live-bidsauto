@@ -150,7 +150,7 @@ class IndexVehicleRecords extends Command
 
             // Dispatch the job for this chunk
             $vehicles->chunk($dispatchChunkSize)->each(function ($chunk) {
-            Log::info('Dispatching Store Vehicle To Elastic Search Job');
+                Log::info('Dispatching Store Vehicle To Elastic Search Job');
                 dispatch(new StoreVehicleToElasticsearch($chunk));
             });
 
