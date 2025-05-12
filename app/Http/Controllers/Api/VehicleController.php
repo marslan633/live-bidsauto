@@ -583,6 +583,80 @@ class VehicleController extends Controller
      * Search vehicle information records through lot_id or vin using Elasticsearch.
      */
     public function searchVehicle(Request $request, $id)
+{
+    try {
+        // Determine the index based on the 'data_source' parameter
+        $data_source = $request->input('data_source', 'active'); // Default to 'active'
+        $index = $data_source === 'archived' ? 'vehicle_record_archiveds' : 'vehicle_records';
+
+        // Base query
+        $query = [
+            'index' => $index,
+            'body' => [
+                'query' => [
+                    'bool' => [
+                        'must' => []
+                    ]
+                ],
+                'size' => 1
+            ]
+        ];
+
+        // Search by type (lot_id or vin)
+        if ($request->type === 'lot_id') {
+            $query['body']['query']['bool']['must'][] = ['term' => ['lot_id.keyword' => $id]];
+        } elseif ($request->type === 'vin') {
+            $query['body']['query']['bool']['must'][] = ['term' => ['vin.keyword' => $id]];
+        } else {
+            return sendResponse(false, 400, 'Bad Request', 'Invalid search type specified', 200);
+        }
+
+        // Include sale history if requested
+        if (filter_var($request->input('is_history', false), FILTER_VALIDATE_BOOLEAN)) {
+            $historyQuery = [
+                'index' => 'sale_auction_histories',
+                'body' => [
+                    'query' => [
+                        'bool' => [
+                            'must' => [['term' => ['vin.keyword' => $id]]]
+                        ]
+                    ],
+                    'size' => 10
+                ]
+            ];
+
+            $historyResponse = Elasticsearch::search($historyQuery);
+            $query['body']['_source'] = true; // Exclude history from main query
+        }
+
+        // Execute the main search query
+        $response = Elasticsearch::search($query);
+
+        if (!empty($response['hits']['hits'])) {
+            $record = $response['hits']['hits'][0]['_source'];
+
+            // Attach history data if available
+            if (isset($historyResponse['hits']['hits'])) {
+                $record['sale_histories'] = array_column($historyResponse['hits']['hits'], '_source');
+            }
+
+            return sendResponse(true, 200, 'Car Detail Fetched Successfully!', $record, 200);
+        } else {
+            return sendResponse(false, 404, 'Not Found', 'Car detail not found', 200);
+        }
+    } catch (\Exception $ex) {
+        return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+    }
+}
+
+
+    /**
+         * Search vehicle information records throught lot_id or vin.
+         */
+        /**
+     * Search vehicle information records through lot_id or vin using Elasticsearch.
+     */
+    public function searchVehicleOld(Request $request, $id)
     {
         try {
             // Determine the model based on the 'type' parameter
