@@ -67,18 +67,42 @@ class StoreVehicleToElasticsearch implements ShouldQueue
                 'buyNowRelation',
             ]);
 
-            // Prepare bulk data for Elasticsearch
+            // Prepare bulk data for indexing into both vehicle_records and index_vehicles
+            // First index for 'vehicle_records'
             $bulkData[] = ['index' => ['_index' => 'vehicle_records', '_id' => $vehicle->id]];
             $bulkData[] = $vehicle->toArray();  // Index the vehicle and all of its relations
 
-            // Optionally, log the vehicle data being indexed (for debugging)
-            Log::info('Indexing vehicle to Elasticsearch', ['vehicle_id' => $vehicle->id]);
+            // Second index for 'index_vehicles'
+            $bulkData[] = ['index' => ['_index' => 'index_vehicles', '_id' => $vehicle->id]];
+            $bulkData[] = $vehicle->toArray();  // Index the same vehicle to 'index_vehicles'
+
+            // Log the vehicle data being indexed
+            Log::info('Preparing to index vehicle', ['vehicle_id' => $vehicle->id]);
         }
 
-        // Perform bulk indexing if there is data
+        // Check if there's any data to index
         if (!empty($bulkData)) {
-            $client->bulk(['body' => $bulkData]);
-            Log::info('Vehicle records indexed in Elasticsearch.');
+            try {
+                // Debug Log: Check the structure of the bulk data being sent
+                Log::info('Bulk Index Data: ', ['bulk_data' => json_encode($bulkData)]);
+
+                // Execute the bulk request
+                $response = $client->bulk(['body' => $bulkData]);
+
+                // Debug Log: Response from Elasticsearch
+                Log::info('Bulk Indexing Response: ', ['response' => $response]);
+
+                // Check if response is successful
+                if (isset($response['errors']) && $response['errors']) {
+                    Log::error('Errors while indexing vehicles', ['errors' => $response['items']]);
+                } else {
+                    Log::info('Vehicles successfully indexed in both vehicle_records and index_vehicles.');
+                }
+            } catch (\Exception $e) {
+                Log::error('Error in Bulk Indexing: ', ['error' => $e->getMessage()]);
+            }
+        } else {
+            Log::info('No vehicles found for indexing.');
         }
     }
 }
