@@ -583,56 +583,56 @@ class VehicleController extends Controller
      * Search vehicle information records through lot_id or vin using Elasticsearch.
      */
     public function searchVehicle(Request $request, $id)
-{
-    try {
-        // Determine the index based on the 'data_source' parameter
-        $data_source = $request->input('data_source', 'active'); // Default to 'active'
-        $index = $data_source === 'archived' ? 'vehicle_record_archiveds' : 'vehicle_records';
-        $client = app('ElasticsearchKvmFour');
-        // Debug Log: Check Index
-        Log::info('Search Index: ' . ['index' => $index]);
+    {
+        try {
+            // Determine the index based on the 'data_source' parameter
+            $data_source = $request->input('data_source', 'active'); // Default to 'active'
+            $index = $data_source === 'archived' ? 'vehicle_record_archiveds' : 'vehicle_records';
+            $client = app('ElasticsearchKvmFour');
+            // Debug Log: Check Index
+            Log::info('Search Index: ' , ['index' => $index]);
 
-        // Base query
-        $query = [
-            'index' => $index,
-            'body' => [
-                'query' => [
-                    'bool' => [
-                        'must' => []
-                    ]
-                ],
-                'size' => 1
-            ]
-        ];
+            // Base query
+            $query = [
+                'index' => $index,
+                'body' => [
+                    'query' => [
+                        'bool' => [
+                            'must' => []
+                        ]
+                    ],
+                    'size' => 1
+                ]
+            ];
 
-        // Search by type (lot_id or vin)
-        if ($request->has('type') && $request->type === 'lot_id') {
-            $query['body']['query']['bool']['must'][] = ['match' => ['lot_id' => $id]];
-        } elseif ($request->type === 'vin') {
-            $query['body']['query']['bool']['must'][] = ['match' => ['vin' => $id]];
+            // Search by type (lot_id or vin)
+            if ($request->has('type') && $request->type === 'lot_id') {
+                $query['body']['query']['bool']['must'][] = ['match' => ['lot_id' => $id]];
+            } elseif ($request->type === 'vin') {
+                $query['body']['query']['bool']['must'][] = ['match' => ['vin' => $id]];
+            }
+
+            // Debug Log: Search Query
+            Log::info('Search Query: ', ['query' => $query]);
+
+            // Execute the main search query
+            $response = $client->search($query);
+
+            // Debug Log: Search Response
+            Log::info('Search Response: ', ['response' => $response]);
+
+            if (!empty($response['hits']['hits'])) {
+                $record = $response['hits']['hits'][0]['_source'];
+
+                return sendResponse(true, 200, 'Car Detail Fetched Successfully!', $record, 200);
+            } else {
+                return sendResponse(false, 404, 'Not Found', 'Car detail not found', 200);
+            }
+        } catch (\Exception $ex) {
+            Log::info('Search Error: ' , ['data' => $ex->getMessage()]);
+            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
         }
-
-        // Debug Log: Search Query
-        Log::info('Search Query: ', ['query' => $query]);
-
-        // Execute the main search query
-        $response = $client->search($query);
-
-        // Debug Log: Search Response
-        Log::info('Search Response: ', ['response' => $response]);
-
-        if (!empty($response['hits']['hits'])) {
-            $record = $response['hits']['hits'][0]['_source'];
-
-            return sendResponse(true, 200, 'Car Detail Fetched Successfully!', $record, 200);
-        } else {
-            return sendResponse(false, 404, 'Not Found', 'Car detail not found', 200);
-        }
-    } catch (\Exception $ex) {
-        Log::info('Search Error: ' , ['data' => $ex->getMessage()]);
-        return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
     }
-}
 
     /**
          * Search vehicle information records throught lot_id or vin.
