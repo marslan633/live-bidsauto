@@ -72,10 +72,6 @@ class StoreVehicleToElasticsearch implements ShouldQueue
             $bulkData[] = ['index' => ['_index' => 'vehicle_records', '_id' => $vehicle->id]];
             $bulkData[] = $vehicle->toArray();  // Index the vehicle and all of its relations
 
-            // Second index for 'index_vehicles'
-            $bulkData[] = ['index' => ['_index' => 'index_vehicles', '_id' => $vehicle->id]];
-            $bulkData[] = $vehicle->toArray();  // Index the same vehicle to 'index_vehicles'
-
             // Log the vehicle data being indexed
             Log::info('Preparing to index vehicle', ['vehicle_id' => $vehicle->id]);
         }
