@@ -629,7 +629,7 @@ class VehicleController extends Controller
             return sendResponse(false, 404, 'Not Found', 'Car detail not found', 200);
         }
     } catch (\Exception $ex) {
-        Log::info('Search Error: ' . ['data' => $ex->getMessage()]);
+        Log::info('Search Error: ' , ['data' => $ex->getMessage()]);
         return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
     }
 }
