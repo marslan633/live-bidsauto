@@ -606,12 +606,10 @@ class VehicleController extends Controller
         ];
 
         // Search by type (lot_id or vin)
-        if ($request->type === 'lot_id') {
+        if ($request->has('type') && $request->type === 'lot_id') {
             $query['body']['query']['bool']['must'][] = ['match' => ['lot_id' => $id]];
         } elseif ($request->type === 'vin') {
             $query['body']['query']['bool']['must'][] = ['match' => ['vin' => $id]];
-        } else {
-            return sendResponse(false, 400, 'Bad Request', 'Invalid search type specified', 200);
         }
 
         // Debug Log: Search Query
