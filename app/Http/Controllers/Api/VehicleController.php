@@ -590,7 +590,7 @@ class VehicleController extends Controller
         $index = $data_source === 'archived' ? 'vehicle_record_archiveds' : 'vehicle_records';
         $client = app('ElasticsearchKvmFour');
         // Debug Log: Check Index
-        Log::info('Search Index: ' . $index);
+        Log::info('Search Index: ' . ['index' => $index]);
 
         // Base query
         $query = [
@@ -613,13 +613,13 @@ class VehicleController extends Controller
         }
 
         // Debug Log: Search Query
-        Log::info('Search Query: ', $query);
+        Log::info('Search Query: ', ['query' => $query]);
 
         // Execute the main search query
         $response = $client->search($query);
 
         // Debug Log: Search Response
-        Log::info('Search Response: ', $response);
+        Log::info('Search Response: ', ['response' => $response]);
 
         if (!empty($response['hits']['hits'])) {
             $record = $response['hits']['hits'][0]['_source'];
@@ -629,7 +629,7 @@ class VehicleController extends Controller
             return sendResponse(false, 404, 'Not Found', 'Car detail not found', 200);
         }
     } catch (\Exception $ex) {
-        Log::info('Search Error: ' . $ex->getMessage());
+        Log::info('Search Error: ' . ['data' => $ex->getMessage()]);
         return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
     }
 }
