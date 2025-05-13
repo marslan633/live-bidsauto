@@ -98,6 +98,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                         $record['is_new'] = true;
                         $record['processed_at'] = Carbon::now();
                         $record['created_at'] = Carbon::now();
+                        $record['updated_at'] = Carbon::now();
                         $newRecords[] = $record;
                     }
                 } catch (\Exception $e) {

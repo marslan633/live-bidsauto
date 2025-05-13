@@ -94,7 +94,6 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
                 'updated_at' => $record['updated_at']
               ]);
 
-
               DB::connection('mysql')->table('vehicle_records')->where('id', $this->recordId)->delete();
             //   Log::info('Vehicle Record Deleted ' . $this->recordId);
         } catch (\Exception $e) {

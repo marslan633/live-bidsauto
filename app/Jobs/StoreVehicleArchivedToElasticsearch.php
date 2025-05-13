@@ -17,14 +17,9 @@ class StoreVehicleArchivedToElasticsearch implements ShouldQueue
     protected $vehicles;
 
     /**
-     * The name of the job.
-     *
-     * @var string
-     */
-
-    /**
      * Create a new job instance.
      *
+     * @param $vehicles
      * @return void
      */
     public function __construct($vehicles)
@@ -41,16 +36,80 @@ class StoreVehicleArchivedToElasticsearch implements ShouldQueue
     public function handle()
     {
         $client = app('ElasticsearchKvmFour');
-
         $bulkData = [];
+
+        // Eager load the relationships inside the job
+        $this->vehicles->load([
+            'manufacturer',
+            'vehicleModel',
+            'generation',
+            'bodyType',
+            'color',
+            'engine',
+            'transmission',
+            'driveWheel',
+            'vehicleType',
+            'fuel',
+            'status',
+            'seller',
+            'sellerType',
+            'titleRelation',
+            'detailedTitle',
+            'damageMain',
+            'damageSecond',
+            'condition',
+            'image',
+            'country',
+            'state',
+            'city',
+            'location',
+            'sellingBranch',
+            'buyNowRelation',
+        ]);
+
         foreach ($this->vehicles as $vehicle) {
-            $bulkData[] = ['index' => ['_index' => 'vehicle_record_archiveds', '_id' => $vehicle->id]];
-            $bulkData[] = $vehicle->toArray();
+            // Prepare the bulk data for Elasticsearch
+            Log::info('Indexing Archived Vehicle', ['vehicle_id' => $vehicle->id]);
+
+            // Including all relationships in the vehicle data
+            $vehicleData = $vehicle->toArray();
+
+            $bulkData[] = [
+                'index' => [
+                    '_index' => 'vehicle_record_archiveds',  // Different index for archived records
+                    '_id' => $vehicle->id,
+                ]
+            ];
+
+            // Add vehicle data to the bulk request
+            $bulkData[] = $vehicleData;
+
+            Log::info('Preparing to index archived vehicle', ['vehicle_id' => $vehicle->id]);
         }
 
+        // Ensure that there's data to index
         if (!empty($bulkData)) {
-            $client->bulk(['body' => $bulkData]);
-            Log::info('Archived vehicle records indexed in Elasticsearch by job.');
+            try {
+                // Debugging: Log the bulk data structure before sending it
+                Log::info('Bulk Index Data (Archived): ', ['bulk_data' => json_encode($bulkData)]);
+
+                // Execute the bulk request to Elasticsearch
+                $response = $client->bulk(['body' => $bulkData]);
+
+                // Debugging: Log the response from Elasticsearch
+                Log::info('Bulk Indexing Response (Archived): ', ['response' => $response]);
+
+                // Check if Elasticsearch returned errors
+                if (isset($response['errors']) && $response['errors']) {
+                    Log::error('Errors while indexing archived vehicles', ['errors' => $response['items']]);
+                } else {
+                    Log::info('Archived vehicles successfully indexed.');
+                }
+            } catch (\Exception $e) {
+                Log::error('Error in Bulk Indexing Archived Vehicles: ', ['error' => $e->getMessage()]);
+            }
+        } else {
+            Log::info('No archived vehicles found for indexing.');
         }
     }
 }

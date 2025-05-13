@@ -131,34 +131,27 @@ class IndexVehicleRecordArchiveds extends Command
         $isFullFetch = config('app.is_full_fetch', false);
 
         // Set the chunk size to 10,000
-        $chunkSize = 10000;
-        $dispatchChunkSize = 300;
-        // Set the starting point for the query
-        $start = 0;
+        $chunkSize = 500;  // Process records in chunks of 500
+        $dispatchChunkSize = 100;
 
-        // Check if it’s a full fetch or an incremental fetch
-        $query = $isFullFetch
-            ? VehicleRecordArchived::query()
-            : VehicleRecordArchived::query()->where('updated_at', '>=', $minutes);
 
-         // Loop through the records in chunks of 10,000
-         while (true) {
-            // Fetch 10,000 records at a time using skip and take
-            $vehicles = $query->skip($start)->take($chunkSize)->get();
 
-            // If no records are fetched, exit the loop (we've reached the end)
-            if ($vehicles->isEmpty()) {
-                break;
-            }
+        $query = VehicleRecordArchived::query();
 
-            // Dispatch the job for this chunk
-            $vehicles->chunk($dispatchChunkSize)->each(function ($chunk) {
-                dispatch(new StoreVehicleArchivedToElasticsearch($chunk));
-            });
-
-            // Increase the starting point for the next chunk (i.e., skip the previous 10,000 records)
-            $start += $chunkSize;
+        // Full fetch or incremental fetch logic
+        if ($isFullFetch) {
+            $query->whereNotNull('sale_date');
+        } else {
+            $query->where('updated_at', '>=', $minutes)
+                  ->whereNotNull('sale_date');
         }
+
+         // Use Laravel's chunk method to process records in batches of 500
+         $query->chunk($chunkSize, function ($vehicles) use ($dispatchChunkSize) {
+            // Dispatch the job with the chunk, which will include relationships eager-loaded in the job
+            dispatch(new StoreVehicleArchivedToElasticsearch($vehicles));
+        });
+
 
         $this->info('✅ Indexing vehicle_record_archiveds job dispatched!');
 

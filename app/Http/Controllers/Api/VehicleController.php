@@ -387,6 +387,14 @@ class VehicleController extends Controller
                 ]
             ];
 
+
+              // Add the range filter for sale_date > current date and time
+            $must[] = ['range' => [
+                'sale_date' => [
+                    'gt' => Carbon::now()->toDateTimeString(),  // sale_date greater than current date and time
+                ]
+            ]];
+
             $results = $client->search($params);
 
             $vehicles = collect($results['hits']['hits'])->map(fn($hit) => $hit['_source']);

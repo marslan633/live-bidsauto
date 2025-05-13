@@ -130,30 +130,20 @@ class IndexSaleAucationHistories extends Command
         $minutes = Carbon::now()->subMinutes($minutes);
 
         $isFullFetch = config('app.is_full_fetch', false);
-         // Set the chunk size to 10,000
-         $chunkSize = 10000;
-         $dispatchChunkSize = 300;
-         // Set the starting point for the query
-         $start = 0;
+
+
+             // Set the chunk size to 10,000
+        $chunkSize = 1000;  // Process records in chunks of 500
+        $dispatchChunkSize = 300;
+
         $query = $isFullFetch ? SaleAuctionHistory::query() : SaleAuctionHistory::where('updated_at', '>=', $minutes);
 
-        while (true) {
-            // Fetch 10,000 records at a time using skip and take
-            $vehicles = $query->skip($start)->take($chunkSize)->get();
 
-            // If no records are fetched, exit the loop (we've reached the end)
-            if ($vehicles->isEmpty()) {
-                break;
-            }
-
-            // Dispatch the job for this chunk
-            $vehicles->chunk($dispatchChunkSize)->each(function ($chunk) {
-                dispatch(new StoreSaleAuctionHistoryToElasticsearch($chunk));
-            });
-
-            // Increase the starting point for the next chunk (i.e., skip the previous 10,000 records)
-            $start += $chunkSize;
-        }
+        // Use Laravel's chunk method to process records in batches of 500
+        $query->chunk($chunkSize, function ($vehicles) use ($dispatchChunkSize) {
+            // Dispatch the job with the chunk, which will include relationships eager-loaded in the job
+            dispatch(new StoreSaleAuctionHistoryToElasticsearch($vehicles));
+        });
 
 
         $this->info('✅ Indexing sale_auction_histories job dispatched!');
