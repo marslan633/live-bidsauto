@@ -124,8 +124,9 @@ class IndexVehicleRecords extends Command
 
         // Use Laravel's chunk method to process records in batches of 500
         $query->chunk($chunkSize, function ($vehicles) use ($dispatchChunkSize) {
-            // Dispatch the job for this chunk
+            // Ensure that each chunk contains the eager-loaded relationships
             $vehicles->chunk($dispatchChunkSize)->each(function ($chunk) {
+                // Dispatch the job with the chunk, which includes relationships
                 dispatch(new StoreVehicleToElasticsearch($chunk));
             });
         });
