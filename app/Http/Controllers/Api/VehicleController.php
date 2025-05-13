@@ -131,6 +131,13 @@ class VehicleController extends Controller
 
             $must = [['exists' => ['field' => 'sale_date']]];
 
+             // Adding the sale_date filter for records with sale_date > current date and time
+            $must[] = ['range' => [
+                'sale_date' => [
+                    'gt' => Carbon::now()->toDateTimeString(),  // sale_date greater than current date and time
+                ]
+            ]];
+
             if ($request->has('domain_id')) {
                 $must[] = ['terms' => ['domain_id' => (array) $request->input('domain_id')]];
             }
