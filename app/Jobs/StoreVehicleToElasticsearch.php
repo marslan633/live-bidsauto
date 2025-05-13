@@ -66,7 +66,7 @@ class StoreVehicleToElasticsearch implements ShouldQueue
                 'sellingBranch',
                 'buyNowRelation',
             ]);
-
+            Log::info('Vehicle', ['vehicle' => $vehicle]);
             // Prepare bulk data for indexing into both vehicle_records and index_vehicles
             // First index for 'vehicle_records'
             $bulkData[] = ['index' => ['_index' => 'vehicle_records', '_id' => $vehicle->id]];
