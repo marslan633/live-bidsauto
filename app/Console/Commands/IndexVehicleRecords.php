@@ -128,14 +128,36 @@ class IndexVehicleRecords extends Command
         // Set the starting point for the query
         $start = 0;
         $query = VehicleRecord::query();
+        $query->with([
+            'manufacturer',
+            'vehicleModel',
+            'generation',
+            'bodyType',
+            'color',
+            'engine',
+            'transmission',
+            'driveWheel',
+            'vehicleType',
+            'fuel',
+            'status',
+            'seller',
+            'sellerType',
+            'titleRelation',
+            'detailedTitle',
+            'damageMain',
+            'damageSecond',
+            'condition',
+            'image',
+            'country',
+            'state',
+            'city',
+            'location',
+            'sellingBranch',
+            'buyNowRelation',
+        ])->whereNotNull('sale_date');
         // Check if it’s a full fetch or an incremental fetch
-        if ($isFullFetch) {
-            // Full fetch: fetch all records without any filter
-            $query->whereNotNull('sale_date');
-        } else {
-            // Fetch records that were updated after $minutes
-            $query->where('updated_at', '>=', $minutes)
-          ->whereNotNull('sale_date');
+        if (!$isFullFetch) { // Fetch records that were updated after $minutes
+            $query->where('updated_at', '>=', $minutes);
         }
 
         // Loop through the records in chunks of 10,000
@@ -203,8 +225,6 @@ class IndexVehicleRecords extends Command
 
 
         }
-
-
 
         $this->info('✅ Indexing vehicle_records completed!');
     }
