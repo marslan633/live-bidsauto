@@ -132,7 +132,7 @@ class VehicleController extends Controller
             $must = [['exists' => ['field' => 'sale_date']]];
              // Get current date and time (in UTC)
             $now = Carbon::now()->utc(); // Ensure you're using UTC to match Elasticsearch
-            $currentDateTime = $now->toIso8601String(); // Current date and time in ISO8601 format (e.
+            $currentDateTime = $now->toISOString(); // Current date and time in ISO8601 format (e.
             if($request->input('data_source', 'active') === 'active')
             {
                 // Adding the sale_date filter for records with sale_date > current date and time
@@ -402,7 +402,7 @@ class VehicleController extends Controller
 
               // Add the range filter for sale_date > current date and time
               $now = Carbon::now()->utc(); // Ensure you're using UTC to match Elasticsearch
-              $currentDateTime = $now->toIso8601String(); // Current date and time in ISO8601 format (e.
+              $currentDateTime = $now->toISOString(); // Current date and time in ISO8601 format (e.
               if($request->input('data_source', 'active') === 'active')
               {
                   // Adding the sale_date filter for records with sale_date > current date and time
