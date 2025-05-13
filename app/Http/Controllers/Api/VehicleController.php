@@ -582,7 +582,7 @@ class VehicleController extends Controller
         /**
      * Search vehicle information records through lot_id or vin using Elasticsearch.
      */
-    public function searchVehicle(Request $request, $id)
+    public function searchVehicleNew(Request $request, $id)
     {
         try {
             // Determine the index based on the 'data_source' parameter
@@ -640,7 +640,7 @@ class VehicleController extends Controller
         /**
      * Search vehicle information records through lot_id or vin using Elasticsearch.
      */
-    public function searchVehicleOld(Request $request, $id)
+    public function searchVehicle(Request $request, $id)
     {
         try {
             // Determine the model based on the 'type' parameter
