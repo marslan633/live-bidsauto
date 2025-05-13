@@ -86,33 +86,7 @@ class IndexVehicleRecords extends Command
         $chunkSize = 500;  // Process records in chunks of 500
         $dispatchChunkSize = 100;
 
-        $query = VehicleRecord::with([  // Eager loading all relations
-            'manufacturer',
-            'vehicleModel',
-            'generation',
-            'bodyType',
-            'color',
-            'engine',
-            'transmission',
-            'driveWheel',
-            'vehicleType',
-            'fuel',
-            'status',
-            'seller',
-            'sellerType',
-            'titleRelation',
-            'detailedTitle',
-            'damageMain',
-            'damageSecond',
-            'condition',
-            'image',
-            'country',
-            'state',
-            'city',
-            'location',
-            'sellingBranch',
-            'buyNowRelation',
-        ]);
+        $query = VehicleRecord::query();
 
         // Full fetch or incremental fetch logic
         if ($isFullFetch) {
@@ -124,11 +98,8 @@ class IndexVehicleRecords extends Command
 
         // Use Laravel's chunk method to process records in batches of 500
         $query->chunk($chunkSize, function ($vehicles) use ($dispatchChunkSize) {
-            // Ensure that each chunk contains the eager-loaded relationships
-            $vehicles->chunk($dispatchChunkSize)->each(function ($chunk) {
-                // Dispatch the job with the chunk, which includes relationships
-                dispatch(new StoreVehicleToElasticsearch($chunk));
-            });
+            // Dispatch the job with the chunk, which will include relationships eager-loaded in the job
+            dispatch(new StoreVehicleToElasticsearch($vehicles));
         });
 
         $this->info('✅ Indexing vehicle_records completed!');

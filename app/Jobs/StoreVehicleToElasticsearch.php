@@ -28,11 +28,42 @@ class StoreVehicleToElasticsearch implements ShouldQueue
         $client = app('ElasticsearchKvmFour');
         $bulkData = [];
 
+        // Eager load the relationships inside the job
+        $this->vehicles->load([
+            'manufacturer',
+            'vehicleModel',
+            'generation',
+            'bodyType',
+            'color',
+            'engine',
+            'transmission',
+            'driveWheel',
+            'vehicleType',
+            'fuel',
+            'status',
+            'seller',
+            'sellerType',
+            'titleRelation',
+            'detailedTitle',
+            'damageMain',
+            'damageSecond',
+            'condition',
+            'image',
+            'country',
+            'state',
+            'city',
+            'location',
+            'sellingBranch',
+            'buyNowRelation',
+        ]);
+
         foreach ($this->vehicles as $vehicle) {
-            // Already eager loaded relationships, no need to reload them again
+            // Prepare the bulk data for Elasticsearch
             Log::info('Indexing Vehicle', ['vehicle_id' => $vehicle->id]);
 
-            // Prepare the bulk data for Elasticsearch
+            // Including all relationships in the vehicle data
+            $vehicleData = $vehicle->toArray();
+
             $bulkData[] = [
                 'index' => [
                     '_index' => 'vehicle_records',
@@ -40,11 +71,9 @@ class StoreVehicleToElasticsearch implements ShouldQueue
                 ]
             ];
 
-            // Including all relationships in the vehicle data
-            $vehicleData = $vehicle->toArray();
+            // Add vehicle data to the bulk request
             $bulkData[] = $vehicleData;
 
-            // Log the vehicle data being indexed
             Log::info('Preparing to index vehicle', ['vehicle_id' => $vehicle->id]);
         }
 
