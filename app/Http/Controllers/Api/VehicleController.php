@@ -138,7 +138,7 @@ class VehicleController extends Controller
                 // Adding the sale_date filter for records with sale_date > current date and time
                 $must[] = ['range' => [
                     'sale_date' => [
-                        'gt' => $currentDateTime,  // sale_date greater than current date and time
+                        'gte' => $currentDateTime,  // sale_date greater than current date and time
                     ]
                 ]];
             }
@@ -408,7 +408,7 @@ class VehicleController extends Controller
                   // Adding the sale_date filter for records with sale_date > current date and time
                   $must[] = ['range' => [
                       'sale_date' => [
-                          'gt' => $currentDateTime,  // sale_date greater than current date and time
+                          'gte' => $currentDateTime,  // sale_date greater than current date and time
                       ]
                   ]];
               }
