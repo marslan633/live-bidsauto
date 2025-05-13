@@ -130,13 +130,18 @@ class VehicleController extends Controller
             $activeFilterKey = in_array($listing, $validListings) ? $listing : null;
 
             $must = [['exists' => ['field' => 'sale_date']]];
-
-             // Adding the sale_date filter for records with sale_date > current date and time
-            $must[] = ['range' => [
-                'sale_date' => [
-                    'gt' => Carbon::now()->toDateTimeString(),  // sale_date greater than current date and time
-                ]
-            ]];
+             // Get current date and time (in UTC)
+            $now = Carbon::now()->utc(); // Ensure you're using UTC to match Elasticsearch
+            $currentDateTime = $now->toIso8601String(); // Current date and time in ISO8601 format (e.
+            if($request->input('data_source', 'active') === 'active')
+            {
+                // Adding the sale_date filter for records with sale_date > current date and time
+                $must[] = ['range' => [
+                    'sale_date' => [
+                        'gt' => $currentDateTime,  // sale_date greater than current date and time
+                    ]
+                ]];
+            }
 
             if ($request->has('domain_id')) {
                 $must[] = ['terms' => ['domain_id' => (array) $request->input('domain_id')]];
@@ -329,17 +334,17 @@ class VehicleController extends Controller
             }
 
             // Auction date range
-            if ($request->has('auction_date')) {
-                $dates = $request->input('auction_date');
-                if (is_array($dates) && count($dates) === 2) {
-                    $must[] = ['range' => [
-                        'sale_date' => [
-                            'gte' => \Carbon\Carbon::parse($dates[0])->format('Y-m-d'),
-                            'lte' => \Carbon\Carbon::parse($dates[1])->format('Y-m-d'),
-                        ]
-                    ]];
-                }
-            }
+            // if ($request->has('auction_date')) {
+            //     $dates = $request->input('auction_date');
+            //     if (is_array($dates) && count($dates) === 2) {
+            //         $must[] = ['range' => [
+            //             'sale_date' => [
+            //                 'gte' => \Carbon\Carbon::parse($dates[0])->format('Y-m-d'),
+            //                 'lte' => \Carbon\Carbon::parse($dates[1])->format('Y-m-d'),
+            //             ]
+            //         ]];
+            //     }
+            // }
 
             // Dynamic Filters
             $filters = [
@@ -396,12 +401,17 @@ class VehicleController extends Controller
 
 
               // Add the range filter for sale_date > current date and time
-            $must[] = ['range' => [
-                'sale_date' => [
-                    'gt' => Carbon::now()->toDateTimeString(),  // sale_date greater than current date and time
-                ]
-            ]];
-
+              $now = Carbon::now()->utc(); // Ensure you're using UTC to match Elasticsearch
+              $currentDateTime = $now->toIso8601String(); // Current date and time in ISO8601 format (e.
+              if($request->input('data_source', 'active') === 'active')
+              {
+                  // Adding the sale_date filter for records with sale_date > current date and time
+                  $must[] = ['range' => [
+                      'sale_date' => [
+                          'gt' => $currentDateTime,  // sale_date greater than current date and time
+                      ]
+                  ]];
+              }
             $results = $client->search($params);
 
             $vehicles = collect($results['hits']['hits'])->map(fn($hit) => $hit['_source']);
