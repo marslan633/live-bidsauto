@@ -123,8 +123,8 @@ class IndexVehicleRecords extends Command
         $isFullFetch = config('app.is_full_fetch', false);
 
         // Set the chunk size to 10,000
-        $chunkSize = 1;
-        $dispatchChunkSize = 1;
+        $chunkSize = 100;
+        $dispatchChunkSize = 100;
         // Set the starting point for the query
         $start = 0;
         $query = VehicleRecord::query();
