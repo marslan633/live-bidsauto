@@ -23,32 +23,11 @@ class IndexVehicleRecords extends Command
         $clientKvmOne = app('ElasticsearchKvmOne');
         $clientKvmFour = app('ElasticsearchKvmFour');
 
-        // Only fetch records updated in the last 30 minutes
         $minutes = intval(config('app.elastic_store_time'));
-
-
         $cronRun = null;
 
-        // $url = config('app.cron_history_api_url') . '/cron-run-histories';
-
-        try{
-            // Remote Connection to KVM4.1
-            // $cronRunResponse = Http::timeout(120)->retry(3, 1000)->get($url .'?name=process_vehicles_to_elasticsearch');
-
-            // if ($cronRunResponse->successful()) {
-            //     $lastCron = $cronRunResponse->json();
-            //     if ($lastCron && $lastCron['end_time']) {
-            //         $endTime = Carbon::parse($lastCron['end_time']);
-            //         $timeDifference = (int) max(0, $endTime->diffInMinutes(now()));
-
-            //         if ($timeDifference > 20) {
-            //             $minutes = $timeDifference + 10;
-            //         } elseif ($timeDifference === 20) {
-            //             $minutes = $timeDifference + 5;
-            //         }
-            //     }
-            // }
-
+        try {
+            // Fetch the last successful cron run history
             $response = $clientKvmOne->search([
                 'index' => 'cron_run_histories',
                 'body' => [
@@ -82,22 +61,7 @@ class IndexVehicleRecords extends Command
                 }
             }
 
-            // $cronRunResponse = Http::timeout(120)->retry(3, 1000)->post($url, [
-            //     'cron_name' => 'process_vehicles_to_elasticsearch',
-            //     'start_time' => now(),
-            //     'status' => 'running',
-            // ]);
-
-            // if ($cronRunResponse->successful()) {
-            //     Log::info('STORE VEHICLES TO ELASTICSEARCH CREATED');
-            //     // Handle the successful API cronRunResponse
-            //     $cronRun = $cronRunResponse->json()['id'] ?? null; // You can process the data as needed
-            //     // Optionally, you can update the cron record with the API response or status
-            // } else {
-            //     Log::info('Error: STORE VEHICLES TO ELASTICSEARCH CREATED');
-            // }
-
-
+            // Record the new cron run history
             $params = [
                 'index' => 'cron_run_histories',
                 'body' => [
@@ -108,82 +72,68 @@ class IndexVehicleRecords extends Command
                     'updated_at'  => now()->toIso8601String(),
                 ],
             ];
-
             $response = $clientKvmOne->index($params);
-
-            // Get the Elasticsearch auto-generated ID
             $cronRun = $response['_id'];
-
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             Log::info("Error: STORE VEHICLES TO ELASTICSEARCH: ", ['error' => $e->getMessage()]);
             return;
         }
 
+        // Fetch records either incrementally or in full
         $minutes = Carbon::now()->subMinutes($minutes);
         $isFullFetch = config('app.is_full_fetch', false);
 
-        // Set the chunk size to 10,000
-        $chunkSize = 100;
+        $chunkSize = 500;  // Process records in chunks of 500
         $dispatchChunkSize = 100;
-        // Set the starting point for the query
-        $start = 0;
-        $query = VehicleRecord::query();
-        // Check if it’s a full fetch or an incremental fetch
+
+        $query = VehicleRecord::with([  // Eager loading all relations
+            'manufacturer',
+            'vehicleModel',
+            'generation',
+            'bodyType',
+            'color',
+            'engine',
+            'transmission',
+            'driveWheel',
+            'vehicleType',
+            'fuel',
+            'status',
+            'seller',
+            'sellerType',
+            'titleRelation',
+            'detailedTitle',
+            'damageMain',
+            'damageSecond',
+            'condition',
+            'image',
+            'country',
+            'state',
+            'city',
+            'location',
+            'sellingBranch',
+            'buyNowRelation',
+        ]);
+
+        // Full fetch or incremental fetch logic
         if ($isFullFetch) {
-            // Full fetch: fetch all records without any filter
             $query->whereNotNull('sale_date');
         } else {
-            // Fetch records that were updated after $minutes
             $query->where('updated_at', '>=', $minutes)
-          ->whereNotNull('sale_date');
+                  ->whereNotNull('sale_date');
         }
 
-        // Loop through the records in chunks of 10,000
-        while (true) {
-            // Fetch 10,000 records at a time using skip and take
-            $vehicles = $query->skip($start)->take($chunkSize)->get();
-
-            // If no records are fetched, exit the loop (we've reached the end)
-            if ($vehicles->isEmpty()) {
-                break;
-            }
-
+        // Use Laravel's chunk method to process records in batches of 500
+        $query->chunk($chunkSize, function ($vehicles) use ($dispatchChunkSize) {
             // Dispatch the job for this chunk
             $vehicles->chunk($dispatchChunkSize)->each(function ($chunk) {
                 dispatch(new StoreVehicleToElasticsearch($chunk));
             });
-
-            // Increase the starting point for the next chunk (i.e., skip the previous 10,000 records)
-            $start += $chunkSize;
-        }
+        });
 
         $this->info('✅ Indexing vehicle_records completed!');
 
-        // if(config('app.is_full_fetch') == true){
-        //     VehicleRecord::chunk(500, function ($vehicles) use ($clientKvmFour) {
-        //         foreach ($vehicles as $vehicle) {
-        //             $clientKvmFour->index([
-        //                 'index' => 'vehicle_records',
-        //                 'id' => $vehicle->id,
-        //                 'body' => $vehicle->toArray(),
-        //             ]);
-        //         }
-        //     });
-        // }else{
-        //     VehicleRecord::where('updated_at', '>=', $minutes)
-        //     ->chunk(500, function ($vehicles) use ($clientKvmFour) {
-        //         foreach ($vehicles as $vehicle) {
-        //             $clientKvmFour->index([
-        //                 'index' => 'vehicle_records',
-        //                 'id' => $vehicle->id,
-        //                 'body' => $vehicle->toArray(),
-        //             ]);
-        //         }
-        //     });
-        // }
-
-        if($cronRun){
-
+        // Update the cron history status to success
+        if ($cronRun) {
             $clientKvmOne->update([
                 'index' => 'cron_run_histories',
                 'id'    => $cronRun,
@@ -195,17 +145,9 @@ class IndexVehicleRecords extends Command
                     ]
                 ]
             ]);
-
-                Log::info('STORE VEHICLES TO ELASTICSEARCH CREATED');
-            } else {
-                Log::info('ERROR: STORE VEHICLES TO ELASTICSEARCH CREATED');
-
-
+            Log::info('STORE VEHICLES TO ELASTICSEARCH SUCCESS');
+        } else {
+            Log::info('ERROR: STORE VEHICLES TO ELASTICSEARCH FAILED');
         }
-
-
-
-        $this->info('✅ Indexing vehicle_records completed!');
     }
-
 }
