@@ -586,87 +586,87 @@ class VehicleController extends Controller
      * Search vehicle information records through lot_id or vin using Elasticsearch.
      */
     public function searchVehicle(Request $request, $id)
-    {
-        try {
-            // Determine the index based on the 'data_source' parameter
-            $data_source = $request->input('data_source', 'active'); // Default to 'active'
-            $index = $data_source === 'archived' ? 'vehicle_record_archiveds' : 'vehicle_records';
-            $client = app('ElasticsearchKvmFour');
+{
+    try {
+        // Determine the index based on the 'data_source' parameter
+        $data_source = $request->input('data_source', 'active'); // Default to 'active'
+        $index = $data_source === 'archived' ? 'vehicle_record_archiveds' : 'vehicle_records';
+        $client = app('ElasticsearchKvmFour');
 
-            // Debug Log: Check Index
-            Log::info('Search Index: ', ['index' => $index]);
+        // Debug Log: Check Index
+        Log::info('Search Index: ', ['index' => $index]);
 
-            // Base query for vehicle records
-            $query = [
-                'index' => $index,
-                'body' => [
-                    'query' => [
-                        'bool' => [
-                            'must' => []
-                        ]
-                    ],
-                    'size' => 1
-                ]
-            ];
+        // Base query for vehicle records
+        $query = [
+            'index' => $index,
+            'body' => [
+                'query' => [
+                    'bool' => [
+                        'must' => []
+                    ]
+                ],
+                'size' => 1
+            ]
+        ];
 
-            // Search by type (lot_id or vin)
-            if ($request->has('type') && $request->type === 'lot_id') {
-                $query['body']['query']['bool']['must'][] = ['match' => ['lot_id' => $id]];
-            } elseif ($request->type === 'vin') {
-                $query['body']['query']['bool']['must'][] = ['match' => ['vin' => $id]];
-            }
+        // Search by type (lot_id or vin)
+        if ($request->has('type') && $request->type === 'lot_id') {
+            $query['body']['query']['bool']['must'][] = ['match' => ['lot_id' => $id]];
+        } elseif ($request->type === 'vin') {
+            $query['body']['query']['bool']['must'][] = ['match' => ['vin' => $id]];
+        }
 
-            // Check if 'is_history' is true and if so, append the sale_auction_histories
+        // Debug Log: Search Query
+        Log::info('Search Query: ', ['query' => $query]);
+
+        // Execute the main search query
+        $response = $client->search($query);
+
+        // Debug Log: Search Response
+        Log::info('Search Response: ', ['response' => $response]);
+
+        if (!empty($response['hits']['hits'])) {
+            $record = $response['hits']['hits'][0]['_source'];
+
+            // If is_history is true, we fetch sale_auction_histories data
             $includeHistory = filter_var($request->input('is_history', false), FILTER_VALIDATE_BOOLEAN);
+            $saleHistories = [];
 
             if ($includeHistory) {
-                // Add a nested query to include sale_auction_histories
-                $query['body']['query']['bool']['must'][] = [
-                    'nested' => [
-                        'path' => 'sale_auction_histories',
+                // Query sale_auction_histories index to get auction history matching vin
+                $saleHistoryQuery = [
+                    'index' => 'sale_auction_histories',
+                    'body' => [
                         'query' => [
-                            'bool' => [
-                                'must' => [
-                                    ['match' => ['sale_auction_histories.vin' => $id]] // Match vin in sale_auction_histories
-                                ]
+                            'match' => [
+                                'vin' => $record['vin']
                             ]
-                        ]
+                        ],
+                        'size' => 10  // Adjust size if needed
                     ]
                 ];
 
-                // You can specify the fields to include in the response
-                $query['body']['_source'] = ['*', 'sale_auction_histories']; // Include sale_auction_histories in the response
-            } else {
-                // If history is not requested, ensure sale_histories is an empty array in the response
-                $query['body']['_source'] = ['*', 'sale_auction_histories'];
-            }
+                $saleHistoryResponse = $client->search($saleHistoryQuery);
 
-            // Debug Log: Search Query
-            Log::info('Search Query: ', ['query' => $query]);
-
-            // Execute the main search query
-            $response = $client->search($query);
-
-            // Debug Log: Search Response
-            Log::info('Search Response: ', ['response' => $response]);
-
-            if (!empty($response['hits']['hits'])) {
-                $record = $response['hits']['hits'][0]['_source'];
-
-                // If no history was included, ensure sale_auction_histories is an empty array
-                if (!$includeHistory) {
-                    $record['sale_auction_histories'] = [];
+                // If we have sale_auction_histories, include them in the result
+                if (!empty($saleHistoryResponse['hits']['hits'])) {
+                    $saleHistories = collect($saleHistoryResponse['hits']['hits'])->map(fn($hit) => $hit['_source'])->toArray();
                 }
-
-                return sendResponse(true, 200, 'Car Detail Fetched Successfully!', $record, 200);
-            } else {
-                return sendResponse(false, 404, 'Not Found', 'Car detail not found', 200);
             }
-        } catch (\Exception $ex) {
-            Log::info('Search Error: ', ['data' => $ex->getMessage()]);
-            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+
+            // Add the sale_auction_histories to the result, even if it's an empty array
+            $record['sale_auction_histories'] = $saleHistories;
+
+            return sendResponse(true, 200, 'Car Detail Fetched Successfully!', $record, 200);
+        } else {
+            return sendResponse(false, 404, 'Not Found', 'Car detail not found', 200);
         }
+    } catch (\Exception $ex) {
+        Log::info('Search Error: ', ['data' => $ex->getMessage()]);
+        return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
     }
+}
+
 
 
     /**
