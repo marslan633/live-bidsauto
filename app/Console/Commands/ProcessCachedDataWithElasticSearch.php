@@ -106,11 +106,22 @@ class ProcessCachedDataWithElasticSearch extends Command
                     ]
                 ]);
 
-                // Delete old document
-                $client->delete([
+                $response = $client->exists([
                     'index' => 'vehicle_api_data',
-                    'id' => $docId,
+                    'id'    => $docId,
                 ]);
+
+                // If the document exists, delete it
+                if ($response) {
+                    $client->delete([
+                        'index' => 'vehicle_api_data',
+                        'id'    => $docId,
+                    ]);
+                    Log::info("Document with ID $docId deleted successfully.");
+                } else {
+                    Log::info("Document with ID $docId not found, skipping delete.");
+                }
+
 
             } catch (\Exception $e) {
                 Log::info("Error processing doc ID {$doc['_id']}: " . $e->getMessage());
