@@ -43,8 +43,10 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
             $batchData = [];
 
             foreach ($data as $car) {
-                $batchData[] = $this->prepareArchivedData((array) $car);
-
+                $preparedData = $this->prepareArchivedData((array) $car);
+                if($preparedData){
+                    $batchData[] = $preparedData;
+                }
             }
 
              // Process batch when the limit is reached
@@ -68,12 +70,23 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
 
     private function prepareArchivedData(array $car)
     {
-        return [
-            'lot_id' => $car['lot'],
-            'status_id' => $car['status']['id'],
-            'bid' => $car['bid'],
-            'final_bid_updated_at' => $car['final_bid_updated_at'],
-        ];
+
+
+        if (
+            !is_null($car['lot']) &&
+            isset($car['status']['id']) && !is_null($car['status']['id']) &&
+            !is_null($car['bid']) &&
+            !is_null($car['final_bid_updated_at'])
+        ) {
+            return [
+                'lot_id' => $car['lot'],
+                'status_id' => $car['status']['id'],
+                'bid' => $car['bid'],
+                'final_bid_updated_at' => $car['final_bid_updated_at'],
+            ];
+        }
+
+        return null;
     }
 
     private function insertBatch(array $batchData)
