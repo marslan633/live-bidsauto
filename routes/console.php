@@ -49,8 +49,8 @@ if (config('app.app_kvm_three') === true) {
      * Cron Job - Process Vehicle Data from kvm4.2 redis cache and populate it into kvm4.3 Mysql.
      */
     // app(Schedule::class)->command('process:process-cached-data-to-databases-with-elasticsearch')->everyTenMinutes()->withoutOverlapping();
-    app(Schedule::class)->command('process:cached-archived-data-to-database-with-elasticsearch')->everyTenMinutes()->withoutOverlapping();
-    // app(Schedule::class)->command('process:expired-auction-archive-with-elasticsearch')->dailyAt('18:40')->everyFifteenMinutes();
+    app(Schedule::class)->command('process:cached-archived-data-to-database-with-elasticsearch')->everyFifteenMinutes()->withoutOverlapping();
+    app(Schedule::class)->command('process:expired-auction-archive-with-elasticsearch')->everyFiveMinutes()->everyFifteenMinutes();
 
     // app(Schedule::class)->command('process:process-cached-data-to-databases')->everyTenMinutes()->withoutOverlapping();
 
