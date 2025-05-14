@@ -22,7 +22,6 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
         $this->queue = "cached_archived_data_queue_with_elasticsearch";
         $this->cacheKey = $cacheKey;
         Log::info('Process Cached Archived Constructr ');
-
     }
 
     /**
@@ -35,7 +34,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
         try {
             // Retrieve data from cache
             $data = unCompressData($this->cacheKey->cache_value);
-            Log::info('Uncompressed Log', ['data', json_encode($data)]);
+            // Log::info('Uncompressed Log', ['data', json_encode($data)]);
             if (!$data) {
                 Log::warning("No archived data found for key: {$this->cacheKey->_id}");
                 return;
