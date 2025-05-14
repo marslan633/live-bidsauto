@@ -39,11 +39,11 @@ class StoreSaleAuctionHistoryToElasticsearch implements ShouldQueue
         $bulkData = [];
 
         // Eager load relationships inside the job
-        $this->histories->load([
-            'domain',  // Load the related domain
-            'status',  // Load the related status
-            'seller',  // Load the related seller
-        ]);
+        // $this->histories->load([
+        //     'domain',  // Load the related domain
+        //     'status',  // Load the related status
+        //     'seller',  // Load the related seller
+        // ]);
 
         foreach ($this->histories as $history) {
             // Prepare the bulk data for Elasticsearch
