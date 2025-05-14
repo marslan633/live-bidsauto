@@ -8,7 +8,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Elasticsearch\ClientBuilder;
 use Illuminate\Support\Facades\Log;
-use App\Models\SaleAuctionHistory; // Assuming this is the model for sale_auction_histories
+use Carbon\Carbon;
 
 class StoreSaleAuctionHistoryToElasticsearch implements ShouldQueue
 {
@@ -16,43 +16,35 @@ class StoreSaleAuctionHistoryToElasticsearch implements ShouldQueue
 
     protected $histories;
 
-    /**
-     * Create a new job instance.
-     *
-     * @param $histories
-     */
     public function __construct($histories)
     {
         $this->queue = 'store_sale_auction_history_records_to_elasticsearch_job';
         $this->histories = $histories;
     }
 
-    /**
-     * Execute the job.
-     *
-     * @return void
-     */
     public function handle()
     {
         $client = app('ElasticsearchKvmFour');
-
         $bulkData = [];
 
-        // Eager load relationships inside the job
-        // $this->histories->load([
-        //     'domain',  // Load the related domain
-        //     'status',  // Load the related status
-        //     'seller',  // Load the related seller
-        // ]);
+        $this->histories->load([
+            'domain',
+            'status',
+            'seller',
+        ]);
 
         foreach ($this->histories as $history) {
-            // Prepare the bulk data for Elasticsearch
             Log::info('Indexing Sale Auction History', ['history_id' => $history->id]);
 
-            // Convert the history data to an array, including relationships
             $historyData = $history->toArray();
 
-            // Add the history data to the bulk request for Elasticsearch
+            // Format sale_date as ISO8601 (for strict_date_optional_time)
+            $historyData['sale_date'] = Carbon::parse($historyData['sale_date'])->toIso8601String();
+
+            // Format created_at and updated_at to "Y-m-d H:i:s"
+            $historyData['created_at'] = Carbon::parse($historyData['created_at'])->format('Y-m-d H:i:s');
+            $historyData['updated_at'] = Carbon::parse($historyData['updated_at'])->format('Y-m-d H:i:s');
+
             $bulkData[] = [
                 'index' => [
                     '_index' => 'sale_auction_histories',
@@ -60,25 +52,19 @@ class StoreSaleAuctionHistoryToElasticsearch implements ShouldQueue
                 ]
             ];
 
-            // Adding the history data to the bulk request body
             $bulkData[] = $historyData;
 
             Log::info('Preparing to index sale auction history', ['history_id' => $history->id]);
         }
 
-        // If we have data to index
         if (!empty($bulkData)) {
             try {
-                // Debugging: Log the bulk data structure before sending it
                 Log::info('Bulk Index Data: ', ['bulk_data' => json_encode($bulkData)]);
 
-                // Execute the bulk request to Elasticsearch
                 $response = $client->bulk(['body' => $bulkData]);
 
-                // Debugging: Log the response from Elasticsearch
                 Log::info('Bulk Indexing Response: ', ['response' => $response]);
 
-                // Check if Elasticsearch returned any errors
                 if (isset($response['errors']) && $response['errors']) {
                     Log::error('Errors while indexing sale auction history', ['errors' => $response['items']]);
                 } else {
