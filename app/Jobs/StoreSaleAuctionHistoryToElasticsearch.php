@@ -45,6 +45,7 @@ class StoreSaleAuctionHistoryToElasticsearch implements ShouldQueue
             $historyData['created_at'] = Carbon::parse($historyData['created_at'])->format('Y-m-d H:i:s');
             $historyData['updated_at'] = Carbon::parse($historyData['updated_at'])->format('Y-m-d H:i:s');
 
+
             $bulkData[] = [
                 'index' => [
                     '_index' => 'sale_auction_histories',
