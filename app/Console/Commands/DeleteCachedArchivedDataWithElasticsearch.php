@@ -45,15 +45,13 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
         // Elasticsearch client
         $client = app('ElasticsearchKvmOne');
 
-        // Time range: 1 hour ago to 30 minutes ago
+        // Time range: 30 minutes ago to now
         $now = Carbon::now()->utc(); // Ensure you're using UTC to match Elasticsearch
-        $startTime = $now->subMinutes(60)->toDateTimeString(); // 1 hour ago
-        $endTime = $now->subMinutes(30)->toDateTimeString();   // 30 minutes ago
+        $startTime = $now->subMinutes(30)->toDateTimeString(); // 30 minutes ago
 
         // Log the start time and current time for debugging purposes
         Log::info('Deleting records with status "completed" between', [
             'start_time' => $startTime,
-            'end_time' => $endTime,
             'now' => $now->toDateTimeString(),
         ]);
 
@@ -62,7 +60,7 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
             $params = [
                 'index' => 'vehicle_archived_api_data',
                 'scroll' => '1m', // Set scroll time context
-                'size' => 200, // Fetch 200 records at a time
+                'size' => 500, // Fetch 200 records at a time
                 'body' => [
                     'query' => [
                         'bool' => [
@@ -77,8 +75,7 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
                                 [
                                     'range' => [
                                         'updated_at' => [
-                                            'gte' => $startTime, // 1 hour ago
-                                            'lte' => $endTime    // 30 minutes ago
+                                            'lte' => $startTime // Delete records older than 30 minutes
                                         ]
                                     ]
                                 ]
@@ -100,7 +97,6 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
             }
 
             // Continue scrolling and deleting until no more results are returned
-            $totalDeleted = 0;
             do {
                 $hits = $response['hits']['hits'];
 
@@ -119,16 +115,14 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
                     ];
                 }
 
-                // Perform bulk delete
-                if (!empty($deleteParams)) {
+                  // Perform bulk delete
+                  if (!empty($deleteParams)) {
                     $bulkResponse = $client->bulk(['body' => $deleteParams]);
 
                     if (isset($bulkResponse['errors']) && $bulkResponse['errors']) {
                         Log::error('Bulk delete errors', ['response' => json_encode($bulkResponse)]);
                     } else {
-                        $deletedCount = count($deleteParams);
-                        $totalDeleted += $deletedCount;
-                        $this->info("Successfully deleted $deletedCount records.");
+                        $this->info('Successfully deleted ' . count($deleteParams) . ' records.');
                     }
                 }
 
@@ -140,7 +134,7 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
 
             } while (count($hits) > 0);
 
-            $this->info("Completed deleting $totalDeleted records.");
+            $this->info('Completed deleting records.');
 
         } catch (\Exception $e) {
             Log::error('Error deleting records: ' . $e->getMessage());
