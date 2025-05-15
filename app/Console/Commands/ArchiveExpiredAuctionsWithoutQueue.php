@@ -69,7 +69,7 @@ class ArchiveExpiredAuctionsWithoutQueue extends Command
             // $expiredRecords = VehicleRecord::whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [now()])->get();
             $totalArchived = 0;
             DB::table('vehicle_records')
-            ->whereRaw("DATE_FORMAT(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), '%Y-%m-%d %H:%i') <= ?", [now()->format('Y-m-d H:i')])
+            ->whereRaw("DATE_FORMAT(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), '%Y-%m-%d %H:%i') <= ?", [now()->addHours(28)->format('Y-m-d H:i')])
             ->orderBy('created_at') // Required for Laravel 11 chunking
             ->chunk($batchSize, function ($expiredRecords) use (&$totalArchived) {
                 foreach ($expiredRecords as $record) {
