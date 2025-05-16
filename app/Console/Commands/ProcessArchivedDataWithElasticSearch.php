@@ -58,7 +58,7 @@ class ProcessArchivedDataWithElasticSearch extends Command
         ]);
         $hits = $response['hits']['hits'];
 
-        $minutes = 2500; // Default minutes value
+        $minutes = 4320; // Default minutes value
 
         if (!empty($hits)) {
             $lastCron = $hits[0]['_source'];

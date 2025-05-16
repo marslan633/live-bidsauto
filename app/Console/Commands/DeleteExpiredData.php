@@ -45,7 +45,7 @@ class DeleteExpiredData extends Command
         $client = app('ElasticsearchKvmFour');
 
         // Get current date and time (in UTC)
-        $now = Carbon::now()->addHours(28)->utc(); // Ensure you're using UTC to match Elasticsearch
+        $now = Carbon::now()->utc(); // Ensure you're using UTC to match Elasticsearch
         $currentDateTime = $now->toIso8601String(); // Current date and time in ISO8601 format (e.g., 2025-05-10T18:35:01+00:00)
 
         // Log the current time for debugging purposes
