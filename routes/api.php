@@ -32,6 +32,22 @@ Route::get('test-api', [VehicleController::class, 'testApi']);
 Route::get('removeStaleCacheKeys', [VehicleController::class, 'removeStaleCacheKeys']);
 Route::get('/records-by-interval', [VehicleController::class, 'getRecordsByInterval']);
 
+Route::get('/sale-date-check', function(){
+    $origonal = DB::table('vehicle_records')
+            ->whereRaw(
+                "DATE_FORMAT(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), '%Y-%m-%d %H:%i') <= ?",
+                [now()->format('Y-m-d H:i')]
+            )
+            ->orderBy('created_at')->limit(1)->get();
+    $extended = DB::table('vehicle_records')
+            ->whereRaw(
+                "DATE_FORMAT(DATE_ADD(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), INTERVAL 28 HOUR), '%Y-%m-%d %H:%i') <= ?",
+                [now()->format('Y-m-d H:i')]
+            )
+            ->orderBy('created_at')->limit(1)->get();
+    return ['origonal' => $origonal, 'extended' => $extended];
+});
+
 Route::get('get-read-redis-data', function(){
     $IS_KVM_TWO = config('app.is_kvm_two');
     $CacheModel = $IS_KVM_TWO ? RemoteCacheKey::class : CacheKey::class;

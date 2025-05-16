@@ -69,9 +69,17 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
             $updateUrl = $url . "/$cronRun";
             $batchSize = intval(config('app.batch_size'));
             // $expiredRecords = VehicleRecord::whereRaw("STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') < ?", [now()])->get();
+
+
+            // sale_date => 16-05-2025
+            // expire_date = 17-05-2025
+
             $totalArchived = 0;
             DB::table('vehicle_records')
-            ->whereRaw("DATE_FORMAT(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), '%Y-%m-%d %H:%i') <= ?", [now()->format('Y-m-d H:i')])
+            ->whereRaw(
+                "DATE_FORMAT(DATE_ADD(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), INTERVAL 28 HOUR), '%Y-%m-%d %H:%i') <= ?",
+                [now()->format('Y-m-d H:i')]
+            )
             ->orderBy('created_at') // Required for Laravel 11 chunking
             ->chunk($batchSize, function ($expiredRecords) use (&$totalArchived) {
                 foreach ($expiredRecords as $record) {

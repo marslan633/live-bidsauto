@@ -81,7 +81,15 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
             //     'seller_id' => $record['seller_id']
             //   ])]);
 
-              DB::connection('mysql')->table('sale_auction_histories')->insert([
+
+            $saleAuctionRecord = DB::connection('mysql')->table('sale_auction_histories')
+            ->where([
+                'vin' => $record['vin'],
+                'lot_id' => $record['lot_id'],
+                'sale_date' => $record['sale_date'],
+            ])->first();
+
+            $saleData = [
                 'vin' => $record['vin'],
                 'domain_id' => $record['domain_id'],
                 'sale_date' => $record['sale_date'],
@@ -90,11 +98,21 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
                 'odometer_mi' => $record['odometer_mi'],
                 'status_id' => $record['status_id'],
                 'seller_id' => $record['seller_id'],
-                'created_at' => $record['created_at'],
-                'updated_at' => $record['updated_at']
-              ]);
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ];
+            if($saleAuctionRecord){
+                unset($saleData['created_at']);
+                DB::connection('mysql')
+                    ->table('sale_auction_histories')
+                    ->where('id', $saleAuctionRecord->id)
+                    ->update($saleData);
+            }else{
+                DB::connection('mysql')->table('sale_auction_histories')->insert($saleData);
+            }
 
-              DB::connection('mysql')->table('vehicle_records')->where('id', $this->recordId)->delete();
+
+            DB::connection('mysql')->table('vehicle_records')->where('id', $this->recordId)->delete();
             //   Log::info('Vehicle Record Deleted ' . $this->recordId);
         } catch (\Exception $e) {
             Log::error("Error processing auction record VIN: {$record['vin']} - " . $e->getMessage());
