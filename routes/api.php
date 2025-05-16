@@ -42,7 +42,7 @@ Route::get('/sale-date-check', function(){
     $extended = DB::table('vehicle_records')
             ->whereRaw(
                 "DATE_FORMAT(DATE_ADD(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), INTERVAL 28 HOUR), '%Y-%m-%d %H:%i') <= ?",
-                [now()->format('Y-m-d H:i')]
+                [now()->addHours(28)->format('Y-m-d H:i')]
             )
             ->orderBy('created_at')->limit(1)->get();
     return ['origonal' => $origonal, 'extended' => $extended];
