@@ -74,31 +74,37 @@ class StoreVehicleArchivedToElasticsearch implements ShouldQueue
             // Including all relationships in the vehicle data
             $vehicleData = $vehicle->toArray();
 
+            /*
+            // Bulk Insert Logic (Commented)
             $bulkData[] = [
-                'update' => [
-                    '_index' => 'vehicle_record_archiveds',
+                'index' => [
+                    '_index' => 'vehicle_record_archiveds',  // Different index for archived records
                     '_id' => $vehicle->id,
                 ]
             ];
 
-            $bulkData[] = [
-                'doc' => $vehicleData,
-                'doc_as_upsert' => true
-            ];
+            // Add vehicle data to the bulk request
+            $bulkData[] = $vehicleData;
+            */
 
-            // $bulkData[] = [
-            //     'index' => [
-            //         '_index' => 'vehicle_record_archiveds',  // Different index for archived records
-            //         '_id' => $vehicle->id,
-            //     ]
-            // ];
+            // Single Document Insert Logic
+            try {
+                $response = $client->index([
+                    'index' => 'vehicle_record_archiveds',
+                    'id' => $vehicle->id,
+                    'body' => $vehicleData,
+                ]);
 
-            // // Add vehicle data to the bulk request
-            // $bulkData[] = $vehicleData;
+                Log::info('Indexed Archived Vehicle Successfully', ['vehicle_id' => $vehicle->id, 'response' => $response]);
+            } catch (\Exception $e) {
+                Log::error('Error Indexing Vehicle to Elasticsearch', ['vehicle_id' => $vehicle->id, 'vehicleData' => $vehicleData, 'error' => $e->getMessage()]);
+            }
 
-            Log::info('Preparing to index archived vehicle', ['vehicle_id' => $vehicle->id]);
+            // Log::info('Preparing to index archived vehicle', ['vehicle_id' => $vehicle->id]);
         }
 
+        /*
+        // Bulk Insert Logic (Commented)
         // Ensure that there's data to index
         if (!empty($bulkData)) {
             try {
@@ -123,5 +129,6 @@ class StoreVehicleArchivedToElasticsearch implements ShouldQueue
         } else {
             Log::info('No archived vehicles found for indexing.');
         }
+        */
     }
 }
