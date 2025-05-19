@@ -75,14 +75,26 @@ class StoreVehicleArchivedToElasticsearch implements ShouldQueue
             $vehicleData = $vehicle->toArray();
 
             $bulkData[] = [
-                'index' => [
-                    '_index' => 'vehicle_record_archiveds',  // Different index for archived records
+                'update' => [
+                    '_index' => 'vehicle_record_archiveds',
                     '_id' => $vehicle->id,
                 ]
             ];
 
-            // Add vehicle data to the bulk request
-            $bulkData[] = $vehicleData;
+            $bulkData[] = [
+                'doc' => $vehicleData,
+                'doc_as_upsert' => true
+            ];
+
+            // $bulkData[] = [
+            //     'index' => [
+            //         '_index' => 'vehicle_record_archiveds',  // Different index for archived records
+            //         '_id' => $vehicle->id,
+            //     ]
+            // ];
+
+            // // Add vehicle data to the bulk request
+            // $bulkData[] = $vehicleData;
 
             Log::info('Preparing to index archived vehicle', ['vehicle_id' => $vehicle->id]);
         }

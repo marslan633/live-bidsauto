@@ -146,8 +146,8 @@ class IndexVehicleRecordArchiveds extends Command
                   ->whereNotNull('sale_date');
         }
 
-         // Use Laravel's chunk method to process records in batches of 500
-         $query->chunk($chunkSize, function ($vehicles) use ($dispatchChunkSize) {
+        // Use Laravel's chunk method to process records in batches of 500
+        $query->chunk($chunkSize, function ($vehicles) use ($dispatchChunkSize) {
             // Dispatch the job with the chunk, which will include relationships eager-loaded in the job
             dispatch(new StoreVehicleArchivedToElasticsearch($vehicles));
         });
