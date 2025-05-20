@@ -139,12 +139,13 @@ class IndexVehicleRecordArchiveds extends Command
         $query = VehicleRecordArchived::query();
 
         // Full fetch or incremental fetch logic
-        if ($isFullFetch) {
-            $query->whereNotNull('sale_date');
-        } else {
-            $query->where('updated_at', '>=', $minutes)
-                  ->whereNotNull('sale_date');
-        }
+        $query->whereNotNull('sale_date');
+        // if ($isFullFetch) {
+        //     $query->whereNotNull('sale_date');
+        // } else {
+        //     $query->where('updated_at', '>=', $minutes)
+        //           ->whereNotNull('sale_date');
+        // }
 
         // Use Laravel's chunk method to process records in batches of 500
         $query->chunk($chunkSize, function ($vehicles) use ($dispatchChunkSize) {
