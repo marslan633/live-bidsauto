@@ -103,32 +103,6 @@ class StoreVehicleArchivedToElasticsearch implements ShouldQueue
             // Log::info('Preparing to index archived vehicle', ['vehicle_id' => $vehicle->id]);
         }
 
-        /*
-        // Bulk Insert Logic (Commented)
-        // Ensure that there's data to index
-        if (!empty($bulkData)) {
-            try {
-                // Debugging: Log the bulk data structure before sending it
-                Log::info('Bulk Index Data (Archived): ', ['bulk_data' => json_encode($bulkData)]);
 
-                // Execute the bulk request to Elasticsearch
-                $response = $client->bulk(['body' => $bulkData]);
-
-                // Debugging: Log the response from Elasticsearch
-                Log::info('Bulk Indexing Response (Archived): ', ['response' => $response]);
-
-                // Check if Elasticsearch returned errors
-                if (isset($response['errors']) && $response['errors']) {
-                    Log::error('Errors while indexing archived vehicles', ['errors' => $response['items']]);
-                } else {
-                    Log::info('Archived vehicles successfully indexed.');
-                }
-            } catch (\Exception $e) {
-                Log::error('Error in Bulk Indexing Archived Vehicles: ', ['error' => $e->getMessage()]);
-            }
-        } else {
-            Log::info('No archived vehicles found for indexing.');
-        }
-        */
     }
 }
