@@ -134,8 +134,6 @@ class IndexVehicleRecordArchiveds extends Command
         $chunkSize = 500;  // Process records in chunks of 500
         $dispatchChunkSize = 100;
 
-
-
         $query = VehicleRecordArchived::query();
 
         // Full fetch or incremental fetch logic
