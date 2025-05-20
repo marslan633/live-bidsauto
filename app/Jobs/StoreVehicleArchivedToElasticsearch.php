@@ -89,25 +89,45 @@ class StoreVehicleArchivedToElasticsearch implements ShouldQueue
 
             // Single Document Insert Logic
             try {
-                // Replace or create the document
-                $response = $client->index([
+                // Check if the document exists
+                $exists = $client->exists([
                     'index' => 'vehicle_record_archiveds',
                     'id'    => $vehicle->id,
-                    'body'  => $vehicleData,
                 ]);
 
-                Log::info('Replaced or Created Archived Vehicle in Elasticsearch', [
-                    'vehicle_id' => $vehicle->id,
-                    'response' => $response,
-                ]);
+                if ($exists) {
+                    // Document exists, perform an update
+                    $response = $client->update([
+                        'index' => 'vehicle_record_archiveds',
+                        'id'    => $vehicle->id,
+                        'body'  => [
+                            'doc' => $vehicleData,
+                        ],
+                    ]);
+                    Log::info('Updated Archived Vehicle in Elasticsearch', [
+                        'vehicle_id' => $vehicle->id,
+                        'response' => $response,
+                    ]);
+                } else {
+                    // Document doesn't exist, perform a create
+                    $response = $client->index([
+                        'index' => 'vehicle_record_archiveds',
+                        'id'    => $vehicle->id,
+                        'body'  => $vehicleData,
+                    ]);
+                    Log::info('Created Archived Vehicle in Elasticsearch', [
+                        'vehicle_id' => $vehicle->id,
+                        'response' => $response,
+                    ]);
+                }
+
             } catch (\Exception $e) {
-                Log::error('Error Replacing or Creating Vehicle in Elasticsearch', [
+                Log::error('Error Indexing Vehicle to Elasticsearch', [
                     'vehicle_id' => $vehicle->id,
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString()
                 ]);
             }
-
 
 
             // Log::info('Preparing to index archived vehicle', ['vehicle_id' => $vehicle->id]);
