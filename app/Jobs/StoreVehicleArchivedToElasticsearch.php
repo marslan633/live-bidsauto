@@ -96,38 +96,36 @@ class StoreVehicleArchivedToElasticsearch implements ShouldQueue
                 ]);
 
                 if ($exists) {
-                    // Document exists, perform an update
-                    $response = $client->update([
+                    // Document exists, delete it
+                    $client->delete([
                         'index' => 'vehicle_record_archiveds',
                         'id'    => $vehicle->id,
-                        'body'  => [
-                            'doc' => $vehicleData,
-                        ],
                     ]);
-                    Log::info('Updated Archived Vehicle in Elasticsearch', [
+
+                    Log::info('Deleted existing document in Elasticsearch', [
                         'vehicle_id' => $vehicle->id,
-                        'response' => $response,
-                    ]);
-                } else {
-                    // Document doesn't exist, perform a create
-                    $response = $client->index([
-                        'index' => 'vehicle_record_archiveds',
-                        'id'    => $vehicle->id,
-                        'body'  => $vehicleData,
-                    ]);
-                    Log::info('Created Archived Vehicle in Elasticsearch', [
-                        'vehicle_id' => $vehicle->id,
-                        'response' => $response,
                     ]);
                 }
 
+                // Create the new document
+                $response = $client->index([
+                    'index' => 'vehicle_record_archiveds',
+                    'id'    => $vehicle->id,
+                    'body'  => $vehicleData,
+                ]);
+
+                Log::info('Created new document in Elasticsearch', [
+                    'vehicle_id' => $vehicle->id,
+                    'response' => $response,
+                ]);
             } catch (\Exception $e) {
-                Log::error('Error Indexing Vehicle to Elasticsearch', [
+                Log::error('Error processing document in Elasticsearch', [
                     'vehicle_id' => $vehicle->id,
                     'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
+                    'trace' => $e->getTraceAsString(),
                 ]);
             }
+
 
 
             // Log::info('Preparing to index archived vehicle', ['vehicle_id' => $vehicle->id]);
