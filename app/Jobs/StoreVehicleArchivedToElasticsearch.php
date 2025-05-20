@@ -97,7 +97,7 @@ class StoreVehicleArchivedToElasticsearch implements ShouldQueue
 
                 Log::info('Indexed Archived Vehicle Successfully', ['vehicle_id' => $vehicle->id, 'response' => $response]);
             } catch (\Exception $e) {
-                Log::error('Error Indexing Vehicle to Elasticsearch', ['vehicle_id' => $vehicle->id, 'vehicleData' => $vehicleData, 'error' => $e->getMessage()]);
+                Log::error('Error Indexing Vehicle to Elasticsearch', ['vehicle_id' => $vehicle->id, 'error' => $e->getMessage(),   'trace' => $e->getTraceAsString()]);
             }
 
             // Log::info('Preparing to index archived vehicle', ['vehicle_id' => $vehicle->id]);
