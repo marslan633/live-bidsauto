@@ -89,26 +89,19 @@ class StoreVehicleArchivedToElasticsearch implements ShouldQueue
 
             // Single Document Insert Logic
             try {
-                // Check if document exists
-                $exists = $client->exists([
-                    'index' => 'vehicle_record_archiveds',
-                    'id'    => $vehicle->id,
-                ]);
-
-                // Always index() — update is not reliable for full replacement
+                // Replace or create the document
                 $response = $client->index([
                     'index' => 'vehicle_record_archiveds',
                     'id'    => $vehicle->id,
                     'body'  => $vehicleData,
                 ]);
 
-                Log::info($exists ? 'Updated vehicle via index()' : 'Created new vehicle via index()', [
+                Log::info('Replaced or Created Archived Vehicle in Elasticsearch', [
                     'vehicle_id' => $vehicle->id,
                     'response' => $response,
                 ]);
-
             } catch (\Exception $e) {
-                Log::error('Error Indexing Vehicle to Elasticsearch', [
+                Log::error('Error Replacing or Creating Vehicle in Elasticsearch', [
                     'vehicle_id' => $vehicle->id,
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString()
