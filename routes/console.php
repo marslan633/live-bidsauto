@@ -35,7 +35,7 @@ if (config('app.app_kvm_one') === true) {
 
     //  app(Schedule::class)->command('process:api-data-with-elasticsearch')->everyFifteenMinutes()->withoutOverlapping();
     //  app(Schedule::class)->command('process:cached-data-with-elasticsearch')->everyFiveMinutes()->withoutOverlapping();
-     app(Schedule::class)->command('process:archived-data-with-elasticsearch')->dailyAt('17:45')->withoutOverlapping();
+     app(Schedule::class)->command('process:archived-data-with-elasticsearch')->dailyAt('18:25')->withoutOverlapping();
 
     // app(Schedule::class)->command('process:delete-cached-data-with-elasticsearch')->everyTenMinutes()->withoutOverlapping();
     app(Schedule::class)->command('process:delete-cached-archived-data-with-elasticsearch')->hourly()->withoutOverlapping();
@@ -49,7 +49,7 @@ if (config('app.app_kvm_three') === true) {
      * Cron Job - Process Vehicle Data from kvm4.2 redis cache and populate it into kvm4.3 Mysql.
      */
     // app(Schedule::class)->command('process:process-cached-data-to-databases-with-elasticsearch')->everyTenMinutes()->withoutOverlapping();
-    app(Schedule::class)->command('process:cached-archived-data-to-database-with-elasticsearch')->dailyAt('17:50')->withoutOverlapping();
+    app(Schedule::class)->command('process:cached-archived-data-to-database-with-elasticsearch')->dailyAt('18:35')->withoutOverlapping();
     // app(Schedule::class)->command('process:expired-auction-archive-with-elasticsearch')->everyFifteenMinutes()->everyFifteenMinutes();
 
     // app(Schedule::class)->command('process:process-cached-data-to-databases')->everyTenMinutes()->withoutOverlapping();

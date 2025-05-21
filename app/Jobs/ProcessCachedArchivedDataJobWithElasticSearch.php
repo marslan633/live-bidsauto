@@ -170,8 +170,6 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                 Log::info('Sale Records Not Found');
             }
 
-
-
             try{
                 $client = app('ElasticsearchKvmOne');
 
