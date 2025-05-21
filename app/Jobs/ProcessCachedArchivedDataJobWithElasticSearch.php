@@ -166,6 +166,8 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                 // DB::table('sale_auction_histories')->where('id', $saleRecord[0]['id'])->update($saleRecord[0]);
                 // DB::table('sale_auction_histories')->upsert($saleRecord, ['id'], array_keys($saleRecord[0]));
                 Log::info('Updated Records Sale Ids', ['data' => json_encode($updatedRecordIds)]);
+            }else{
+                Log::info('Sale Records Not Found');
             }
 
 
