@@ -25,7 +25,6 @@ class StoreSaleAuctionHistoryToElasticsearch implements ShouldQueue
     public function handle()
     {
         $client = app('ElasticsearchKvmFour');
-        $bulkData = [];
 
         $this->histories->load([
             'domain',
@@ -38,44 +37,40 @@ class StoreSaleAuctionHistoryToElasticsearch implements ShouldQueue
 
             $historyData = $history->toArray();
 
-            // Format sale_date as ISO8601 (for strict_date_optional_time)
+            // Format dates
             $historyData['sale_date'] = Carbon::parse($historyData['sale_date'])->toIso8601String();
-
-            // Format created_at and updated_at to "Y-m-d H:i:s"
             $historyData['created_at'] = Carbon::parse($historyData['created_at'])->format('Y-m-d H:i:s');
             $historyData['updated_at'] = Carbon::parse($historyData['updated_at'])->format('Y-m-d H:i:s');
 
-
-            $bulkData[] = [
-                'index' => [
-                    '_index' => 'sale_auction_histories',
-                    '_id' => $history->id,
-                ]
-            ];
-
-            $bulkData[] = $historyData;
-
-            Log::info('Preparing to index sale auction history', ['history_id' => $history->id]);
-        }
-
-        if (!empty($bulkData)) {
             try {
-                Log::info('Bulk Index Data: ', ['bulk_data' => json_encode($bulkData)]);
+                // Upsert parameters
+                $params = [
+                    'index' => 'sale_auction_histories',
+                    'id'    => $history->id,
+                    'body'  => [
+                        'script' => [
+                            'source' => 'ctx._source.putAll(params.historyData)',
+                            'params' => [
+                                'historyData' => $historyData
+                            ],
+                        ],
+                        'upsert' => $historyData,
+                    ]
+                ];
 
-                $response = $client->bulk(['body' => $bulkData]);
+                $response = $client->update($params);
 
-                Log::info('Bulk Indexing Response: ', ['response' => $response]);
-
-                if (isset($response['errors']) && $response['errors']) {
-                    Log::error('Errors while indexing sale auction history', ['errors' => $response['items']]);
-                } else {
-                    Log::info('Sale Auction History records successfully indexed.');
-                }
+                Log::info('Upserted Sale Auction History in Elasticsearch', [
+                    'history_id' => $history->id,
+                    'response' => $response,
+                ]);
             } catch (\Exception $e) {
-                Log::error('Error in Bulk Indexing: ', ['error' => $e->getMessage()]);
+                Log::error('Error Upserting Sale Auction History in Elasticsearch', [
+                    'history_id' => $history->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
             }
-        } else {
-            Log::info('No sale auction history records found for indexing.');
         }
     }
 }
