@@ -89,37 +89,30 @@ class StoreVehicleArchivedToElasticsearch implements ShouldQueue
 
             // Single Document Insert Logic
             try {
-                // Check if the document exists
-                $exists = $client->exists([
+                // Prepare the upsert parameters
+                $params = [
                     'index' => 'vehicle_record_archiveds',
                     'id'    => $vehicle->id,
-                ]);
+                    'body'  => [
+                        'script' => [
+                            'source' => 'ctx._source.putAll(params.vehicleData)',
+                            'params' => [
+                                'vehicleData' => $vehicleData
+                            ],
+                        ],
+                        'upsert' => $vehicleData,
+                    ]
+                ];
 
-                if ($exists) {
-                    // Document exists, delete it
-                    $client->delete([
-                        'index' => 'vehicle_record_archiveds',
-                        'id'    => $vehicle->id,
-                    ]);
+                // Perform the upsert operation
+                $response = $client->update($params);
 
-                    Log::info('Deleted existing document in Elasticsearch', [
-                        'vehicle_id' => $vehicle->id,
-                    ]);
-                }
-
-                // Create the new document
-                $response = $client->index([
-                    'index' => 'vehicle_record_archiveds',
-                    'id'    => $vehicle->id,
-                    'body'  => $vehicleData,
-                ]);
-
-                Log::info('Created new document in Elasticsearch', [
+                Log::info('Upserted Vehicle in Elasticsearch', [
                     'vehicle_id' => $vehicle->id,
                     'response' => $response,
                 ]);
             } catch (\Exception $e) {
-                Log::error('Error processing document in Elasticsearch', [
+                Log::error('Error Upserting Vehicle in Elasticsearch', [
                     'vehicle_id' => $vehicle->id,
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString(),
