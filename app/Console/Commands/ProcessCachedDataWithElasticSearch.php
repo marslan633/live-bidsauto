@@ -149,8 +149,8 @@ class ProcessCachedDataWithElasticSearch extends Command
                     'body' => [
                         'server_name' => 'KVM4.1',
                         'error_type' => 'Internal Server Error',
-                        'command_name' => "Error processing doc ID {$doc['_id']}: " . json_encode($e->getMessage()),
-                        'error' => "No cached data found.",
+                        'command_name' => 'process:cached-data-with-elasticsearch',
+                        'error' => "Error processing doc ID {$doc['_id']}: " . json_encode($e->getMessage()),
                         'created_at' => now()->toIso8601String(),
                         'updated_at' => now()->toIso8601String(),
                     ],
