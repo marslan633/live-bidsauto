@@ -57,7 +57,6 @@ class SetupElasticsearchClassesKvmOne extends Command
                     ]
                 ]
             ],
-
             'cron_run_histories' => [
                 'settings' => [
                     'index' => [
@@ -74,21 +73,21 @@ class SetupElasticsearchClassesKvmOne extends Command
                         'error_message' => ['type' => 'text'],
                     ],
                 ],
-                'error_logs' => [
-                    'mappings' => [
-                        'properties' => [
-                            'created_at' => [
-                                'type' => 'date',
-                                'format' => 'yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis'
-                            ],
-                            'updated_at' => [
-                                'type' => 'date',
-                                'format' => 'yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis'
-                            ],
-                            'server_name' => ['type' => 'keyword'],
-                            'command_name' => ['type' => 'keyword'],
-                            'error' => ['type' => 'text'],
+            ],
+            'error_logs' => [
+                'mappings' => [
+                    'properties' => [
+                        'created_at' => [
+                            'type' => 'date',
+                            'format' => 'yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis'
                         ],
+                        'updated_at' => [
+                            'type' => 'date',
+                            'format' => 'yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis'
+                        ],
+                        'server_name' => ['type' => 'keyword'],
+                        'command_name' => ['type' => 'keyword'],
+                        'error' => ['type' => 'text'],
                     ],
                 ],
             ],
