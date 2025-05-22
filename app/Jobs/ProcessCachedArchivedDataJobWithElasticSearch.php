@@ -148,10 +148,10 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                     Log::info("Skipping record due to error: " . $e->getMessage());
                 }
             }
-            Log::info('existingSaleRecords', ['existingSaleRecords' => json_encode($existingSaleRecords)]);
-            Log::info('saleRecord', ['saleRecord' => json_encode($saleRecord)]);
             // ✅ Bulk Update Existing Records
             if (!empty($updatedRecords)) {
+                Log::info('existingSaleRecords', ['existingSaleRecords' => json_encode($existingSaleRecords)]);
+                Log::info('saleRecord', ['saleRecord' => json_encode($saleRecord)]);
                 foreach($updatedRecords as $item_one){
 
                     DB::table('vehicle_record_archiveds')->where('id', $item_one['id'])->update($item_one);
