@@ -79,7 +79,7 @@ class SetupElasticsearchClassesKvmOne extends Command
         foreach ($indices as $indexName => $indexConfig) {
             // Check if index exists
             $exists = $client->indices()->exists(['index' => $indexName]);
-
+            $this->info("Exists response for index {$indexName}: " . json_encode($exists));
             if ($exists) {
                 $this->info("Index '{$indexName}' already exists. Skipping creation.");
             } else {
