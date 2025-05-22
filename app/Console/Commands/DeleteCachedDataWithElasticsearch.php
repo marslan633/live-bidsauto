@@ -120,7 +120,17 @@ class DeleteCachedDataWithElasticsearch extends Command
                     $bulkResponse = $client->bulk(['body' => $deleteParams]);
 
                     if (isset($bulkResponse['errors']) && $bulkResponse['errors']) {
-                        Log::error('Bulk delete errors', ['response' => json_encode($bulkResponse)]);
+                        $client->index([
+                            'index' => 'error_logs',
+                            'body' => [
+                                'server_name' => 'KVM4.1',
+                                'error_type' => 'Internal Server Error',
+                                'command_name' => 'process:delete-cached-data-with-elasticsearch',
+                                'error' => 'Bulk delete error: ' . json_encode($bulkResponse),
+                                'created_at' => now()->toIso8601String(),
+                                'updated_at' => now()->toIso8601String(),
+                            ],
+                        ]);
                     } else {
                         $this->info('Successfully deleted ' . count($deleteParams) . ' records.');
                     }
@@ -137,8 +147,18 @@ class DeleteCachedDataWithElasticsearch extends Command
             $this->info('Completed deleting records.');
 
         } catch (\Exception $e) {
-            Log::error('Error deleting records: ' . $e->getMessage());
-            $this->error('Error deleting records: ' . $e->getMessage());
+            $client->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.1',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'process:delete-cached-data-with-elasticsearch',
+                    'error' => 'Error deleting records: ' . json_encode($e->getMessage()),
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
+
         }
     }
 }

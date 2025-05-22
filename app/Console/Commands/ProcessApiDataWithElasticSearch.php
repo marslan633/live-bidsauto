@@ -97,8 +97,17 @@ class ProcessApiDataWithElasticSearch extends Command
                     ->get($apiUrl);
 
                 if (! $response->successful()) {
-                    $this->error('❌ Failed to fetch API data.');
-                    // \Log::error('❌ Failed to fetch API data.');
+                    $client->index([
+                        'index' => 'error_logs',
+                        'body' => [
+                            'server_name' => 'KVM4.1',
+                            'error_type' => 'Car Stats Api',
+                            'command_name' => 'process:api-data-with-elasticsearch',
+                            'error' => '❌ Failed to fetch API data.',
+                            'created_at' => now()->toIso8601String(),
+                            'updated_at' => now()->toIso8601String(),
+                        ],
+                    ]);
                     break;
                 }
 
@@ -153,16 +162,13 @@ class ProcessApiDataWithElasticSearch extends Command
 
 
         } catch (\Exception $e) {
-            $this->error('❌ Error: '.$e->getMessage());
-            // \Log::error("❌ Error: " . $e->getMessage());
-
             $client->index([
                 'index' => 'error_logs',
                 'body' => [
                     'server_name' => 'KVM4.1',
                     'error_type' => 'Internal Server Error',
                     'command_name' => 'process:api-data-with-elasticsearch',
-                    'error' => $e->getMessage(),
+                    'error' => json_encode($e->getMessage()),
                     'created_at' => now()->toIso8601String(),
                     'updated_at' => now()->toIso8601String(),
                 ],

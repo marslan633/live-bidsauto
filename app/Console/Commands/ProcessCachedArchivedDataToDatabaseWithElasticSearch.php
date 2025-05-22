@@ -58,7 +58,17 @@ class ProcessCachedArchivedDataToDatabaseWithElasticSearch extends Command
                 $cronRun = $response['_id'];
                 // Optionally, you can update the cron record with the API response or status
             } else {
-                Log::info('Error: PROCESS CACHED ARCHIVED DATA TO DATABASE CREATED');
+                $client->index([
+                    'index' => 'error_logs',
+                    'body' => [
+                        'server_name' => 'KVM4.3',
+                        'error_type' => 'Internal Server Error',
+                        'command_name' => 'process:cached-archived-data-to-database-with-elasticsearch',
+                        'error' => 'Error: PROCESS CACHED ARCHIVED DATA TO DATABASE CREATED',
+                        'created_at' => now()->toIso8601String(),
+                        'updated_at' => now()->toIso8601String(),
+                    ],
+                ]);
             }
 
             $response = $client->search([
@@ -87,8 +97,17 @@ class ProcessCachedArchivedDataToDatabaseWithElasticSearch extends Command
 
 
             if (count($hits) == 0) {
-                $this->info("No Data Archived Pending to process");
-                Log::info('NOT DATA:PROCESS CACHED ARCHIVED DATA TO DATABASE CREATED');
+                $client->index([
+                    'index' => 'error_logs',
+                    'body' => [
+                        'server_name' => 'KVM4.3',
+                        'error_type' => 'General',
+                        'command_name' => 'process:cached-archived-data-to-database-with-elasticsearch',
+                        'error' => 'NOT DATA:PROCESS CACHED ARCHIVED DATA TO DATABASE CREATED',
+                        'created_at' => now()->toIso8601String(),
+                        'updated_at' => now()->toIso8601String(),
+                    ],
+                ]);
                 return;
             }
 
@@ -100,12 +119,20 @@ class ProcessCachedArchivedDataToDatabaseWithElasticSearch extends Command
             }, $hits);
 
         } catch (\Exception $e) {
-            Log::info("Error fetching cache keys: ", ['data' => json_encode($e->getMessage())]);
             $this->handleCronError($cronRun, "Error fetching cache keys: " . $e->getMessage());
+            $client->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.3',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'process:cached-archived-data-to-database-with-elasticsearch',
+                    'error' => 'Error fetching cache keys: ' . json_encode($e->getMessage()),
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
             return;
         }
-
-
 
         collect($data)->chunk(100)->each(function ($chunk) {
             foreach ($chunk as $item) {
@@ -130,7 +157,17 @@ class ProcessCachedArchivedDataToDatabaseWithElasticSearch extends Command
 
             Log::info('PROCESS CACHED DATA TO DATABASE UPDATED');
         } else {
-            Log::info('ERROR: PROCESS CACHED DATA TO DATABASE UPDATED');
+            $client->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.3',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'process:cached-archived-data-to-database-with-elasticsearch',
+                    'error' => 'ERROR: PROCESS CACHED DATA TO DATABASE UPDATED',
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
         }
 
 
@@ -142,7 +179,6 @@ class ProcessCachedArchivedDataToDatabaseWithElasticSearch extends Command
      */
     private function handleCronError($cronRun, $errorMessage)
     {
-        Log::error($errorMessage);
 
         $client = app('ElasticsearchKvmOne');
 

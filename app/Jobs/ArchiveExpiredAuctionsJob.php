@@ -36,13 +36,24 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
     public function handle()
     {
         Log::info('Archived Expired Job Handle Function Calling');
+        $client = app('ElasticsearchKvmOne');
         try {
 
             $record  = DB::connection('mysql')->table('vehicle_records')->where('id', $this->recordId)->first();
             // Log::info('Record Fetched', ['record' => json_encode($record)]);
 
             if (!$record) {
-                Log::info("Auction record not found for ID: {$this->recordId}");
+                $client->index([
+                    'index' => 'error_logs',
+                    'body' => [
+                        'server_name' => 'KVM4.3',
+                        'error_type' => 'General',
+                        'command_name' => 'expired_auction_archive_queue',
+                        'error' => "Auction record not found for ID: {$this->recordId}",
+                        'created_at' => now()->toIso8601String(),
+                        'updated_at' => now()->toIso8601String(),
+                    ],
+                ]);
                 return;
             }
 
@@ -115,7 +126,17 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
             DB::connection('mysql')->table('vehicle_records')->where('id', $this->recordId)->delete();
             //   Log::info('Vehicle Record Deleted ' . $this->recordId);
         } catch (\Exception $e) {
-            Log::error("Error processing auction record VIN: {$record['vin']} - " . $e->getMessage());
+            $client->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.3',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'expired_auction_archive_queue',
+                    'error' => "Error processing auction record VIN: {$record['vin']} - ". json_encode($e->getMessage()) ,
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
         }
     }
 }

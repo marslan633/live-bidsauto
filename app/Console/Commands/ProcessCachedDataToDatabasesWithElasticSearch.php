@@ -61,7 +61,17 @@ class ProcessCachedDataToDatabasesWithElasticSearch extends Command
                 $cronRun = $response['_id'];
                 // Optionally, you can update the cron record with the API response or status
             } else {
-                Log::info('Error: PROCESS CACHED DATA TO DATABASE CREATED');
+                $clientkvmOne->index([
+                    'index' => 'error_logs',
+                    'body' => [
+                        'server_name' => 'KVM4.3',
+                        'error_type' => 'Internal Server Error',
+                        'command_name' => 'process:process-cached-data-to-databases-with-elasticsearch',
+                        'error' => 'Error: PROCESS CACHED DATA TO DATABASE CREATED',
+                        'created_at' => now()->toIso8601String(),
+                        'updated_at' => now()->toIso8601String(),
+                    ],
+                ]);
             }
 
             // Fetch data from Elasticsearch index
@@ -90,8 +100,17 @@ class ProcessCachedDataToDatabasesWithElasticSearch extends Command
             $hits = $response['hits']['hits'];
 
             if (count($hits) === 0) {
-                $this->info("No Data Pending to process");
-                Log::info('NO DATA: vehicle_process_cached_api_data index empty');
+                $clientkvmOne->index([
+                    'index' => 'error_logs',
+                    'body' => [
+                        'server_name' => 'KVM4.3',
+                        'error_type' => 'General',
+                        'command_name' => 'process:process-cached-data-to-databases-with-elasticsearch',
+                        'error' => 'NO DATA: vehicle_process_cached_api_data index empty',
+                        'created_at' => now()->toIso8601String(),
+                        'updated_at' => now()->toIso8601String(),
+                    ],
+                ]);
                 return;
             }
 
@@ -104,6 +123,18 @@ class ProcessCachedDataToDatabasesWithElasticSearch extends Command
 
         }catch(\Exception $e){
             // if($cronRun !== null){
+                $clientkvmOne->index([
+                    'index' => 'error_logs',
+                    'body' => [
+                        'server_name' => 'KVM4.3',
+                        'error_type' => 'Internal Server Error',
+                        'command_name' => 'process:process-cached-data-to-databases-with-elasticsearch',
+                        'error' => 'Error fetching cache keys: ' . json_encode($e->getMessage()),
+                        'created_at' => now()->toIso8601String(),
+                        'updated_at' => now()->toIso8601String(),
+                    ],
+                ]);
+
                 $this->handleCronError($cronRun, "Error fetching cache keys: " . $e->getMessage());
             // }
             return;
@@ -132,8 +163,17 @@ class ProcessCachedDataToDatabasesWithElasticSearch extends Command
 
             Log::info('PROCESS CACHED DATA TO DATABASE UPDATED');
         }else{
-
-            Log::info('ERROR: PROCESS CACHED DATA TO DATABASE UPDATED');
+            $clientkvmOne->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.3',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'process:process-cached-data-to-databases-with-elasticsearch',
+                    'error' => 'ERROR: PROCESS CACHED DATA TO DATABASE UPDATED',
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
         }
 
 
@@ -144,7 +184,6 @@ class ProcessCachedDataToDatabasesWithElasticSearch extends Command
      */
     private function handleCronError($cronRun, $errorMessage)
     {
-        Log::error($errorMessage);
             $clientkvmOne = app('ElasticsearchKvmOne');
 
             $clientkvmOne->update([

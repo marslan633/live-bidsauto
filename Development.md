@@ -1,16 +1,11 @@
-<!-- 
-1. Compress Whole Data Flow
-    => Process Api Data, Process Cached Data, Process Cached Data To Database
-2. CRON Run History Create or Update => Logs Added
-3. CRON RUN HISTORY STATUS UPDATE ISSUES
-4. Restructure => process:expired-auction-archive
-5. process:cached-archived-data-to-database-wihtout-queue => Sale History VN
-6. Delete Records Api using Batch
- -->
-
-
-KVM4.1
-1. process:archived-data => data compressed
-KVM4.3
-2. process:cached-archived-data-to-database => Api created + Apis Integrated + Job created
-
+$client->index([
+                            'index' => 'error_logs',
+                            'body' => [
+                                'server_name' => 'KVM4.3',
+                                'error_type' => 'Internal Server Error',
+                                'command_name' => 'process:expired-auction-archive-with-elasticsearch',
+                                'error' => 'Bulk delete errors: ' . json_encode($bulkResponse),
+                                'created_at' => now()->toIso8601String(),
+                                'updated_at' => now()->toIso8601String(),
+                            ],
+                        ]);

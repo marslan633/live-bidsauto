@@ -203,10 +203,18 @@ class ProcessArchivedDataWithElasticSearch extends Command
                 }
             } while ($nextUrl !== null);
         } catch (\Exception $e) {
-            if(config('app.env') !== 'production'){
-                $this->error("Error: " . $e->getMessage());
-                Log::error("Error: " . $e->getMessage());
-            }
+
+            $client->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.1',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'process:archived-data-with-elasticsearch',
+                    'error' => json_encode($e->getMessage()),
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
 
             $client->update([
                 'index' => 'cron_run_histories',

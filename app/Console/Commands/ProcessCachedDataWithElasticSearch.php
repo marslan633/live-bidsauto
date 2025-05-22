@@ -62,12 +62,32 @@ class ProcessCachedDataWithElasticSearch extends Command
             $hits = $response['hits']['hits'];
 
             if (empty($hits)) {
-                $this->info("No cached data found.");
+                $client->index([
+                    'index' => 'error_logs',
+                    'body' => [
+                        'server_name' => 'KVM4.1',
+                        'error_type' => 'General Error',
+                        'command_name' => 'process:cached-data-with-elasticsearch',
+                        'error' => "No cached data found.",
+                        'created_at' => now()->toIso8601String(),
+                        'updated_at' => now()->toIso8601String(),
+                    ],
+                ]);
                 return;
             }
 
         } catch (\Exception $e) {
-            Log::info("Error fetching cache keys: ", ['data' => json_encode($e->getMessage())]);
+            $client->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.1',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'process:cached-data-with-elasticsearch',
+                    'error' => json_encode($e->getMessage()),
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
             $this->handleCronError($cronRun, "Error fetching cache keys: " . $e->getMessage());
             return;
         }
@@ -124,7 +144,17 @@ class ProcessCachedDataWithElasticSearch extends Command
 
 
             } catch (\Exception $e) {
-                Log::info("Error processing doc ID {$doc['_id']}: " . $e->getMessage());
+                $client->index([
+                    'index' => 'error_logs',
+                    'body' => [
+                        'server_name' => 'KVM4.1',
+                        'error_type' => 'Internal Server Error',
+                        'command_name' => "Error processing doc ID {$doc['_id']}: " . json_encode($e->getMessage()),
+                        'error' => "No cached data found.",
+                        'created_at' => now()->toIso8601String(),
+                        'updated_at' => now()->toIso8601String(),
+                    ],
+                ]);
                 continue;
             }
         }
@@ -149,7 +179,6 @@ class ProcessCachedDataWithElasticSearch extends Command
      */
     private function handleCronError($cronRun, $errorMessage)
     {
-        Log::error($errorMessage);
         // Always Run on Defautl Server
         $client = app('ElasticsearchKvmOne');
 

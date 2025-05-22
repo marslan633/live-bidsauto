@@ -64,7 +64,17 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
                 $cronRun = $response['_id'];
                 // Optionally, you can update the cron record with the API response or status
             } else {
-                Log::info('Error: PROCESS AUCTION ARCHIVED DATA TO DATABASE CREATED');
+                $client->index([
+                    'index' => 'error_logs',
+                    'body' => [
+                        'server_name' => 'KVM4.3',
+                        'error_type' => 'Internal Server Error',
+                        'command_name' => 'process:expired-auction-archive-with-elasticsearch',
+                        'error' => 'Error: PROCESS AUCTION ARCHIVED DATA TO DATABASE CREATED',
+                        'created_at' => now()->toIso8601String(),
+                        'updated_at' => now()->toIso8601String(),
+                    ],
+                ]);
             }
             $updateUrl = $url . "/$cronRun";
             $batchSize = intval(config('app.batch_size'));
@@ -110,7 +120,18 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
 
                     Log::info('PROCESS CACHED DATA TO DATABASE UPDATED');
                 } else {
-                    Log::info('ERROR: PROCESS CACHED DATA TO DATABASE UPDATED');
+
+                    $client->index([
+                        'index' => 'error_logs',
+                        'body' => [
+                            'server_name' => 'KVM4.3',
+                            'error_type' => 'Internal Server Error',
+                            'command_name' => 'process:expired-auction-archive-with-elasticsearch',
+                            'error' => 'ERROR: PROCESS CACHED DATA TO DATABASE UPDATED',
+                            'created_at' => now()->toIso8601String(),
+                            'updated_at' => now()->toIso8601String(),
+                        ],
+                    ]);
                 }
 
                 return;
@@ -135,15 +156,36 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
 
                 Log::info('PROCESS CACHED DATA TO DATABASE UPDATED');
             } else {
-                Log::info('ERROR: PROCESS CACHED DATA TO DATABASE UPDATED');
+
+                $client->index([
+                    'index' => 'error_logs',
+                    'body' => [
+                        'server_name' => 'KVM4.3',
+                        'error_type' => 'Internal Server Error',
+                        'command_name' => 'process:expired-auction-archive-with-elasticsearch',
+                        'error' => 'ERROR: PROCESS CACHED DATA TO DATABASE UPDATED',
+                        'created_at' => now()->toIso8601String(),
+                        'updated_at' => now()->toIso8601String(),
+                    ],
+                ]);
             }
 
         } catch (Exception $e) {
-            $this->error("An error occurred while archiving expired auctions.");
-            Log::error("Error in auction:archive cron job - " . $e->getMessage());
-
             // Remote Connection to KVM4.1
             $client = app('ElasticsearchKvmOne');
+
+            $client->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.3',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'process:expired-auction-archive-with-elasticsearch',
+                    'error' => 'Error in auction:archive cron job - ' . json_encode($e->getMessage()),
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
+
 
             $client->update([
                 'index' => 'cron_run_histories',

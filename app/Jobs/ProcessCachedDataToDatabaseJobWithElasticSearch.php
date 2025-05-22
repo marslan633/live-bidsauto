@@ -33,10 +33,22 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
      */
     public function handle(): void
     {
+        $clientkvmOne = app('ElasticsearchKvmOne');
         try {
+
             $data = unCompressData($this->cacheKey->cache_value);
             if (!$data) {
-                Log::warning("No data found for key: {$this->cacheKey->_id}");
+                $clientkvmOne->index([
+                    'index' => 'error_logs',
+                    'body' => [
+                        'server_name' => 'KVM4.3',
+                        'error_type' => 'General',
+                        'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+                        'error' => "No data found for key: {$this->cacheKey->_id}",
+                        'created_at' => now()->toIso8601String(),
+                        'updated_at' => now()->toIso8601String(),
+                    ],
+                ]);
                 return;
             }
 
@@ -54,11 +66,31 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 $this->insertBatch($batchData, $this->cacheKey->_id);
                 $batchData = []; // Reset batch
             }else{
-                Log::info('Batch Condition Not Meet');
+                $clientkvmOne->index([
+                    'index' => 'error_logs',
+                    'body' => [
+                        'server_name' => 'KVM4.3',
+                        'error_type' => 'General',
+                        'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+                        'error' => "Batch Condition Not Meet",
+                        'created_at' => now()->toIso8601String(),
+                        'updated_at' => now()->toIso8601String(),
+                    ],
+                ]);
             }
 
         } catch (\Exception $e) {
-            Log::error("Error processing key {$this->cacheKey->_id}: " . $e->getMessage());
+            $clientkvmOne->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.3',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+                    'error' => "Error processing key {$this->cacheKey->_id}: " . json_encode($e->getMessage()),
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
         }
     }
 
@@ -68,6 +100,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
     public function insertBatch(array $batchData, $cacheKey)
     {
         Log::info('Starting Batch Insertion');
+        $clientkvmOne = app('ElasticsearchKvmOne');
         try {
             if (empty($batchData)) {
                 return;
@@ -103,7 +136,17 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                     }
                 } catch (\Exception $e) {
                     $failedRecords[] = $record;
-                    Log::info("Skipping record due to error: " . $e->getMessage());
+                    $clientkvmOne->index([
+                        'index' => 'error_logs',
+                        'body' => [
+                            'server_name' => 'KVM4.3',
+                            'error_type' => 'Internal Server Error',
+                            'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+                            'error' => "Skipping record due to error: " . json_encode($e->getMessage()),
+                            'created_at' => now()->toIso8601String(),
+                            'updated_at' => now()->toIso8601String(),
+                        ],
+                    ]);
                 }
             }
 
@@ -120,10 +163,17 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 // DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
             }
         } catch (\Throwable $e) {
-
-            // Mark cache as pending in case of failure
-
-            Log::info("Batch insert failed: " . $e->getMessage());
+            $clientkvmOne->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.3',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+                    'error' => "Batch insert failed: " . json_encode($e->getMessage()),
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
             return;
         }
 
@@ -148,13 +198,44 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                     ]);
                     Log::info("✅ Elasticsearch Processed document status updated for _id: $cacheKey");
                 }  catch (\Throwable $e) {
-                    Log::warning("⚠️ Failed to update document: " . $e->getMessage());
+                    $clientkvmOne->index([
+                        'index' => 'error_logs',
+                        'body' => [
+                            'server_name' => 'KVM4.3',
+                            'error_type' => 'Internal Server Error',
+                            'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+                            'error' => "⚠️ Failed to update document: " . json_encode($e->getMessage()),
+                            'created_at' => now()->toIso8601String(),
+                            'updated_at' => now()->toIso8601String(),
+                        ],
+                    ]);
                 }
             } else {
-                Log::warning("⚠️ Document not found for update with _id: $cacheKey");
+                Log::warning();
+                $clientkvmOne->index([
+                    'index' => 'error_logs',
+                    'body' => [
+                        'server_name' => 'KVM4.3',
+                        'error_type' => 'General',
+                        'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+                        'error' => "⚠️ Document not found for update with _id: $cacheKey",
+                        'created_at' => now()->toIso8601String(),
+                        'updated_at' => now()->toIso8601String(),
+                    ],
+                ]);
             }
         }catch (\Throwable $e) {
-            Log::error("❌ Elasticsearch exists check failed: " . $e->getMessage());
+            $clientkvmOne->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.3',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+                    'error' => "❌ Elasticsearch exists check failed: " . json_encode($e->getMessage()),
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
         }
     }
 
