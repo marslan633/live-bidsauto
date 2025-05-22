@@ -6,7 +6,7 @@ use Illuminate\Console\Command;
 
 class SetupElasticsearchClassesKvmOne extends Command
 {
-    protected $signature = 'app:setup-elasticsearch-classes-kvm-one';
+    protected $signature = 'process:setup-elasticsearch-classes-kvm-one';
     protected $description = 'Create Elasticsearch indexes if they do not exist';
 
     public function handle()
