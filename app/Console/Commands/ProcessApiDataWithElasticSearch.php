@@ -156,6 +156,18 @@ class ProcessApiDataWithElasticSearch extends Command
             $this->error('❌ Error: '.$e->getMessage());
             // \Log::error("❌ Error: " . $e->getMessage());
 
+            $client->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.1',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'process:api-data-with-elasticsearch',
+                    'error' => $e->getMessage(),
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
+
             $client->update([
                 'index' => 'cron_run_histories',
                 'id'    => $cronRun, // This is the Elasticsearch document _id

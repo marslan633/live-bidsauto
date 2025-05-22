@@ -86,6 +86,7 @@ class SetupElasticsearchClassesKvmOne extends Command
                             'format' => 'yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis'
                         ],
                         'server_name' => ['type' => 'keyword'],
+                        'error_type' => ['type' => 'keyword'],
                         'command_name' => ['type' => 'keyword'],
                         'error' => ['type' => 'text'],
                     ],
