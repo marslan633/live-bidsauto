@@ -77,16 +77,38 @@ class SetupElasticsearchClassesKvmOne extends Command
         ];
 
         foreach ($indices as $indexName => $indexConfig) {
-            // Check if index exists
-            $exists = $client->indices()->exists(['index' => $indexName]);
-            $this->info("Exists response for index {$indexName}: " . json_encode($exists));
-            if ($exists) {
+            try {
+                // Check if index exists by calling exists and inspecting status
+                $response = $client->indices()->exists(['index' => $indexName]);
+
+                // $response can be an array or boolean depending on client version
+                // So check if it's boolean false or has HTTP status 404
+                $indexExists = false;
+
+                if (is_bool($response)) {
+                    // If boolean, then use it directly
+                    $indexExists = $response;
+                } elseif (is_array($response) && isset($response['status'])) {
+                    $indexExists = $response['status'] !== 404;
+                } elseif (empty($response)) {
+                    // empty response means not found
+                    $indexExists = false;
+                } else {
+                    // fallback: if non-empty array assume exists
+                    $indexExists = true;
+                }
+
+            } catch (\Exception $e) {
+                // Exception usually means index does not exist
+                $indexExists = false;
+            }
+
+            if ($indexExists) {
                 $this->info("Index '{$indexName}' already exists. Skipping creation.");
             } else {
                 // Create index
                 $params = ['index' => $indexName];
 
-                // Add mappings and settings if provided
                 if (isset($indexConfig['mappings'])) {
                     $params['body']['mappings'] = $indexConfig['mappings'];
                 }
@@ -98,5 +120,6 @@ class SetupElasticsearchClassesKvmOne extends Command
                 $this->info("Index '{$indexName}' created successfully.");
             }
         }
+
     }
 }
