@@ -151,7 +151,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
             // ✅ Bulk Update Existing Records
             if (!empty($updatedRecords)) {
                 Log::info('existingSaleRecords', ['existingSaleRecords' => json_encode($existingSaleRecords)]);
-                Log::info('saleRecord', ['saleRecord' => json_encode($saleRecord)]);
+                Log::info('updatedSaleRecords', ['updatedSaleRecords' => json_encode($updatedSaleRecords)]);
                 foreach($updatedRecords as $item_one){
 
                     DB::table('vehicle_record_archiveds')->where('id', $item_one['id'])->update($item_one);
@@ -160,8 +160,8 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                 Log::info('Updated Records Ids', ['data' => json_encode($updatedRecordIds)]);
             }
 
-            if (!empty($saleRecord)) {
-                foreach($saleRecord as $item_two){
+            if (!empty($updatedSaleRecords)) {
+                foreach($updatedSaleRecords as $item_two){
                     DB::table('sale_auction_histories')->where('id', $item_two['id'])->update($item_two);
                 }
                 // DB::table('sale_auction_histories')->where('id', $saleRecord[0]['id'])->update($saleRecord[0]);
