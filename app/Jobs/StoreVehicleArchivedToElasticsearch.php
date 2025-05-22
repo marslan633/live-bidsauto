@@ -36,6 +36,7 @@ class StoreVehicleArchivedToElasticsearch implements ShouldQueue
     public function handle()
     {
         $client = app('ElasticsearchKvmFour');
+        $clientKvmOne = app('ElasticsearchKvmOne');
         $bulkData = [];
 
         // Eager load the relationships inside the job
@@ -112,10 +113,16 @@ class StoreVehicleArchivedToElasticsearch implements ShouldQueue
                     'response' => $response,
                 ]);
             } catch (\Exception $e) {
-                Log::error('Error Upserting Vehicle in Elasticsearch', [
-                    'vehicle_id' => $vehicle->id,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString(),
+                $clientKvmOne->index([
+                    'index' => 'error_logs',
+                    'body' => [
+                        'server_name' => 'KVM4.4',
+                        'error_type' => 'Internal Server Error',
+                        'command_name' => 'store_archived_vehicle_records_to_elasticsearch_job',
+                        'error' => 'Error Upserting Vehicle in Elasticsearch ' . json_encode($e->getMessage()),
+                        'created_at' => now()->toIso8601String(),
+                        'updated_at' => now()->toIso8601String(),
+                    ],
                 ]);
             }
 

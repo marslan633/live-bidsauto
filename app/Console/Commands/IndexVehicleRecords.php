@@ -75,7 +75,17 @@ class IndexVehicleRecords extends Command
             $response = $clientKvmOne->index($params);
             $cronRun = $response['_id'];
         } catch (\Exception $e) {
-            Log::info("Error: STORE VEHICLES TO ELASTICSEARCH: ", ['error' => $e->getMessage()]);
+            $clientKvmOne->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.4',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'index:vehicle-records',
+                    'error' => 'Error: STORE VEHICLES TO ELASTICSEARCH: ' . json_encode($e->getMessage()),
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
             return;
         }
 
@@ -119,7 +129,17 @@ class IndexVehicleRecords extends Command
             ]);
             Log::info('STORE VEHICLES TO ELASTICSEARCH SUCCESS');
         } else {
-            Log::info('ERROR: STORE VEHICLES TO ELASTICSEARCH FAILED');
+            $clientKvmOne->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.4',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'index:vehicle-records',
+                    'error' => 'ERROR: STORE VEHICLES TO ELASTICSEARCH FAILED',
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
         }
     }
 }

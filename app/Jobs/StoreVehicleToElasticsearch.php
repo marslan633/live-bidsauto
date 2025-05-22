@@ -26,6 +26,7 @@ class StoreVehicleToElasticsearch implements ShouldQueue
     public function handle()
     {
         $client = app('ElasticsearchKvmFour');
+        $clientKvmOne = app('ElasticsearchKvmOne');
         $bulkData = [];
 
         // Eager load the relationships inside the job
@@ -91,15 +92,45 @@ class StoreVehicleToElasticsearch implements ShouldQueue
 
                 // Check if Elasticsearch returned errors
                 if (isset($response['errors']) && $response['errors']) {
-                    Log::error('Errors while indexing vehicles', ['errors' => $response['items']]);
+                    $clientKvmOne->index([
+                        'index' => 'error_logs',
+                        'body' => [
+                            'server_name' => 'KVM4.4',
+                            'error_type' => 'Internal Server Error',
+                            'command_name' => 'store_vehicle_records_to_elasticsearch_job',
+                            'error' => 'Errors while indexing vehicles ' . json_encode($response['items']),
+                            'created_at' => now()->toIso8601String(),
+                            'updated_at' => now()->toIso8601String(),
+                        ],
+                    ]);
                 } else {
                     Log::info('Vehicles successfully indexed.');
                 }
             } catch (\Exception $e) {
-                Log::error('Error in Bulk Indexing: ', ['error' => $e->getMessage()]);
+                $clientKvmOne->index([
+                    'index' => 'error_logs',
+                    'body' => [
+                        'server_name' => 'KVM4.4',
+                        'error_type' => 'Internal Server Error',
+                        'command_name' => 'store_vehicle_records_to_elasticsearch_job',
+                        'error' => 'Error in Bulk Indexing: ' . json_encode($e->getMessage()),
+                        'created_at' => now()->toIso8601String(),
+                        'updated_at' => now()->toIso8601String(),
+                    ],
+                ]);
             }
         } else {
-            Log::info('No vehicles found for indexing.');
+            $clientKvmOne->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.4',
+                    'error_type' => 'General',
+                    'command_name' => 'store_vehicle_records_to_elasticsearch_job',
+                    'error' => 'No vehicles found for indexing.',
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
         }
     }
 }

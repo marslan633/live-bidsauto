@@ -43,6 +43,7 @@ class DeleteExpiredData extends Command
 
         // Elasticsearch client
         $client = app('ElasticsearchKvmFour');
+        $clientKvmOne = app('ElasticsearchKvmOne');
 
         // Get current date and time (in UTC)
         $now = Carbon::now()->utc(); // Ensure you're using UTC to match Elasticsearch
@@ -99,7 +100,18 @@ class DeleteExpiredData extends Command
                     $bulkResponse = $client->bulk(['body' => $deleteParams]);
 
                     if (isset($bulkResponse['errors']) && $bulkResponse['errors']) {
-                        Log::error('Bulk delete errors', ['response' => json_encode($bulkResponse)]);
+                        $clientKvmOne->index([
+                            'index' => 'error_logs',
+                            'body' => [
+                                'server_name' => 'KVM4.4',
+                                'error_type' => 'Internal Server Error',
+                                'command_name' => 'process:delete-expired-data',
+                                'error' => 'Bulk delete errors: ' . json_encode($bulkResponse),
+                                'created_at' => now()->toIso8601String(),
+                                'updated_at' => now()->toIso8601String(),
+                            ],
+                        ]);
+
                     } else {
                         $this->info('Successfully deleted ' . count($deleteParams) . ' records.');
                     }
@@ -116,8 +128,17 @@ class DeleteExpiredData extends Command
             $this->info('Completed deleting records.');
 
         } catch (\Exception $e) {
-            Log::error('Error deleting records: ' . $e->getMessage());
-            $this->error('Error deleting records: ' . $e->getMessage());
+            $clientKvmOne->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.4',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'process:delete-expired-data',
+                    'error' => 'Error deleting records: ' . json_encode($e->getMessage()),
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
         }
     }
 }

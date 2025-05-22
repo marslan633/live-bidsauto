@@ -50,6 +50,8 @@ if (config('app.app_kvm_three') === true) {
     // app(Schedule::class)->command('process:process-cached-data-to-databases-with-elasticsearch')->everyTenMinutes()->withoutOverlapping();
     // app(Schedule::class)->command('process:cached-archived-data-to-database-with-elasticsearch')->dailyAt('18:48')->withoutOverlapping();
     // app(Schedule::class)->command('process:expired-auction-archive-with-elasticsearch')->everyFifteenMinutes()->everyFifteenMinutes();
+
+
     // app(Schedule::class)->command('process:process-cached-data-to-databases')->everyTenMinutes()->withoutOverlapping();
 
     /**
@@ -88,7 +90,7 @@ if (config('app.app_kvm_four') === true) {
 //    app(Schedule::class)->command('index:vehicle-records')->dailyAt('19:35')->withoutOverlapping();
 
     // app(Schedule::class)->command('index:vehicle-record-archiveds')->dailyAt('17:25')->withoutOverlapping();
-    app(Schedule::class)->command('index:sale-auction-histories')->dailyAt('17:23')->withoutOverlapping();
+    // app(Schedule::class)->command('index:sale-auction-histories')->dailyAt('17:23')->withoutOverlapping();
 
     // app(Schedule::class)->command('process:delete-expired-data')->everyFifteenMinutes()->withoutOverlapping();
 }

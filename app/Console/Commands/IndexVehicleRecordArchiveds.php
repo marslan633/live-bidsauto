@@ -116,14 +116,33 @@ class IndexVehicleRecordArchiveds extends Command
                 Log::info('STORE VEHICLE ARCHIVEDS TO ELASTICSEARCH CREATED');
                 $cronRun = $response['_id'];
             } else {
-                Log::info('Error: STORE VEHICLE ARCHIVEDS TO ELASTICSEARCH CREATED');
+                $clientKvmOne->index([
+                    'index' => 'error_logs',
+                    'body' => [
+                        'server_name' => 'KVM4.4',
+                        'error_type' => 'Internal Server Error',
+                        'command_name' => 'index:vehicle-record-archiveds',
+                        'error' => 'Error: STORE VEHICLE ARCHIVEDS TO ELASTICSEARCH CREATED',
+                        'created_at' => now()->toIso8601String(),
+                        'updated_at' => now()->toIso8601String(),
+                    ],
+                ]);
             }
 
             // Get the Elasticsearch auto-generated ID
 
         }catch(\Exception $e){
-            Log::info("Error: STORE VEHICLE ARCHIVEDS TO ELASTICSEARCH: ", ['error' => $e->getMessage()]);
-
+            $clientKvmOne->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.4',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'index:vehicle-record-archiveds',
+                    'error' => 'Error: STORE VEHICLE ARCHIVEDS TO ELASTICSEARCH: ' . json_encode($e->getMessage()),
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
             return;
         }
         $minutes = Carbon::now()->subMinutes($minutes);
@@ -169,9 +188,17 @@ class IndexVehicleRecordArchiveds extends Command
 
                 Log::info('STORE VEHICLES ARCHIVEDS TO ELASTICSEARCH CREATED');
             } else {
-                Log::info('ERROR: STORE VEHICLES ARCHIVEDS TO ELASTICSEARCH CREATED');
-
-
+                $clientKvmOne->index([
+                    'index' => 'error_logs',
+                    'body' => [
+                        'server_name' => 'KVM4.4',
+                        'error_type' => 'Internal Server Error',
+                        'command_name' => 'index:vehicle-record-archiveds',
+                        'error' => 'ERROR: STORE VEHICLES ARCHIVEDS TO ELASTICSEARCH CREATED',
+                        'created_at' => now()->toIso8601String(),
+                        'updated_at' => now()->toIso8601String(),
+                    ],
+                ]);
         }
 
         $this->info('✅ Indexing vehicle_records completed!');

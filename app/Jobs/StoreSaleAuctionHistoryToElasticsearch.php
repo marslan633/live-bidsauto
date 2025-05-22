@@ -25,7 +25,7 @@ class StoreSaleAuctionHistoryToElasticsearch implements ShouldQueue
     public function handle()
     {
         $client = app('ElasticsearchKvmFour');
-
+        $clientKvmOne = app('ElasticsearchKvmOne');
         $this->histories->load([
             'domain',
             'status',
@@ -65,10 +65,16 @@ class StoreSaleAuctionHistoryToElasticsearch implements ShouldQueue
                     'response' => $response,
                 ]);
             } catch (\Exception $e) {
-                Log::error('Error Upserting Sale Auction History in Elasticsearch', [
-                    'history_id' => $history->id,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString(),
+                $clientKvmOne->index([
+                    'index' => 'error_logs',
+                    'body' => [
+                        'server_name' => 'KVM4.4',
+                        'error_type' => 'Internal Server Error',
+                        'command_name' => 'store_sale_auction_history_records_to_elasticsearch_job',
+                        'error' => 'Error Upserting Sale Auction History in Elasticsearch ' . json_encode($e->getMessage()),
+                        'created_at' => now()->toIso8601String(),
+                        'updated_at' => now()->toIso8601String(),
+                    ],
                 ]);
             }
         }
