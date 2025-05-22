@@ -77,16 +77,29 @@ class SetupElasticsearchClassesKvmOne extends Command
         ];
 
         foreach ($indices as $indexName => $indexConfig) {
-            // Check if index exists
             $exists = $client->indices()->exists(['index' => $indexName]);
+
+            // Convert object response to array (if needed)
+            if (is_object($exists)) {
+                $exists = json_decode(json_encode($exists), true);
+            }
+
+            // If empty array/object, means index does NOT exist
+            $existsFlag = false;
+            if (is_bool($exists)) {
+                $existsFlag = $exists;
+            } elseif (is_array($exists)) {
+                // If empty array, no index
+                $existsFlag = !empty($exists);
+            }
+
             $this->info("Exists response for index {$indexName}: " . json_encode($exists));
-            if ($exists) {
+
+            if ($existsFlag) {
                 $this->info("Index '{$indexName}' already exists. Skipping creation.");
             } else {
-                // Create index
                 $params = ['index' => $indexName];
 
-                // Add mappings and settings if provided
                 if (isset($indexConfig['mappings'])) {
                     $params['body']['mappings'] = $indexConfig['mappings'];
                 }
@@ -98,5 +111,6 @@ class SetupElasticsearchClassesKvmOne extends Command
                 $this->info("Index '{$indexName}' created successfully.");
             }
         }
+
     }
 }
