@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Elastic\Elasticsearch\Exception\ClientResponseException;
 
 class SetupElasticsearchClassesKvmOne extends Command
 {
@@ -78,39 +79,35 @@ class SetupElasticsearchClassesKvmOne extends Command
 
         foreach ($indices as $indexName => $indexConfig) {
             $exists = $client->indices()->exists(['index' => $indexName]);
-
-            // Convert object response to array (if needed)
-            if (is_object($exists)) {
-                $exists = json_decode(json_encode($exists), true);
-            }
-
-            // If empty array/object, means index does NOT exist
-            $existsFlag = false;
-            if (is_bool($exists)) {
-                $existsFlag = $exists;
-            } elseif (is_array($exists)) {
-                // If empty array, no index
-                $existsFlag = !empty($exists);
-            }
-
             $this->info("Exists response for index {$indexName}: " . json_encode($exists));
 
-            if ($existsFlag) {
+            // Cast to boolean to handle empty array/object properly
+            if ((bool) $exists) {
                 $this->info("Index '{$indexName}' already exists. Skipping creation.");
-            } else {
-                $params = ['index' => $indexName];
+                continue;
+            }
 
-                if (isset($indexConfig['mappings'])) {
-                    $params['body']['mappings'] = $indexConfig['mappings'];
-                }
-                if (isset($indexConfig['settings'])) {
-                    $params['body']['settings'] = $indexConfig['settings'];
-                }
+            // Prepare index creation parameters
+            $params = ['index' => $indexName];
 
+            if (isset($indexConfig['mappings'])) {
+                $params['body']['mappings'] = $indexConfig['mappings'];
+            }
+            if (isset($indexConfig['settings'])) {
+                $params['body']['settings'] = $indexConfig['settings'];
+            }
+
+            try {
                 $client->indices()->create($params);
                 $this->info("Index '{$indexName}' created successfully.");
+            } catch (ClientResponseException $e) {
+                if (str_contains($e->getMessage(), 'resource_already_exists_exception')) {
+                    $this->info("Index '{$indexName}' already exists (caught during create). Skipping.");
+                } else {
+                    // rethrow unknown exceptions
+                    throw $e;
+                }
             }
         }
-
     }
 }
