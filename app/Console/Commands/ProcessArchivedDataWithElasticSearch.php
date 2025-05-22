@@ -66,11 +66,11 @@ class ProcessArchivedDataWithElasticSearch extends Command
                 $endTime = Carbon::parse($lastCron['end_time']);
                 $timeDifference = max(0, $endTime->diffInMinutes(now()));
 
-                // if ($timeDifference > 20) {
-                //     $minutes = $timeDifference + 10;
-                // } elseif ($timeDifference === 20) {
-                //     $minutes = $timeDifference + 5;
-                // }
+                if ($timeDifference > 20) {
+                    $minutes = $timeDifference + 10;
+                } elseif ($timeDifference === 20) {
+                    $minutes = $timeDifference + 5;
+                }
             }
         }
 
