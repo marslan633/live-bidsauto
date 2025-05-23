@@ -98,34 +98,22 @@ class SetupElasticsearchClassesKvmOne extends Command
             $exists = $client->indices()->exists(['index' => $indexName]);
             $this->info("Exists response for index {$indexName}: " . json_encode($exists));
 
-            // Check if $exists is an object and empty (means index does NOT exist)
+            // Same check for empty object means index does NOT exist
             if (is_object($exists) && count(get_object_vars($exists)) === 0) {
-                $this->info("Index '{$indexName}' does NOT exist. Creating it...");
-
-                $params = ['index' => $indexName];
-
-                if (isset($indexConfig['mappings'])) {
-                    $params['body']['mappings'] = $indexConfig['mappings'];
-                }
-                if (isset($indexConfig['settings'])) {
-                    $params['body']['settings'] = $indexConfig['settings'];
-                }
-
+                $this->info("Index '{$indexName}' does NOT exist. Skipping delete.");
+            } else {
                 try {
-                    $client->indices()->create($params);
-                    $this->info("Index '{$indexName}' created successfully.");
+                    $client->indices()->delete(['index' => $indexName]);
+                    $this->info("Index '{$indexName}' deleted successfully.");
                 } catch (ClientResponseException $e) {
-                    if (str_contains($e->getMessage(), 'resource_already_exists_exception')) {
-                        $this->info("Index '{$indexName}' already exists (caught during create). Skipping.");
+                    if (str_contains($e->getMessage(), 'index_not_found_exception')) {
+                        $this->info("Index '{$indexName}' not found (caught in delete). Skipping.");
                     } else {
                         throw $e;
                     }
                 }
-
-            } else {
-                // If not empty object, treat as index exists
-                $this->info("Index '{$indexName}' already exists. Skipping creation.");
             }
+
 
         }
     }
