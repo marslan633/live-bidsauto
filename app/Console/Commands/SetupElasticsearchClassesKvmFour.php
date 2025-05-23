@@ -90,44 +90,38 @@ class SetupElasticsearchClassesKvmFour extends Command
         ];
 
         foreach ($indices as $indexName => $indexConfig) {
-            try {
-                $exists = $client->indices()->exists(['index' => $indexName]);
-                $this->info("Checking if index '{$indexName}' exists: " . ($exists ? 'Yes' : 'No'));
+            $exists = $client->indices()->exists(['index' => $indexName]);
+            $this->info("Exists response for index {$indexName}: " . json_encode($exists));
 
-                if (!$exists) {
-                    $params = ['index' => $indexName];
+            // Check if $exists is an object and empty (means index does NOT exist)
+            if (is_object($exists) && count(get_object_vars($exists)) === 0) {
+                $this->info("Index '{$indexName}' does NOT exist. Creating it...");
 
-                    // Always initialize 'body' as array to avoid undefined errors
-                    $params['body'] = [];
+                $params = ['index' => $indexName];
 
-                    if (isset($indexConfig['mappings'])) {
-                        $params['body']['mappings'] = $indexConfig['mappings'];
-                    }
-                    if (isset($indexConfig['settings'])) {
-                        $params['body']['settings'] = $indexConfig['settings'];
-                    }
+                if (isset($indexConfig['mappings'])) {
+                    $params['body']['mappings'] = $indexConfig['mappings'];
+                }
+                if (isset($indexConfig['settings'])) {
+                    $params['body']['settings'] = $indexConfig['settings'];
+                }
 
-                    $this->info("Creating index '{$indexName}' with params:");
-                    $this->info(json_encode($params, JSON_PRETTY_PRINT));
-
-                    $response = $client->indices()->create($params);
-
+                try {
+                    $client->indices()->create($params);
                     $this->info("Index '{$indexName}' created successfully.");
-                    $this->info("Response: " . json_encode($response));
-                } else {
-                    $this->info("Index '{$indexName}' already exists. Skipping creation.");
+                } catch (ClientResponseException $e) {
+                    if (str_contains($e->getMessage(), 'resource_already_exists_exception')) {
+                        $this->info("Index '{$indexName}' already exists (caught during create). Skipping.");
+                    } else {
+                        throw $e;
+                    }
                 }
-            } catch (ClientResponseException $e) {
-                $this->error("ClientResponseException while creating '{$indexName}': " . $e->getMessage());
-                if (str_contains($e->getMessage(), 'resource_already_exists_exception')) {
-                    $this->info("Index '{$indexName}' already exists (caught during create). Skipping.");
-                } else {
-                    throw $e;
-                }
-            } catch (\Exception $e) {
-                $this->error("Exception while creating '{$indexName}': " . $e->getMessage());
-                throw $e;
+
+            } else {
+                // If not empty object, treat as index exists
+                $this->info("Index '{$indexName}' already exists. Skipping creation.");
             }
+
         }
     }
 }
