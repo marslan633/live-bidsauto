@@ -344,7 +344,7 @@ class VehicleController extends Controller
                 'seller_types' => 'seller_type_id',
                 'drive_wheels' => 'drive_wheel_id',
                 'transmissions' => 'transmission_id',
-                'detailed_titles' => 'detailed_title_id',
+                // 'detailed_titles' => 'detailed_title_id',
                 'damages' => 'damage_id',
             ];
 
@@ -941,19 +941,28 @@ class VehicleController extends Controller
                 ? 'vehicle_record_archiveds'
                 : 'vehicle_records';
 
-            $filters = [
-                'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers'],
-                'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models'],
-                'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types'],
-                'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions'],
-                'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels'],
-                'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types'],
-                'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels'],
-                'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions'],
-                'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles'],
-                'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages'],
-                'buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows'],
-            ];
+
+            if($request->has('manufacturers')){
+                $filters = [
+                    'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers'],
+                    'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models'],
+                    'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types'],
+                    'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions'],
+                    'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels'],
+                    'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types'],
+                    'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels'],
+                    'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions'],
+                    // 'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles'],
+                    'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages'],
+                    'buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows'],
+                ];
+            }else{
+                $filters = [
+                    'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers'],
+                    'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types']
+                ];
+
+            }
 
             $searchAttribute = $request->input('search_attribute');
             $searchValue = $request->input('search_value');
