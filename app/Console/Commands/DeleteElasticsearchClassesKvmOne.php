@@ -24,27 +24,21 @@ class DeleteElasticsearchClassesKvmOne extends Command
 
         foreach ($indices as $indexName) {
             $exists = $client->indices()->exists(['index' => $indexName]);
-            $this->info("Exists response for index {$indexName}: " . json_encode($exists));
+            $this->info("Checking index '{$indexName}': " . ($exists ? 'Exists' : 'Does not exist'));
 
-            // If response is empty object {}, index does NOT exist
-            if (is_object($exists) && count(get_object_vars($exists)) === 0) {
-                $this->info("Index '{$indexName}' does NOT exist. Skipping delete.");
-                continue;
-            }
-
-            if ((bool) $exists) {
+            if ($exists) {
                 try {
                     $client->indices()->delete(['index' => $indexName]);
                     $this->info("Index '{$indexName}' deleted successfully.");
                 } catch (ClientResponseException $e) {
                     if (str_contains($e->getMessage(), 'index_not_found_exception')) {
-                        $this->info("Index '{$indexName}' not found (caught in delete). Skipping.");
+                        $this->info("Index '{$indexName}' not found during delete, skipping.");
                     } else {
                         throw $e;
                     }
                 }
             } else {
-                $this->info("Index '{$indexName}' does NOT exist. Skipping delete.");
+                $this->info("Index '{$indexName}' does not exist. Skipping delete.");
             }
         }
     }

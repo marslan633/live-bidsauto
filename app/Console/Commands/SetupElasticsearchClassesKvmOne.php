@@ -8,7 +8,7 @@ use Elastic\Elasticsearch\Exception\ClientResponseException;
 class SetupElasticsearchClassesKvmOne extends Command
 {
     protected $signature = 'process:setup-elasticsearch-classes-kvm-one';
-    protected $description = 'Delete existing Elasticsearch indexes if they exist, then create them';
+    protected $description = 'Create Elasticsearch indexes if they do not exist';
 
     public function handle()
     {
@@ -30,7 +30,7 @@ class SetupElasticsearchClassesKvmOne extends Command
                     ]
                 ]
             ],
-            // ... (other indices, same as your original)
+
             'vehicle_process_cached_api_data' => [
                 'mappings' => [
                     'properties' => [
@@ -42,6 +42,7 @@ class SetupElasticsearchClassesKvmOne extends Command
                     ]
                 ]
             ],
+
             'vehicle_archived_api_data' => [
                 'mappings' => [
                     'properties' => [
@@ -94,32 +95,26 @@ class SetupElasticsearchClassesKvmOne extends Command
         ];
 
         foreach ($indices as $indexName => $indexConfig) {
-            try {
-                // Check if index exists
-                $exists = $client->indices()->exists(['index' => $indexName]);
+            $exists = $client->indices()->exists(['index' => $indexName]);
+            $this->info("Exists response for index {$indexName}: " . json_encode($exists));
 
-                if ($exists) {
-                    $this->info("Index '{$indexName}' exists. Attempting to delete...");
-
-                    // Delete index
+            // Same check for empty object means index does NOT exist
+            if (is_object($exists) && count(get_object_vars($exists)) === 0) {
+                $this->info("Index '{$indexName}' does NOT exist. Skipping delete.");
+            } else {
+                try {
                     $client->indices()->delete(['index' => $indexName]);
                     $this->info("Index '{$indexName}' deleted successfully.");
-                } else {
-                    $this->info("Index '{$indexName}' does NOT exist.");
+                } catch (ClientResponseException $e) {
+                    if (str_contains($e->getMessage(), 'index_not_found_exception')) {
+                        $this->info("Index '{$indexName}' not found (caught in delete). Skipping.");
+                    } else {
+                        throw $e;
+                    }
                 }
-
-                // Create index
-                $client->indices()->create([
-                    'index' => $indexName,
-                    // Add settings if provided
-                    'body' => $indexConfig,
-                ]);
-                $this->info("Index '{$indexName}' created successfully.");
-            } catch (ClientResponseException $e) {
-                $this->error("Elasticsearch Client error for index '{$indexName}': " . $e->getMessage());
-            } catch (\Exception $e) {
-                $this->error("General error for index '{$indexName}': " . $e->getMessage());
             }
+
+
         }
     }
 }
