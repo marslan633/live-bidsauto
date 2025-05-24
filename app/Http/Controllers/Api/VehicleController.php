@@ -969,6 +969,7 @@ class VehicleController extends Controller
             $currentHitAttribute = $request->input('current_hit_attribute');
             $listing = $request->input('listing');
             $validListings = array_keys($filters);
+
             $activeFilterKey = in_array($listing, $validListings) ? $listing : null;
 
             $must = [['exists' => ['field' => 'sale_date']]];
