@@ -453,15 +453,27 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             ]);
             // Log::info('Status', ['data' => $status_id]);
 
-        $title_id = !empty($car['vehicle_record']['title_title'])
-            ? DB::table('titles')
+        // $title_id = !empty($car['vehicle_record']['title_title'])
+        //     ? DB::table('titles')
+        //         ->where('title_api_id', $car['vehicle_record']['title_title']['title_api_id'])
+        //         ->value('id')
+        //         ?? DB::table('titles')->insertGetId([
+        //             'title_api_id' => $car['vehicle_record']['title_title']['title_api_id'],
+        //             'name' => $car['vehicle_record']['title_title']['name']
+        //         ])
+        //     : null;
+        if (!empty($car['vehicle_record']['title_title'])) {
+            DB::table('titles')->updateOrInsert(
+                ['title_api_id' => $car['vehicle_record']['title_title']['title_api_id']],
+                ['name' => $car['vehicle_record']['title_title']['name']]
+            );
+
+            $title_id = DB::table('titles')
                 ->where('title_api_id', $car['vehicle_record']['title_title']['title_api_id'])
-                ->value('id')
-                ?? DB::table('titles')->insertGetId([
-                    'title_api_id' => $car['vehicle_record']['title_title']['title_api_id'],
-                    'name' => $car['vehicle_record']['title_title']['name']
-                ])
-            : null;
+                ->value('id');
+        } else {
+            $title_id = null;
+        }
             // Log::info('Title', ['data' => $title_id]);
 
         $detailed_title_id = DB::table('detailed_titles')
