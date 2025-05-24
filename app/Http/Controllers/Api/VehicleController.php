@@ -959,9 +959,9 @@ class VehicleController extends Controller
             }else{
                 $filters = [
                     'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers'],
-                    'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types']
+                    'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types'],
+                    'buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows'],
                 ];
-
             }
 
             $searchAttribute = $request->input('search_attribute');
