@@ -462,7 +462,8 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
         //             'name' => $car['vehicle_record']['title_title']['name']
         //         ])
         //     : null;
-        if (!empty($car['vehicle_record']['title_title'])) {
+
+        if (!empty($car['vehicle_record']['title_title']) && !empty($car['vehicle_record']['title_title']['title_api_id']) && $car['vehicle_record']['title_title']['title_api_id'] != 0) {
             DB::table('titles')->updateOrInsert(
                 ['title_api_id' => $car['vehicle_record']['title_title']['title_api_id']],
                 ['name' => $car['vehicle_record']['title_title']['name']]
@@ -474,6 +475,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
         } else {
             $title_id = null;
         }
+
             // Log::info('Title', ['data' => $title_id]);
 
         $detailed_title_id = DB::table('detailed_titles')
