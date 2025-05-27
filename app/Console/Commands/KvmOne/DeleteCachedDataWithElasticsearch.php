@@ -1,27 +1,27 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\Commands\KvmOne;
 
 use Illuminate\Console\Command;
 use Elasticsearch\Client;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
-class DeleteCachedArchivedDataWithElasticsearch extends Command
+class DeleteCachedDataWithElasticsearch extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'process:delete-cached-archived-data-with-elasticsearch';
+    protected $signature = 'process:delete-cached-data-with-elasticsearch';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Delete records with status "completed" from Elasticsearch index "vehicle_archived_api_data" older than 30 minutes to 1 hour ago';
+    protected $description = 'Delete records with status "completed" and older than 30 minutes from Elasticsearch index "vehicle_process_cached_api_data"';
 
     /**
      * Create a new command instance.
@@ -40,27 +40,27 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
      */
     public function handle()
     {
-        $this->info('Starting to delete completed status records older than 30 minutes to 1 hour from vehicle_archived_api_data...');
+        $this->info('Starting to delete records older than 30 minutes and with status "completed" from vehicle_process_cached_api_data...');
 
         // Elasticsearch client
         $client = app('ElasticsearchKvmOne');
 
         // Time range: 30 minutes ago to now
         $now = Carbon::now()->utc(); // Ensure you're using UTC to match Elasticsearch
-        $startTime = $now->subMinutes(30)->toIso8601String(); // 30 minutes ago
+        $startTime = $now->subMinutes(30)->toDateTimeString(); // 30 minutes ago
 
         // Log the start time and current time for debugging purposes
-        Log::info('Deleting records with status "completed" between', [
+        Log::info('Deleting records older than 30 minutes with status "completed"', [
             'start_time' => $startTime,
-            'now' => $now->toIso8601String(),
+            'now' => $now->toDateTimeString(),
         ]);
 
         try {
-            // Search for documents with status "completed" and within the time range
+            // Search for documents older than 30 minutes and with status "completed"
             $params = [
-                'index' => 'vehicle_archived_api_data',
+                'index' => 'vehicle_process_cached_api_data',
                 'scroll' => '1m', // Set scroll time context
-                'size' => 500, // Fetch 200 records at a time
+                'size' => 300, // Fetch 200 records at a time
                 'body' => [
                     'query' => [
                         'bool' => [
@@ -109,14 +109,14 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
                 foreach ($hits as $hit) {
                     $deleteParams[] = [
                         'delete' => [
-                            '_index' => 'vehicle_archived_api_data',
+                            '_index' => 'vehicle_process_cached_api_data',
                             '_id' => $hit['_id']
                         ]
                     ];
                 }
 
-                  // Perform bulk delete
-                  if (!empty($deleteParams)) {
+                // Perform bulk delete
+                if (!empty($deleteParams)) {
                     $bulkResponse = $client->bulk(['body' => $deleteParams]);
 
                     if (isset($bulkResponse['errors']) && $bulkResponse['errors']) {
@@ -125,8 +125,8 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
                             'body' => [
                                 'server_name' => 'KVM4.1',
                                 'error_type' => 'Internal Server Error',
-                                'command_name' => 'process:delete-cached-archived-data-with-elasticsearch',
-                                'error' => 'Bulk delete errors: ' . json_encode($bulkResponse),
+                                'command_name' => 'process:delete-cached-data-with-elasticsearch',
+                                'error' => 'Bulk delete error: ' . json_encode($bulkResponse),
                                 'created_at' => now()->toIso8601String(),
                                 'updated_at' => now()->toIso8601String(),
                             ],
@@ -152,12 +152,13 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
                 'body' => [
                     'server_name' => 'KVM4.1',
                     'error_type' => 'Internal Server Error',
-                    'command_name' => 'process:delete-cached-archived-data-with-elasticsearch',
+                    'command_name' => 'process:delete-cached-data-with-elasticsearch',
                     'error' => 'Error deleting records: ' . json_encode($e->getMessage()),
                     'created_at' => now()->toIso8601String(),
                     'updated_at' => now()->toIso8601String(),
                 ],
             ]);
+
         }
     }
 }

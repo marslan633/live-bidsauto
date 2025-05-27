@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Jobs;
+namespace App\Jobs\KvmThree;
 
 use App\Models\VehicleRecord;
 use App\Models\VehicleRecordArchived;

@@ -1,5 +1,5 @@
 <?php
-namespace App\Jobs;
+namespace App\Jobs\KvmFour;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;

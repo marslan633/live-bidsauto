@@ -1,79 +1,83 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\Commands\KvmThree;
 
-use App\Jobs\ProcessCachedArchivedDataJob;
-use App\Jobs\ProcessCachedArchivedDataJobWithElasticSearch;
+use App\Jobs\ProcessCachedDataToDatabaseJob;
+use App\Jobs\KvmThree\ProcessCachedDataToDatabaseJobWithElasticSearch;
 use Illuminate\Console\Command;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\{Http, Mail, Log};
 use App\Mail\CronJobFailedMail;
-use App\Models\CronRunHistory;
-use App\Models\VehicleArchivedApiData;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
-class ProcessCachedArchivedDataToDatabaseWithElasticSearch extends Command
+class ProcessCachedDataToDatabasesWithElasticSearch extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'process:cached-archived-data-to-database-with-elasticsearch';
+    protected $signature = 'process:process-cached-data-to-databases-with-elasticsearch';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Fetch data from cache and save it into the database';
+    protected $description = 'Process cached data into database';
+
     /**
      * Execute the console command.
      */
     public function handle()
     {
         $startDateTime = Carbon::now();
-        $cronRun = null;
-        $client = app('ElasticsearchKvmOne');
+        $this->info("Process started at: " . $startDateTime);
+        $this->info("API URL " . config('app.cron_history_api_url'));
+        Log::info("Process started at: " . $startDateTime);
 
-        try {
+        $cronRun = null;
+
+        $clientkvmOne = app('ElasticsearchKvmOne');
+
+
+        try{
 
             $params = [
                 'index' => 'cron_run_histories',
                 'body'  => [
-                    'cron_name'   => 'process_cached_archived_data',
+                    'cron_name'   => 'process_cached_data_to_database',
                     'start_time'  => $startDateTime->toIso8601String(),
                     'status'      => 'running',
                     'created_at'  => now()->toIso8601String(),
                     'updated_at'  => now()->toIso8601String(),
                 ]
             ];
-            $response = $client->index($params);
+
+            $response = $clientkvmOne->index($params);
 
             if ($response['_id']) {
-                Log::info('PROCESS CACHED ARCHIVED DATA TO DATABASE CREATED');
+                Log::info('PROCESS CACHED DATA TO DATABASE CREATED');
                 // Handle the successful API cronRunResponse
                 $cronRun = $response['_id'];
                 // Optionally, you can update the cron record with the API response or status
             } else {
-                $client->index([
+                $clientkvmOne->index([
                     'index' => 'error_logs',
                     'body' => [
                         'server_name' => 'KVM4.3',
                         'error_type' => 'Internal Server Error',
-                        'command_name' => 'process:cached-archived-data-to-database-with-elasticsearch',
-                        'error' => 'Error: PROCESS CACHED ARCHIVED DATA TO DATABASE CREATED',
+                        'command_name' => 'process:process-cached-data-to-databases-with-elasticsearch',
+                        'error' => 'Error: PROCESS CACHED DATA TO DATABASE CREATED',
                         'created_at' => now()->toIso8601String(),
                         'updated_at' => now()->toIso8601String(),
                     ],
                 ]);
             }
 
-            $response = $client->search([
-                'index' => 'vehicle_archived_api_data',
-                'size' => 100, // Number of records to return
+            // Fetch data from Elasticsearch index
+            $response = $clientkvmOne->search([
+                'index' => 'vehicle_process_cached_api_data',
+                'size' => 150, // Number of records to return
                 'sort' => [
                     'created_at:desc' // Sort by created_at in descending order
                 ],
@@ -95,15 +99,14 @@ class ProcessCachedArchivedDataToDatabaseWithElasticSearch extends Command
 
             $hits = $response['hits']['hits'];
 
-
-            if (count($hits) == 0) {
-                $client->index([
+            if (count($hits) === 0) {
+                $clientkvmOne->index([
                     'index' => 'error_logs',
                     'body' => [
                         'server_name' => 'KVM4.3',
                         'error_type' => 'General',
-                        'command_name' => 'process:cached-archived-data-to-database-with-elasticsearch',
-                        'error' => 'NOT DATA:PROCESS CACHED ARCHIVED DATA TO DATABASE CREATED',
+                        'command_name' => 'process:process-cached-data-to-databases-with-elasticsearch',
+                        'error' => 'NO DATA: vehicle_process_cached_api_data index empty',
                         'created_at' => now()->toIso8601String(),
                         'updated_at' => now()->toIso8601String(),
                     ],
@@ -111,39 +114,42 @@ class ProcessCachedArchivedDataToDatabaseWithElasticSearch extends Command
                 return;
             }
 
-             // Extract source
-             $data = array_map(function ($item) {
+            // Extract source
+            $data = array_map(function ($item) {
                 $source = $item['_source'];
                 $source['_id'] = $item['_id']; // Keep doc ID if needed
                 return $source;
             }, $hits);
 
-        } catch (\Exception $e) {
-            $this->handleCronError($cronRun, "Error fetching cache keys: " . $e->getMessage());
-            $client->index([
-                'index' => 'error_logs',
-                'body' => [
-                    'server_name' => 'KVM4.3',
-                    'error_type' => 'Internal Server Error',
-                    'command_name' => 'process:cached-archived-data-to-database-with-elasticsearch',
-                    'error' => 'Error fetching cache keys: ' . json_encode($e->getMessage()),
-                    'created_at' => now()->toIso8601String(),
-                    'updated_at' => now()->toIso8601String(),
-                ],
-            ]);
+        }catch(\Exception $e){
+            // if($cronRun !== null){
+                $clientkvmOne->index([
+                    'index' => 'error_logs',
+                    'body' => [
+                        'server_name' => 'KVM4.3',
+                        'error_type' => 'Internal Server Error',
+                        'command_name' => 'process:process-cached-data-to-databases-with-elasticsearch',
+                        'error' => 'Error fetching cache keys: ' . json_encode($e->getMessage()),
+                        'created_at' => now()->toIso8601String(),
+                        'updated_at' => now()->toIso8601String(),
+                    ],
+                ]);
+
+                $this->handleCronError($cronRun, "Error fetching cache keys: " . $e->getMessage());
+            // }
             return;
         }
 
+        // **Batch processing setup**
+        // Initialize an empty array to hold the jobs
         collect($data)->chunk(100)->each(function ($chunk) {
             foreach ($chunk as $item) {
-                // Dispatch a job for each item in the chunk
-                ProcessCachedArchivedDataJobWithElasticSearch::dispatch((object)$item);
+                // Log::info('Data For Database', ['item' => json_encode($item)]);
+                ProcessCachedDataToDatabaseJobWithElasticSearch::dispatch((object)$item);
             }
         });
-
         if($cronRun){
-
-            $client->update([
+            $clientkvmOne->update([
                 'index' => 'cron_run_histories',
                 'id'    => $cronRun, // previously captured _id
                 'body'  => [
@@ -156,20 +162,19 @@ class ProcessCachedArchivedDataToDatabaseWithElasticSearch extends Command
             ]);
 
             Log::info('PROCESS CACHED DATA TO DATABASE UPDATED');
-        } else {
-            $client->index([
+        }else{
+            $clientkvmOne->index([
                 'index' => 'error_logs',
                 'body' => [
                     'server_name' => 'KVM4.3',
                     'error_type' => 'Internal Server Error',
-                    'command_name' => 'process:cached-archived-data-to-database-with-elasticsearch',
+                    'command_name' => 'process:process-cached-data-to-databases-with-elasticsearch',
                     'error' => 'ERROR: PROCESS CACHED DATA TO DATABASE UPDATED',
                     'created_at' => now()->toIso8601String(),
                     'updated_at' => now()->toIso8601String(),
                 ],
             ]);
         }
-
 
 
     }
@@ -179,26 +184,23 @@ class ProcessCachedArchivedDataToDatabaseWithElasticSearch extends Command
      */
     private function handleCronError($cronRun, $errorMessage)
     {
+            $clientkvmOne = app('ElasticsearchKvmOne');
 
-        $client = app('ElasticsearchKvmOne');
-
-        $client->update([
-            'index' => 'cron_run_histories',
-            'id'    => $cronRun, // previously captured _id
-            'body'  => [
-                'doc' => [
-                    'end_time'    => now()->toIso8601String(),
-                    'status'      => 'failed',
-                    'error_message' => $errorMessage,
-                    'updated_at'  => now()->toIso8601String(),
+            $clientkvmOne->update([
+                'index' => 'cron_run_histories',
+                'id'    => $cronRun, // previously captured _id
+                'body'  => [
+                    'doc' => [
+                        'end_time'    => now()->toIso8601String(),
+                        'status'      => 'failed',
+                        'updated_at'  => now()->toIso8601String(),
+                    ]
                 ]
-            ]
-        ]);
+            ]);
 
         $adminEmails = explode(',', env('ADMIN_EMAIL'));
-        Mail::to($adminEmails)->send(new CronJobFailedMail($errorMessage, 'process_cached_archived_data'));
+        Mail::to($adminEmails)->send(new CronJobFailedMail($errorMessage, 'process_cached_data'));
     }
-
 
 
 }

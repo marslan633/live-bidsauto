@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Jobs;
+namespace App\Jobs\KvmThree;
 
 use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;

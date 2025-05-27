@@ -1,17 +1,16 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\Commands\KvmFour;
 
-use App\Jobs\StoreSaleAuctionHistoryToElasticsearch;
-use App\Models\SaleAuctionHistory;
+use App\Jobs\KvmFour\StoreVehicleArchivedToElasticsearch;
 use Illuminate\Console\Command;
 use App\Models\VehicleRecordArchived;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
-class IndexSaleAucationHistories extends Command
+class IndexVehicleRecordArchiveds extends Command
 {
-    protected $signature = 'index:sale-auction-histories';
+    protected $signature = 'index:vehicle-record-archiveds';
     protected $description = 'Index all vehicle records to Elasticsearch';
 
     public function handle()
@@ -36,7 +35,7 @@ class IndexSaleAucationHistories extends Command
         try{
 
             // Remote Connection to KVM4.1
-            // $cronRunResponse = Http::timeout(120)->retry(3, 1000)->get($url .'?name=process_sale_auction_histories');
+            // $cronRunResponse = Http::timeout(120)->retry(3, 1000)->get($url .'?name=process_vehicle_archiveds_to_elasticsearch');
 
             // if ($cronRunResponse->successful()) {
             //     $lastCron = $cronRunResponse->json();
@@ -59,7 +58,7 @@ class IndexSaleAucationHistories extends Command
                     'query' => [
                         'bool' => [
                             'must' => [
-                                ['term' => ['cron_name' => 'process_sale_auction_histories']],
+                                ['term' => ['cron_name' => 'process_vehicle_archiveds_to_elasticsearch']],
                                 ['term' => ['status' => 'success']]
                             ]
                         ]
@@ -86,7 +85,7 @@ class IndexSaleAucationHistories extends Command
             }
 
             // $cronRunResponse = Http::timeout(120)->retry(3, 1000)->post($url, [
-            //     'cron_name' => 'process_sale_auction_histories',
+            //     'cron_name' => 'process_vehicle_archiveds_to_elasticsearch',
             //     'start_time' => now(),
             //     'status' => 'running',
             // ]);
@@ -103,7 +102,7 @@ class IndexSaleAucationHistories extends Command
             $params = [
                 'index' => 'cron_run_histories',
                 'body' => [
-                    'cron_name'   => 'process_sale_auction_histories',
+                    'cron_name'   => 'process_vehicle_archiveds_to_elasticsearch',
                     'start_time'  => $startDateTime->toIso8601String(),
                     'status'      => 'running',
                     'created_at'  => now()->toIso8601String(),
@@ -122,7 +121,7 @@ class IndexSaleAucationHistories extends Command
                     'body' => [
                         'server_name' => 'KVM4.4',
                         'error_type' => 'Internal Server Error',
-                        'command_name' => 'index:sale-auction-histories',
+                        'command_name' => 'index:vehicle-record-archiveds',
                         'error' => 'Error: STORE VEHICLE ARCHIVEDS TO ELASTICSEARCH CREATED',
                         'created_at' => now()->toIso8601String(),
                         'updated_at' => now()->toIso8601String(),
@@ -138,7 +137,7 @@ class IndexSaleAucationHistories extends Command
                 'body' => [
                     'server_name' => 'KVM4.4',
                     'error_type' => 'Internal Server Error',
-                    'command_name' => 'index:sale-auction-histories',
+                    'command_name' => 'index:vehicle-record-archiveds',
                     'error' => 'Error: STORE VEHICLE ARCHIVEDS TO ELASTICSEARCH: ' . json_encode($e->getMessage()),
                     'created_at' => now()->toIso8601String(),
                     'updated_at' => now()->toIso8601String(),
@@ -150,22 +149,28 @@ class IndexSaleAucationHistories extends Command
 
         $isFullFetch = config('app.is_full_fetch', false);
 
+        // Set the chunk size to 10,000
+        $chunkSize = 500;  // Process records in chunks of 500
+        $dispatchChunkSize = 100;
 
-             // Set the chunk size to 10,000
-        $chunkSize = 1000;  // Process records in chunks of 500
-        $dispatchChunkSize = 300;
+        $query = VehicleRecordArchived::query();
 
-        $query = $isFullFetch ? SaleAuctionHistory::query() : SaleAuctionHistory::where('updated_at', '>=', $minutes);
-
+        // Full fetch or incremental fetch logic
+        if ($isFullFetch) {
+            $query->whereNotNull('sale_date');
+        } else {
+            $query->where('updated_at', '>=', $minutes)
+                  ->whereNotNull('sale_date');
+        }
 
         // Use Laravel's chunk method to process records in batches of 500
         $query->chunk($chunkSize, function ($vehicles) use ($dispatchChunkSize) {
             // Dispatch the job with the chunk, which will include relationships eager-loaded in the job
-            dispatch(new StoreSaleAuctionHistoryToElasticsearch($vehicles));
+            dispatch(new StoreVehicleArchivedToElasticsearch($vehicles));
         });
 
 
-        $this->info('✅ Indexing sale_auction_histories job dispatched!');
+        $this->info('✅ Indexing vehicle_record_archiveds job dispatched!');
 
         if($cronRun){
 
@@ -181,15 +186,15 @@ class IndexSaleAucationHistories extends Command
                 ]
             ]);
 
-                Log::info('STORE SALE AUCATION HISTORY TO ELASTICSEARCH CREATED');
+                Log::info('STORE VEHICLES ARCHIVEDS TO ELASTICSEARCH CREATED');
             } else {
                 $clientKvmOne->index([
                     'index' => 'error_logs',
                     'body' => [
                         'server_name' => 'KVM4.4',
                         'error_type' => 'Internal Server Error',
-                        'command_name' => 'index:sale-auction-histories',
-                        'error' => 'ERROR: STORE SALE AUCATION HISTORY TO ELASTICSEARCH CREATED',
+                        'command_name' => 'index:vehicle-record-archiveds',
+                        'error' => 'ERROR: STORE VEHICLES ARCHIVEDS TO ELASTICSEARCH CREATED',
                         'created_at' => now()->toIso8601String(),
                         'updated_at' => now()->toIso8601String(),
                     ],

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\Commands\KvmFour;
 
-use App\Jobs\StoreVehicleToElasticsearch;
+use App\Jobs\KvmFour\StoreVehicleToElasticsearch;
 use Illuminate\Console\Command;
 use App\Models\VehicleRecord;
 use Carbon\Carbon;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Jobs;
+namespace App\Jobs\KvmThree;
 
 use App\Models\VehicleProcessCachedApiData;
 use Illuminate\Queue\SerializesModels;

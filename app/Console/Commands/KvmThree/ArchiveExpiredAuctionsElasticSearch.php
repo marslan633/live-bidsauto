@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\Commands\KvmThree;
 
-use App\Jobs\ArchiveExpiredAuctionsJob;
+use App\Jobs\KvmThree\ArchiveExpiredAuctionsJob;
 use Illuminate\Console\Command;
 use App\Models\VehicleRecord;
 use App\Models\VehicleRecordArchived;
@@ -94,7 +94,7 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
             ->chunk($batchSize, function ($expiredRecords) use (&$totalArchived) {
                 foreach ($expiredRecords as $record) {
                     Log::info('Expired Archived Record', ['record', json_encode($record)]);
-                    ArchiveExpiredAuctionsJob::dispatch($record->id);
+                   ArchiveExpiredAuctionsJob::dispatch($record->id);
                 }
                 $totalArchived += count($expiredRecords);
             });

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\Commands\KvmOne;
 
 use App\Models\CacheKey;
 use App\Models\CronRunHistory;
