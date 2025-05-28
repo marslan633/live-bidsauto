@@ -47,7 +47,7 @@ class DeleteCachedDataWithElasticsearch extends Command
 
         // Time range: 30 minutes ago to now
         $now = Carbon::now()->utc(); // Ensure you're using UTC to match Elasticsearch
-        $startTime = $now->subMinutes(30)->toDateTimeString(); // 30 minutes ago
+        $startTime = $now->subMinutes(60)->toDateTimeString(); // 30 minutes ago
 
         // Log the start time and current time for debugging purposes
         Log::info('Deleting records older than 30 minutes with status "completed"', [
