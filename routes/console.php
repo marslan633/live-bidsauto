@@ -5,7 +5,7 @@ use Illuminate\Console\Scheduling\Schedule;
 
 if (config('app.app_kvm_one') === true) {
 
-     app(Schedule::class)->command('process:api-data-with-elasticsearch')->dailyAt('09:05')->withoutOverlapping();
+     app(Schedule::class)->command('process:api-data-with-elasticsearch')->dailyAt('14:20')->withoutOverlapping();
      app(Schedule::class)->command('process:cached-data-with-elasticsearch')->everyFiveMinutes()->withoutOverlapping();
     //  app(Schedule::class)->command('process:archived-data-with-elasticsearch')->dailyAt('18:38')->withoutOverlapping();
     app(Schedule::class)->command('process:delete-cached-data-with-elasticsearch')->everyThirtyMinutes()->withoutOverlapping();
@@ -17,7 +17,6 @@ if (config('app.app_kvm_three') === true) {
     app(Schedule::class)->command('process:process-cached-data-to-databases-with-elasticsearch')->everyTenMinutes()->withoutOverlapping();
     // app(Schedule::class)->command('process:cached-archived-data-to-database-with-elasticsearch')->dailyAt('18:48')->withoutOverlapping();
     // app(Schedule::class)->command('process:expired-auction-archive-with-elasticsearch')->everyFifteenMinutes()->withoutOverlapping();
-
 }
 
 if (config('app.app_kvm_four') === true) {

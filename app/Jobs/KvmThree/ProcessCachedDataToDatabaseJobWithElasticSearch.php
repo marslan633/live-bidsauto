@@ -239,6 +239,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
         }
     }
 
+
     public function prepareCarData(array $car)
     {
         // Log::info('Car Dara', ['CarData' => json_encode($car)]);
@@ -249,14 +250,21 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
         // Log::info('Year', ['data' => $year]);
 
         $car['vehicle_record'] = (array) $car['vehicle_record'];
-        $model_id = DB::table('vehicle_models')
+        if (!empty($car['model'])
+            && !empty($car['model']['vehicle_model_api_id'])
+            && $car['model']['vehicle_model_api_id'] != 0) {
+
+            DB::table('vehicle_models')->updateOrInsert(
+                ['vehicle_model_api_id' => $car['model']['vehicle_model_api_id']],
+                ['name' => $car['model']['name'], 'updated_at' => now()]
+            );
+
+            $model_id = DB::table('vehicle_models')
                 ->where('vehicle_model_api_id', $car['model']['vehicle_model_api_id'])
-                ->value('id') // Fetch only the 'id' column for efficiency
-                ?? DB::table('vehicle_models')->insertGetId([
-                    'vehicle_model_api_id' => $car['model']['vehicle_model_api_id'],
-                    'name' => $car['model']['name'],
-                ]);
-        // Log::info('Model', ['data' => $model_id]);
+                ->value('id');
+        } else {
+            $model_id = null;
+        }
 
 
         $imageRecord = $car['vehicle_record']['imageRecord'] ?? [];
@@ -542,23 +550,29 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 ])
             : null;
             // Log::info('City', ['data' => $city_id]);
+            if (!empty($car['vehicle_record']['locationRecord'])
+            && !empty($car['vehicle_record']['locationRecord']['location_api_id'])
+            && $car['vehicle_record']['locationRecord']['location_api_id'] != 0) {
 
-        $location_id = !empty($car['vehicle_record']['locationRecord']['location_api_id'])
-            ? DB::table('locations')
-                ->where('location_api_id', $car['vehicle_record']['locationRecord']['location_api_id'])
-                ->value('id')
-                ?? DB::table('locations')->insertGetId([
-                    'location_api_id' => $car['vehicle_record']['locationRecord']['location_api_id'],
+            DB::table('locations')->updateOrInsert(
+                ['location_api_id' => $car['vehicle_record']['locationRecord']['location_api_id']],
+                [
                     'city_id' => $city_id,
                     'name' => trim($car['vehicle_record']['locationRecord']['name']) ?: 'Unnamed Location',
                     'latitude' => $car['vehicle_record']['locationRecord']['latitude'] ?? null,
                     'longitude' => $car['vehicle_record']['locationRecord']['longitude'] ?? null,
                     'postal_code' => trim($car['vehicle_record']['locationRecord']['postal_code']) ?: null,
                     'is_offsite' => $car['vehicle_record']['locationRecord']['is_offsite'] ?? false,
-                    'raw' => $car['vehicle_record']['locationRecord']['raw'] ?? '{}'
-                ])
-            : null;
-            // Log::info('Location', ['data' => $location_id]);
+                    'raw' => $car['vehicle_record']['locationRecord']['raw'] ?? '{}',
+                ]
+            );
+
+            $location_id = DB::table('locations')
+                ->where('location_api_id', $car['vehicle_record']['locationRecord']['location_api_id'])
+                ->value('id');
+        } else {
+            $location_id = null;
+        }
 
         $data = [
             'manufacturer_id' => $manufacturer_id,
