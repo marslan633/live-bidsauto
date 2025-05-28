@@ -430,14 +430,19 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             ?? DB::table('odometers')->insertGetId(['name' => $car['vehicle_record']['odometer']['name']]);
         // Log::info('Odometer', ['data' => $odometer_id]);
 
-        $seller_id = DB::table('sellers')
-            ->where('seller_api_id', $car['vehicle_record']['seller']['seller_api_id'])
-            ->value('id')
-            ?? DB::table('sellers')->insertGetId([
-                'seller_api_id' => $car['vehicle_record']['seller']['seller_api_id'],
-                'name' => $car['vehicle_record']['seller']['name']
-            ]);
-            // Log::info('Seller', ['data' => $seller_id]);
+        if (!empty($car['vehicle_record']['seller']['seller_api_id']) && $car['vehicle_record']['seller']['seller_api_id'] != 0) {
+            DB::table('sellers')->updateOrInsert(
+                ['seller_api_id' => $car['vehicle_record']['seller']['seller_api_id']],
+                ['name' => $car['vehicle_record']['seller']['name']]
+            );
+
+            $seller_id = DB::table('sellers')
+                ->where('seller_api_id', $car['vehicle_record']['seller']['seller_api_id'])
+                ->value('id');
+        } else {
+            $seller_id = null;
+        }
+
 
         $seller_type_id = DB::table('seller_types')
             ->where('seller_type_api_id', $car['vehicle_record']['seller_type']['seller_type_api_id'])
@@ -531,17 +536,25 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             ]);
             // Log::info('Country', ['data' => $country_id]);
 
-        $state_id = !empty($car['vehicle_record']['state'])
-            ? DB::table('states')
-                ->where('state_api_id', $car['vehicle_record']['state']['state_api_id'])
-                ->value('id')
-                ?? DB::table('states')->insertGetId([
-                    'state_api_id' => $car['vehicle_record']['state']['state_api_id'],
-                    'country_id' => $country_id,
-                    'code' => $car['vehicle_record']['state']['code'],
-                    'name' => $car['vehicle_record']['state']['name']
-                ])
-            : null;
+            if (!empty($car['vehicle_record']['state']) && !empty($car['vehicle_record']['state']['state_api_id'])) {
+                DB::table('states')->updateOrInsert(
+                    ['state_api_id' => $car['vehicle_record']['state']['state_api_id']],
+                    [
+                        'country_id' => $country_id,
+                        'code' => $car['vehicle_record']['state']['code'] ?? null,
+                        'name' => $car['vehicle_record']['state']['name'] ?? null,
+                        'updated_at' => now(),
+                    ]
+                );
+
+                $state_id = DB::table('states')
+                    ->where('state_api_id', $car['vehicle_record']['state']['state_api_id'])
+                    ->value('id');
+            } else {
+                $state_id = null;
+            }
+
+
             // Log::info('State', ['data' => $state_id]);
 
         $city_id = !empty($car['vehicle_record']['city'])
