@@ -349,14 +349,19 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                     'name' => $car['color']['name'],
                 ]);
         // Log::info('Color', ['data' => $color_id]);
-        $engine_id =  DB::table('engines')
+
+        if (!empty($car['engine']['engine_api_id']) && $car['engine']['engine_api_id'] != 0) {
+            DB::table('engines')->updateOrInsert(
+                ['engine_api_id' => $car['engine']['engine_api_id']],
+                ['name' => $car['engine']['name'], 'updated_at' => now()]
+            );
+
+            $engine_id = DB::table('engines')
                 ->where('engine_api_id', $car['engine']['engine_api_id'])
-                ->value('id')
-                ?? DB::table('engines')->insertGetId([
-                    'engine_api_id' => $car['engine']['engine_api_id'],
-                    'name' => $car['engine']['name'],
-                ]);
-                // Log::info('Engine', ['data' => $engine_id]);
+                ->value('id');
+        } else {
+            $engine_id = null;
+        }
 
         $transmission_id =  DB::table('transmissions')
                 ->where('transmission_api_id', $car['transmission']['transmission_api_id'])
