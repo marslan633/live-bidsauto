@@ -111,59 +111,5 @@ class StoreVehicleToElasticsearch implements ShouldQueue
             }
         }
 
-        // Ensure that there's data to index
-        // if (!empty($bulkData)) {
-        //     try {
-        //         // Debugging: Log the bulk data structure before sending it
-        //         Log::info('Bulk Index Data: ', ['bulk_data' => json_encode($bulkData)]);
-
-        //         // Execute the bulk request to Elasticsearch
-        //         $response = $client->bulk(['body' => $bulkData]);
-
-        //         // Debugging: Log the response from Elasticsearch
-        //         Log::info('Bulk Indexing Response: ', ['response' => $response]);
-
-        //         // Check if Elasticsearch returned errors
-        //         if (isset($response['errors']) && $response['errors']) {
-        //             $clientKvmOne->index([
-        //                 'index' => 'error_logs',
-        //                 'body' => [
-        //                     'server_name' => 'KVM4.4',
-        //                     'error_type' => 'Internal Server Error',
-        //                     'command_name' => 'store_vehicle_records_to_elasticsearch_job',
-        //                     'error' => 'Errors while indexing vehicles ' . json_encode($response['items']),
-        //                     'created_at' => now()->toIso8601String(),
-        //                     'updated_at' => now()->toIso8601String(),
-        //                 ],
-        //             ]);
-        //         } else {
-        //             Log::info('Vehicles successfully indexed.');
-        //         }
-        //     } catch (\Exception $e) {
-        //         $clientKvmOne->index([
-        //             'index' => 'error_logs',
-        //             'body' => [
-        //                 'server_name' => 'KVM4.4',
-        //                 'error_type' => 'Internal Server Error',
-        //                 'command_name' => 'store_vehicle_records_to_elasticsearch_job',
-        //                 'error' => 'Error in Bulk Indexing: ' . json_encode($e->getMessage()),
-        //                 'created_at' => now()->toIso8601String(),
-        //                 'updated_at' => now()->toIso8601String(),
-        //             ],
-        //         ]);
-        //     }
-        // } else {
-        //     $clientKvmOne->index([
-        //         'index' => 'error_logs',
-        //         'body' => [
-        //             'server_name' => 'KVM4.4',
-        //             'error_type' => 'General',
-        //             'command_name' => 'store_vehicle_records_to_elasticsearch_job',
-        //             'error' => 'No vehicles found for indexing.',
-        //             'created_at' => now()->toIso8601String(),
-        //             'updated_at' => now()->toIso8601String(),
-        //         ],
-        //     ]);
-        // }
     }
 }
