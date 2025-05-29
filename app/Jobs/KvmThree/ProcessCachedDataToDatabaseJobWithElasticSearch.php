@@ -198,20 +198,19 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                     ]);
                     Log::info("✅ Elasticsearch Processed document status updated for _id: $cacheKey");
                 }  catch (\Throwable $e) {
-                    $clientkvmOne->index([
-                        'index' => 'error_logs',
-                        'body' => [
-                            'server_name' => 'KVM4.3',
-                            'error_type' => 'Internal Server Error',
-                            'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
-                            'error' => "⚠️ Failed to update document: " . json_encode($e->getMessage()),
-                            'created_at' => now()->toIso8601String(),
-                            'updated_at' => now()->toIso8601String(),
-                        ],
-                    ]);
+                    // $clientkvmOne->index([
+                    //     'index' => 'error_logs',
+                    //     'body' => [
+                    //         'server_name' => 'KVM4.3',
+                    //         'error_type' => 'Internal Server Error',
+                    //         'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+                    //         'error' => "⚠️ Failed to update document: " . json_encode($e->getMessage()),
+                    //         'created_at' => now()->toIso8601String(),
+                    //         'updated_at' => now()->toIso8601String(),
+                    //     ],
+                    // ]);
                 }
             } else {
-                Log::warning();
                 $clientkvmOne->index([
                     'index' => 'error_logs',
                     'body' => [
