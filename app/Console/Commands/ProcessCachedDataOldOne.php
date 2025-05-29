@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CronJobFailedMail;
+use Illuminate\Support\Facades\Log;
 
 class ProcessCachedDataOldOne extends Command
 {
@@ -479,7 +480,7 @@ class ProcessCachedDataOldOne extends Command
                 ]
             );
         }
-
+        Log::info('Pre Accident Price', ['pre_accident_price' => $lot['pre_accident_price'] ?? null]);
         // Update Vehicle Record with Lot Information
         $vehicleRecord->update([
             'salvage_id' => $lot['id'] ?? null,

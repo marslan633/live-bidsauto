@@ -194,18 +194,6 @@ return [
             'prefix' => 'process_cached_data_',
         ],
 
-        'default_queue' => [
-            'host' => env('REDIS_HOST', '127.0.0.1'),
-            'password' => env('REDIS_PASSWORD'),
-            'port' => env('REDIS_PORT', '6379'),
-            'database' => env('REDIS_QUEUE_DB', 1),
-            'persistent' => true,
-            'timeout' => env('REDIS_TIMEOUT', 2.0),
-            'read_timeout' => env('REDIS_READ_TIMEOUT', 1.5),
-            'retry_interval' => env('REDIS_RETRY_INTERVAL', 5000),
-            'prefix' => 'default_queue_',
-        ],
-
         'cache' => [
             'host' => env('REDIS_CACHE_HOST', '127.0.0.1'),
             'password' => env('REDIS_CACHE_PASSWORD', null),
