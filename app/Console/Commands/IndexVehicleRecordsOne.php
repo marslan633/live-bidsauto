@@ -141,28 +141,6 @@ class IndexVehicleRecordsOne extends Command
             }
         });
 
-        // if(config('app.is_full_fetch') == true){
-        //     VehicleRecord::chunk(500, function ($vehicles) use ($clientKvmOne) {
-        //         foreach ($vehicles as $vehicle) {
-        //             $clientKvmOne->index([
-        //                 'index' => 'vehicle_records',
-        //                 'id' => $vehicle->id,
-        //                 'body' => $vehicle->toArray(),
-        //             ]);
-        //         }
-        //     });
-        // }else{
-        //     VehicleRecord::where('updated_at', '>=', $minutes)
-        //     ->chunk(500, function ($vehicles) use ($clientKvmOne) {
-        //         foreach ($vehicles as $vehicle) {
-        //             $clientKvmOne->index([
-        //                 'index' => 'vehicle_records',
-        //                 'id' => $vehicle->id,
-        //                 'body' => $vehicle->toArray(),
-        //             ]);
-        //         }
-        //     });
-        // }
 
         if($cronRun){
 
