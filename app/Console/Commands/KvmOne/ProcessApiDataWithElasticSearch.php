@@ -81,9 +81,9 @@ class ProcessApiDataWithElasticSearch extends Command
         $baseUrl = 'http://carstat.dev/api/cars';
 
         if (config('app.is_full_fetch') === true) {
-            $apiUrl = "{$baseUrl}?per_page={$perPage}&simple_paginate=1&page=1";
+            $apiUrl = "{$baseUrl}?per_page={$perPage}&simple_paginate=1&page=1&country=us";
         } else {
-            $apiUrl = "{$baseUrl}?per_page={$perPage}&minutes={$minutes}&simple_paginate=1&page=1";
+            $apiUrl = "{$baseUrl}?per_page={$perPage}&minutes={$minutes}&simple_paginate=1&page=1&country=us";
         }
 
         try {
