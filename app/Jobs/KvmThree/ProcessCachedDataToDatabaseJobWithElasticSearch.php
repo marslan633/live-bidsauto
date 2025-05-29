@@ -211,6 +211,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                     // ]);
                 }
             } else {
+                Log::warning();
                 $clientkvmOne->index([
                     'index' => 'error_logs',
                     'body' => [
@@ -248,17 +249,15 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
         // Log::info('Year', ['data' => $year]);
 
         $car['vehicle_record'] = (array) $car['vehicle_record'];
-
         $model_id = DB::table('vehicle_models')
-            ->where('vehicle_model_api_id', $car['model']['vehicle_model_api_id'])
-            ->value('id');
+                ->where('vehicle_model_api_id', $car['model']['vehicle_model_api_id'])
+                ->value('id') // Fetch only the 'id' column for efficiency
+                ?? DB::table('vehicle_models')->insertGetId([
+                    'vehicle_model_api_id' => $car['model']['vehicle_model_api_id'],
+                    'name' => $car['model']['name'],
+                ]);
+        // Log::info('Model', ['data' => $model_id]);
 
-        if (!$model_id) {
-            $model_id = DB::table('vehicle_models')->insertGetId([
-                'vehicle_model_api_id' => $car['model']['vehicle_model_api_id'],
-                'name' => $car['model']['name'],
-            ]);
-        }
 
         $imageRecord = $car['vehicle_record']['imageRecord'] ?? [];
 
@@ -304,360 +303,239 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
         }
         // Log::info('Image', ['data' => $imageId]);
 
-        $manufacturer_id = DB::table('manufacturers')
-            ->where('manufacturer_api_id', $car['manufacturer']['manufacturer_api_id'])
-            ->value('id');
 
-        if (!$manufacturer_id) {
-            $manufacturer_id = DB::table('manufacturers')->insertGetId([
-                'manufacturer_api_id' => $car['manufacturer']['manufacturer_api_id'],
-                'name' => $car['manufacturer']['name'],
-            ]);
-        }
+        $manufacturer_id =  DB::table('manufacturers')
+                ->where('manufacturer_api_id', $car['manufacturer']['manufacturer_api_id'])
+                ->value('id')
+                ?? DB::table('manufacturers')->insertGetId([
+                    'manufacturer_api_id' => $car['manufacturer']['manufacturer_api_id'],
+                    'name' => $car['manufacturer']['name'],
+                ]);
         // Log::info('Manufacturer', ['data' => $manufacturer_id]);
 
         $generation_id = DB::table('generations')
         ->where('generation_api_id', $car['generation']['generation_api_id'])
-        ->value('id');
-
-        if (!$generation_id) {
-            $generation_id = DB::table('generations')->insertGetId([
+        ->value('id') ?? DB::table('generations')->insertGetId([
                 'generation_api_id' => $car['generation']['generation_api_id'],
                 'name' => $car['generation']['name'],
                 'model_id' => $model_id,
             ]);
-        }
+
         // Log::info('Generation', ['data' => $generation_id]);
 
         $body_type_id = DB::table('body_types')
-            ->where('body_type_api_id', $car['body_type']['body_type_api_id'])
-            ->value('id');
+                ->where('body_type_api_id', $car['body_type']['body_type_api_id'])
+                ->value('id')
+                ?? DB::table('body_types')->insertGetId([
+                    'body_type_api_id' => $car['body_type']['body_type_api_id'],
+                    'name' => $car['body_type']['name'],
+                ]);
 
-        if (!$body_type_id) {
-            $body_type_id = DB::table('body_types')->insertGetId([
-                'body_type_api_id' => $car['body_type']['body_type_api_id'],
-                'name' => $car['body_type']['name'],
-            ]);
-        }
         // Log::info('Body Type', ['data' => $body_type_id]);
 
-        $color_id = DB::table('colors')
-            ->where('color_api_id', $car['color']['color_api_id'])
-            ->value('id');
-
-        if (!$color_id) {
-            $color_id = DB::table('colors')->insertGetId([
-                'color_api_id' => $car['color']['color_api_id'],
-                'name' => $car['color']['name'],
-            ]);
-        }
+        $color_id =  DB::table('colors')
+                ->where('color_api_id', $car['color']['color_api_id'])
+                ->value('id')
+                ?? DB::table('colors')->insertGetId([
+                    'color_api_id' => $car['color']['color_api_id'],
+                    'name' => $car['color']['name'],
+                ]);
         // Log::info('Color', ['data' => $color_id]);
+        $engine_id =  DB::table('engines')
+                ->where('engine_api_id', $car['engine']['engine_api_id'])
+                ->value('id')
+                ?? DB::table('engines')->insertGetId([
+                    'engine_api_id' => $car['engine']['engine_api_id'],
+                    'name' => $car['engine']['name'],
+                ]);
+                // Log::info('Engine', ['data' => $engine_id]);
 
-        $engine_id = DB::table('engines')
-            ->where('engine_api_id', $car['engine']['engine_api_id'])
-            ->value('id');
-        if (!$engine_id) {
-            $engine_id = DB::table('engines')->insertGetId([
-                'engine_api_id' => $car['engine']['engine_api_id'],
-                'name' => $car['engine']['name'],
-            ]);
-        }
-        // Log::info('Engine', ['data' => $engine_id]);
+        $transmission_id =  DB::table('transmissions')
+                ->where('transmission_api_id', $car['transmission']['transmission_api_id'])
+                ->value('id')
+                ?? DB::table('transmissions')->insertGetId([
+                    'transmission_api_id' => $car['transmission']['transmission_api_id'],
+                    'name' => $car['transmission']['name'],
+                ]);
+                // Log::info('Transmission', ['data' => $transmission_id]);
 
-        $transmission_id = DB::table('transmissions')
-            ->where('transmission_api_id', $car['transmission']['transmission_api_id'])
-            ->value('id');
-
-        if (!$transmission_id) {
-            $transmission_id = DB::table('transmissions')->insertGetId([
-                'transmission_api_id' => $car['transmission']['transmission_api_id'],
-                'name' => $car['transmission']['name'],
-            ]);
-        }
-        // Log::info('Transmission', ['data' => $transmission_id]);
-
-        $drive_wheel_id = DB::table('drive_wheels')
-            ->where('drive_wheel_api_id', $car['drive_wheel']['drive_wheel_api_id'])
-            ->value('id');
-
-        if (!$drive_wheel_id) {
-            $drive_wheel_id = DB::table('drive_wheels')->insertGetId([
-                'drive_wheel_api_id' => $car['drive_wheel']['drive_wheel_api_id'],
-                'name' => $car['drive_wheel']['name'],
-            ]);
-        }
-        // Log::info('Driver Wheel', ['data' => $drive_wheel_id]);
+        $drive_wheel_id =  DB::table('drive_wheels')
+                ->where('drive_wheel_api_id', $car['drive_wheel']['drive_wheel_api_id'])
+                ->value('id')
+                ?? DB::table('drive_wheels')->insertGetId([
+                    'drive_wheel_api_id' => $car['drive_wheel']['drive_wheel_api_id'],
+                    'name' => $car['drive_wheel']['name'],
+                ]);
+                // Log::info('Driver Wheel', ['data' => $drive_wheel_id]);
 
         $vehicle_type_id = DB::table('vehicle_types')
-        ->where('vehicle_type_api_id', $car['vehicle_type']['vehicle_type_api_id'])
-        ->value('id');
+                ->where('vehicle_type_api_id', $car['vehicle_type']['vehicle_type_api_id'])
+                ->value('id')
+                ?? DB::table('vehicle_types')->insertGetId([
+                    'vehicle_type_api_id' => $car['vehicle_type']['vehicle_type_api_id'],
+                    'name' => $car['vehicle_type']['name'],
+                ]);
+                // Log::info('Vehicle Type', ['data' => $vehicle_type_id]);
 
-        if (!$vehicle_type_id) {
-            $vehicle_type_id = DB::table('vehicle_types')->insertGetId([
-                'vehicle_type_api_id' => $car['vehicle_type']['vehicle_type_api_id'],
-                'name' => $car['vehicle_type']['name'],
-            ]);
-        }
-        // Log::info('Vehicle Type', ['data' => $vehicle_type_id]);
+        $fuel_id =  DB::table('fuels')
+                ->where('fuel_api_id', $car['fuel']['fuel_api_id'])
+                ->value('id')
+                ?? DB::table('fuels')->insertGetId([
+                    'fuel_api_id' => $car['fuel']['fuel_api_id'],
+                    'name' => $car['fuel']['name'],
+                ]);
+                // Log::info('Fuel', ['data' => $fuel_id]);
 
-        $fuel_id = DB::table('fuels')
-            ->where('fuel_api_id', $car['fuel']['fuel_api_id'])
-            ->value('id');
-
-        if (!$fuel_id) {
-            $fuel_id = DB::table('fuels')->insertGetId([
-                'fuel_api_id' => $car['fuel']['fuel_api_id'],
-                'name' => $car['fuel']['name'],
-            ]);
-        }
-        // Log::info('Fuel', ['data' => $fuel_id]);
-
-        $domain_id = null;
-        if (isset($car['vehicle_record']['domain']) && !empty($car['vehicle_record']['domain']['domain_api_id'])) {
-            $domain_id = DB::table('domains')
+        $domain_id = isset($car['vehicle_record']['domain'])
+        ?  DB::table('domains')
                 ->where('domain_api_id', $car['vehicle_record']['domain']['domain_api_id'])
-                ->value('id');
-
-            if (!$domain_id) {
-                $domain_id = DB::table('domains')->insertGetId([
+                ->value('id')
+                ?? DB::table('domains')->insertGetId([
                     'domain_api_id' => $car['vehicle_record']['domain']['domain_api_id'],
                     'name' => $car['vehicle_record']['domain']['name'],
-                ]);
-            }
-        }
-        // Log::info('Domain', ['data' => $domain_id]);
+                ])
+        : null;
+                // Log::info('Domain', ['data' => $domain_id]);
 
-        $selling_branch_id = null;
-        if (isset($car['vehicle_record']['selling_branch'])
-            && !empty($car['vehicle_record']['selling_branch']['selling_branch_api_id'])) {
-
-            $selling_branch_id = DB::table('selling_branches')
+        $selling_branch_id = isset($car['vehicle_record']['selling_branch'])
+        ?  DB::table('selling_branches')
                 ->where('selling_branch_api_id', $car['vehicle_record']['selling_branch']['selling_branch_api_id'])
-                ->value('id');
-
-            if (!$selling_branch_id) {
-                $selling_branch_id = DB::table('selling_branches')->insertGetId([
+                ->value('id')
+                ?? DB::table('selling_branches')->insertGetId([
                     'selling_branch_api_id' => $car['vehicle_record']['selling_branch']['selling_branch_api_id'],
                     'name' => $car['vehicle_record']['selling_branch']['name'],
-                    'link' => $car['vehicle_record']['selling_branch']['link'] ?? null,
-                    'number' => $car['vehicle_record']['selling_branch']['number'] ?? null,
-                    'domain_id' => $domain_id,
-                ]);
-            }
-        }
+                    'link' => $car['vehicle_record']['selling_branch']['link'],
+                    'number' => $car['vehicle_record']['selling_branch']['number'],
+                    'domain_id' => $domain_id, // Use the computed domain_id
+                ])
+        : null;
         // Log::info('Seller Branch', ['data' => $selling_branch_id]);
 
-        $odometer_id = null;
-        if (!empty($car['vehicle_record']['odometer']['name'])) {
-            $odometer_id = DB::table('odometers')
-                ->where('name', $car['vehicle_record']['odometer']['name'])
-                ->value('id');
-
-            if (!$odometer_id) {
-                $odometer_id = DB::table('odometers')->insertGetId([
-                    'name' => $car['vehicle_record']['odometer']['name']
-                ]);
-            }
-        }
+        $odometer_id = DB::table('odometers')
+            ->where('name', $car['vehicle_record']['odometer']['name'])
+            ->value('id')
+            ?? DB::table('odometers')->insertGetId(['name' => $car['vehicle_record']['odometer']['name']]);
         // Log::info('Odometer', ['data' => $odometer_id]);
 
-        $seller_id = null;
-        if (!empty($car['vehicle_record']['seller']['seller_api_id']) && $car['vehicle_record']['seller']['seller_api_id'] != 0) {
-            $seller_id = DB::table('sellers')
-                ->where('seller_api_id', $car['vehicle_record']['seller']['seller_api_id'])
-                ->value('id');
+        $seller_id = DB::table('sellers')
+            ->where('seller_api_id', $car['vehicle_record']['seller']['seller_api_id'])
+            ->value('id')
+            ?? DB::table('sellers')->insertGetId([
+                'seller_api_id' => $car['vehicle_record']['seller']['seller_api_id'],
+                'name' => $car['vehicle_record']['seller']['name']
+            ]);
+            // Log::info('Seller', ['data' => $seller_id]);
 
-            if (!$seller_id) {
-                $seller_id = DB::table('sellers')->insertGetId([
-                    'seller_api_id' => $car['vehicle_record']['seller']['seller_api_id'],
-                    'name' => $car['vehicle_record']['seller']['name'] ?? 'Unknown'
-                ]);
-            }
-        }
-        // Log::info('Seller', ['data' => $seller_id]);
+        $seller_type_id = DB::table('seller_types')
+            ->where('seller_type_api_id', $car['vehicle_record']['seller_type']['seller_type_api_id'])
+            ->value('id')
+            ?? DB::table('seller_types')->insertGetId([
+                'seller_type_api_id' => $car['vehicle_record']['seller_type']['seller_type_api_id'],
+                'name' => $car['vehicle_record']['seller_type']['name']
+            ]);
+            // Log::info('Seller Type', ['data' => $seller_type_id]);
 
-        $seller_type_id = null;
-        if (!empty($car['vehicle_record']['seller_type']['seller_type_api_id']) && $car['vehicle_record']['seller_type']['seller_type_api_id'] != 0) {
-            $seller_type_id = DB::table('seller_types')
-                ->where('seller_type_api_id', $car['vehicle_record']['seller_type']['seller_type_api_id'])
-                ->value('id');
+        $condition_id = DB::table('conditions')
+            ->where('condition_api_id', $car['vehicle_record']['condition']['condition_api_id'])
+            ->value('id')
+            ?? DB::table('conditions')->insertGetId([
+                'condition_api_id' => $car['vehicle_record']['condition']['condition_api_id'],
+                'name' => $car['vehicle_record']['condition']['name']
+            ]);
+            // Log::info('Condition', ['data' => $condition_id]);
 
-            if (!$seller_type_id) {
-                $seller_type_id = DB::table('seller_types')->insertGetId([
-                    'seller_type_api_id' => $car['vehicle_record']['seller_type']['seller_type_api_id'],
-                    'name' => $car['vehicle_record']['seller_type']['name'] ?? 'Unknown'
-                ]);
-            }
-        }
-        // Log::info('Seller Type', ['data' => $seller_type_id]);
+        $status_id = DB::table('statuses')
+            ->where('status_api_id', $car['vehicle_record']['status']['status_api_id'])
+            ->value('id')
+            ?? DB::table('statuses')->insertGetId([
+                'status_api_id' => $car['vehicle_record']['status']['status_api_id'],
+                'name' => $car['vehicle_record']['status']['name']
+            ]);
+            // Log::info('Status', ['data' => $status_id]);
 
-        $condition_id = null;
-        if (!empty($car['vehicle_record']['condition']['condition_api_id']) && $car['vehicle_record']['condition']['condition_api_id'] != 0) {
-            $condition_id = DB::table('conditions')
-                ->where('condition_api_id', $car['vehicle_record']['condition']['condition_api_id'])
-                ->value('id');
-
-            if (!$condition_id) {
-                $condition_id = DB::table('conditions')->insertGetId([
-                    'condition_api_id' => $car['vehicle_record']['condition']['condition_api_id'],
-                    'name' => $car['vehicle_record']['condition']['name'] ?? 'Unknown',
-                ]);
-            }
-        }
-        // Log::info('Condition', ['data' => $condition_id]);
-
-        $status_id = null;
-        if (!empty($car['vehicle_record']['status']['status_api_id']) && $car['vehicle_record']['status']['status_api_id'] != 0) {
-            $status_id = DB::table('statuses')
-                ->where('status_api_id', $car['vehicle_record']['status']['status_api_id'])
-                ->value('id');
-
-            if (!$status_id) {
-                $status_id = DB::table('statuses')->insertGetId([
-                    'status_api_id' => $car['vehicle_record']['status']['status_api_id'],
-                    'name' => $car['vehicle_record']['status']['name'] ?? 'Unknown',
-                ]);
-            }
-        }
-        // Log::info('Status', ['data' => $status_id]);
-
-        $title_id = null;
-        if (!empty($car['vehicle_record']['title_title'])
-            && !empty($car['vehicle_record']['title_title']['title_api_id'])
-            && $car['vehicle_record']['title_title']['title_api_id'] != 0) {
-
-            $title_id = DB::table('titles')
+        $title_id = !empty($car['vehicle_record']['title_title'])
+            ? DB::table('titles')
                 ->where('title_api_id', $car['vehicle_record']['title_title']['title_api_id'])
-                ->value('id');
-
-            if (!$title_id) {
-                $title_id = DB::table('titles')->insertGetId([
+                ->value('id')
+                ?? DB::table('titles')->insertGetId([
                     'title_api_id' => $car['vehicle_record']['title_title']['title_api_id'],
-                    'name' => $car['vehicle_record']['title_title']['name'] ?? 'Unknown',
-                ]);
-            }
-        }
-        // Log::info('Title', ['data' => $title_id]);
+                    'name' => $car['vehicle_record']['title_title']['name']
+                ])
+            : null;
 
-        $detailed_title_id = null;
-        if (!empty($car['vehicle_record']['detailed_title'])
-            && !empty($car['vehicle_record']['detailed_title']['detailed_title_api_id'])
-            && $car['vehicle_record']['detailed_title']['detailed_title_api_id'] != 0) {
 
-            $detailed_title_id = DB::table('detailed_titles')
-                ->where('detailed_title_api_id', $car['vehicle_record']['detailed_title']['detailed_title_api_id'])
-                ->value('id');
+            // Log::info('Title', ['data' => $title_id]);
 
-            if (!$detailed_title_id) {
-                $detailed_title_id = DB::table('detailed_titles')->insertGetId([
-                    'detailed_title_api_id' => $car['vehicle_record']['detailed_title']['detailed_title_api_id'],
-                    'name' => $car['vehicle_record']['detailed_title']['name'] ?? 'Unknown',
-                ]);
-            }
-        }
-        // Log::info('Detailed Title', ['data' => $detailed_title_id]);
+        $detailed_title_id = DB::table('detailed_titles')
+            ->where('detailed_title_api_id', $car['vehicle_record']['detailed_title']['detailed_title_api_id'])
+            ->value('id')
+            ?? DB::table('detailed_titles')->insertGetId([
+                'detailed_title_api_id' => $car['vehicle_record']['detailed_title']['detailed_title_api_id'],
+                'name' => $car['vehicle_record']['detailed_title']['name']
+            ]);
+            // Log::info('Detailed Title', ['data' => $detailed_title_id]);
 
-        $damage_id = null;
-        if (!empty($car['vehicle_record']['damageMain'])
-            && !empty($car['vehicle_record']['damageMain']['damage_api_id'])
-            && $car['vehicle_record']['damageMain']['damage_api_id'] != 0) {
-
-            $damage_id = DB::table('damages')
+        $damage_id = !empty($car['vehicle_record']['damageMain'])
+            ? DB::table('damages')
                 ->where('damage_api_id', $car['vehicle_record']['damageMain']['damage_api_id'])
-                ->value('id');
-
-            if (!$damage_id) {
-                $damage_id = DB::table('damages')->insertGetId([
+                ->value('id')
+                ?? DB::table('damages')->insertGetId([
                     'damage_api_id' => $car['vehicle_record']['damageMain']['damage_api_id'],
-                    'name' => $car['vehicle_record']['damageMain']['name'] ?? 'Unknown',
-                ]);
-            }
-        }
-        // Log::info('Damage', ['data' => $damage_id]);
+                    'name' => $car['vehicle_record']['damageMain']['name']
+                ])
+            : null;
+            // Log::info('Damage', ['data' => $damage_id]);
 
-        $damage_second = null;
-        if (!empty($car['vehicle_record']['damageSecond'])
-            && !empty($car['vehicle_record']['damageSecond']['damage_api_id'])
-            && $car['vehicle_record']['damageSecond']['damage_api_id'] != 0) {
-
-            $damage_second = DB::table('damages')
+        $damage_second = !empty($car['vehicle_record']['damageSecond'])
+            ? DB::table('damages')
                 ->where('damage_api_id', $car['vehicle_record']['damageSecond']['damage_api_id'])
-                ->value('id');
-
-            if (!$damage_second) {
-                $damage_second = DB::table('damages')->insertGetId([
+                ->value('id')
+                ?? DB::table('damages')->insertGetId([
                     'damage_api_id' => $car['vehicle_record']['damageSecond']['damage_api_id'],
-                    'name' => $car['vehicle_record']['damageSecond']['name'] ?? 'Unknown',
-                ]);
-            }
-        }
-        // Log::info('Damage Second', ['data' => $damage_second]);
+                    'name' => $car['vehicle_record']['damageSecond']['name']
+                ])
+            : null;
+            // Log::info('Damage Second', ['data' => $damage_second]);
 
-        $country_id = null;
-        if (!empty($car['vehicle_record']['country']['iso'])) {
-            $country_id = DB::table('countries')
-                ->where('iso', $car['vehicle_record']['country']['iso'])
-                ->value('id');
+        $country_id = DB::table('countries')
+            ->where('iso', $car['vehicle_record']['country']['iso'])
+            ->value('id')
+            ?? DB::table('countries')->insertGetId([
+                'iso' => $car['vehicle_record']['country']['iso'],
+                'name' => $car['vehicle_record']['country']['name']
+            ]);
+            // Log::info('Country', ['data' => $country_id]);
 
-            if (!$country_id) {
-                $country_id = DB::table('countries')->insertGetId([
-                    'iso' => $car['vehicle_record']['country']['iso'],
-                    'name' => $car['vehicle_record']['country']['name'] ?? 'Unknown',
-                ]);
-            }
-        }
-        // Log::info('Country', ['data' => $country_id]);
-
-        $state_id = null;
-        if (!empty($car['vehicle_record']['state'])
-            && !empty($car['vehicle_record']['state']['state_api_id'])
-            && $car['vehicle_record']['state']['state_api_id'] != 0) {
-
-            $state_id = DB::table('states')
+        $state_id = !empty($car['vehicle_record']['state'])
+            ? DB::table('states')
                 ->where('state_api_id', $car['vehicle_record']['state']['state_api_id'])
-                ->value('id');
-
-            if (!$state_id) {
-                $state_id = DB::table('states')->insertGetId([
+                ->value('id')
+                ?? DB::table('states')->insertGetId([
                     'state_api_id' => $car['vehicle_record']['state']['state_api_id'],
                     'country_id' => $country_id,
-                    'code' => $car['vehicle_record']['state']['code'] ?? null,
-                    'name' => $car['vehicle_record']['state']['name'] ?? 'Unknown',
-                ]);
-            }
-        }
-        // Log::info('State', ['data' => $state_id]);
+                    'code' => $car['vehicle_record']['state']['code'],
+                    'name' => $car['vehicle_record']['state']['name']
+                ])
+            : null;
+            // Log::info('State', ['data' => $state_id]);
 
-        $city_id = null;
-        if (!empty($car['vehicle_record']['city'])
-            && !empty($car['vehicle_record']['city']['city_api_id'])
-            && $car['vehicle_record']['city']['city_api_id'] != 0) {
-
-            $city_id = DB::table('cities')
+        $city_id = !empty($car['vehicle_record']['city'])
+            ? DB::table('cities')
                 ->where('city_api_id', $car['vehicle_record']['city']['city_api_id'])
-                ->value('id');
-
-            if (!$city_id) {
-                $city_id = DB::table('cities')->insertGetId([
+                ->value('id')
+                ?? DB::table('cities')->insertGetId([
                     'city_api_id' => $car['vehicle_record']['city']['city_api_id'],
                     'state_id' => $state_id,
-                    'name' => $car['vehicle_record']['city']['name'] ?? 'Unknown',
-                ]);
-            }
-        }
-        // Log::info('City', ['data' => $city_id]);
+                    'name' => $car['vehicle_record']['city']['name']
+                ])
+            : null;
+            // Log::info('City', ['data' => $city_id]);
 
-        $location_id = null;
-        if (!empty($car['vehicle_record']['locationRecord'])
-            && !empty($car['vehicle_record']['locationRecord']['location_api_id'])
-            && $car['vehicle_record']['locationRecord']['location_api_id'] != 0) {
-
-            $location_id = DB::table('locations')
+        $location_id = !empty($car['vehicle_record']['locationRecord']['location_api_id'])
+            ? DB::table('locations')
                 ->where('location_api_id', $car['vehicle_record']['locationRecord']['location_api_id'])
-                ->value('id');
-
-            if (!$location_id) {
-                $location_id = DB::table('locations')->insertGetId([
+                ->value('id')
+                ?? DB::table('locations')->insertGetId([
                     'location_api_id' => $car['vehicle_record']['locationRecord']['location_api_id'],
                     'city_id' => $city_id,
                     'name' => trim($car['vehicle_record']['locationRecord']['name']) ?: 'Unnamed Location',
@@ -665,11 +543,10 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                     'longitude' => $car['vehicle_record']['locationRecord']['longitude'] ?? null,
                     'postal_code' => trim($car['vehicle_record']['locationRecord']['postal_code']) ?: null,
                     'is_offsite' => $car['vehicle_record']['locationRecord']['is_offsite'] ?? false,
-                    'raw' => $car['vehicle_record']['locationRecord']['raw'] ?? '{}',
-                ]);
-            }
-        }
-        // Log::info('Location', ['data' => $location_id]);
+                    'raw' => $car['vehicle_record']['locationRecord']['raw'] ?? '{}'
+                ])
+            : null;
+            // Log::info('Location', ['data' => $location_id]);
 
         $data = [
             'manufacturer_id' => $manufacturer_id,

@@ -36,7 +36,7 @@ return new class extends Migration
             $table->unsignedBigInteger('odometer_mi')->nullable();
             $table->string('odometer_status')->nullable();
             $table->unsignedBigInteger('estimate_repair_price')->nullable();
-            $table->unsignedBigInteger('pre_accident_price')->nullable();
+            $table->string('pre_accident_price')->nullable();
             $table->unsignedBigInteger('clean_wholesale_price')->nullable();
             $table->unsignedBigInteger('actual_cash_value')->nullable();
             $table->string('sale_date')->nullable();
