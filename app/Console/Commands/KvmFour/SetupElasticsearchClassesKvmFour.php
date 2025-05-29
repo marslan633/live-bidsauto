@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\Commands\KvmFour;
 
 use Illuminate\Console\Command;
 use Elastic\Elasticsearch\Exception\ClientResponseException;
