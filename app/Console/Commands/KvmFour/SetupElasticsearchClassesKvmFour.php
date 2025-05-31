@@ -30,6 +30,10 @@ class SetupElasticsearchClassesKvmFour extends Command
                             'type' => 'date',
                             'format' => 'strict_date_optional_time||yyyy-MM-dd'
                         ],
+                        'bid' => [
+                            'type' => 'double',
+                            'null_value'=> 0
+                        ],
                         'domain_id' => ['type' => 'integer'],
                         'condition_id' => ['type' => 'integer'],
                         'fuel_id' => ['type' => 'integer'],
@@ -56,6 +60,10 @@ class SetupElasticsearchClassesKvmFour extends Command
                         'sale_date' => [
                             'type' => 'date',
                             'format' => 'strict_date_optional_time||yyyy-MM-dd'
+                        ],
+                        'bid' => [
+                            'type' => 'double',
+                            'null_value'=> 0
                         ],
                         'final_bid_updated_at' => ['type' => 'keyword'],
                         'year_id' => ['type' => 'integer', 'null_value' => 0],

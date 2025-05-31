@@ -2,9 +2,6 @@
 
 namespace App\Jobs\KvmThree;
 
-use App\Models\VehicleRecord;
-use App\Models\VehicleRecordArchived;
-use App\Models\SaleAuctionHistory;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -122,9 +119,8 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
                 DB::connection('mysql')->table('sale_auction_histories')->insert($saleData);
             }
 
-
             DB::connection('mysql')->table('vehicle_records')->where('id', $this->recordId)->delete();
-            //   Log::info('Vehicle Record Deleted ' . $this->recordId);
+            Log::info('Vehicle Record Deleted ' . $this->recordId);
         } catch (\Exception $e) {
             $client->index([
                 'index' => 'error_logs',

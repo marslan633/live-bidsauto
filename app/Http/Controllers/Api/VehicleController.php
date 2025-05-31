@@ -360,6 +360,11 @@ class VehicleController extends Controller
             $currentDateMillis = \Carbon\Carbon::parse($currentDate)->timestamp * 1000;
             $saleDateOrder = $request->input('sale_date_order', 'sooner');
 
+            if ($request->has('bid_amount')) {
+                $order = $request->input('bid_amount') === 'highest' ? 'desc' : 'asc';
+                $sort[] = ['bid' => $order];
+            }
+
             $sort = [
                 [
                     '_script' => [

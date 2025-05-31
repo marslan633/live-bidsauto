@@ -21,4 +21,3 @@ if (config('app.app_kvm_four') === true) {
     // app(Schedule::class)->command('index:sale-auction-histories')->dailyAt('17:23')->withoutOverlapping();
     // app(Schedule::class)->command('process:delete-expired-data')->everyFifteenMinutes()->withoutOverlapping();
 }
-
