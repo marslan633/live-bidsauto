@@ -281,6 +281,10 @@ class VehicleController extends Controller
             $size = (int) $request->input('size', 10);
             $from = ($page - 1) * $size;
 
+            if ($from + $size > 10000) {
+                return sendResponse(false, 400, 'Cannot paginate beyond 10,000 results. Use filters or load earlier pages.', null, 400);
+            }
+
             $must = [['exists' => ['field' => 'sale_date']]];
 
             // Domain Filter
