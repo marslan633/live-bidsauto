@@ -367,14 +367,26 @@ class VehicleController extends Controller
                     '_script' => [
                         'type' => 'number',
                         'script' => [
-                            // fallback to 0 if bid is null/missing
-                            'source' => "doc['bid'].size() == 0 ? 0 : doc['bid'].value",
+                            // If bid is missing, return null placeholder (extreme low or high)
+                            'source' => "
+                                if (doc['bid'].size() == 0) {
+                                    return params.fallback;
+                                } else {
+                                    return doc['bid'].value;
+                                }
+                            ",
+                            'params' => [
+                                // For descending: nulls (0) go last
+                                // For ascending: large number pushes nulls last
+                                'fallback' => $order === 'desc' ? -1 : 999999999
+                            ],
                             'lang' => 'painless'
                         ],
                         'order' => $order
                     ]
                 ];
             }
+
 
 
 
