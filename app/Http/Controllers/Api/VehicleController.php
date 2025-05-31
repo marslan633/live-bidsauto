@@ -268,7 +268,168 @@ class VehicleController extends Controller
         }
     }
 
+
     public function vehicleInformations(Request $request)
+{
+    try {
+        $client = app('ElasticsearchKvmFour');
+
+        $index = $request->input('data_source', 'active') === 'archived'
+            ? 'vehicle_record_archiveds'
+            : 'vehicle_records';
+
+        $page = (int) $request->input('page', 1);
+        $size = (int) $request->input('size', 10);
+        $searchAfter = $request->input('search_after');
+        $from = ($page - 1) * $size;
+
+        $must = [['exists' => ['field' => 'sale_date']]];
+
+        if ($request->has('domain_id')) {
+            $domainIds = array_map('intval', (array) $request->input('domain_id'));
+            $must[] = ['terms' => ['domain_id' => $domainIds]];
+        }
+
+        if ($request->has('buy_now')) {
+            $buyNow = $request->input('buy_now');
+            if ($buyNow === true || $buyNow === 'true' || $buyNow === 1 || $buyNow === '1') {
+                $buyNowId = BuyNow::where('name', 'buyNowWithPrice')->value('id');
+                $must[] = ['term' => ['buy_now_id' => (int) $buyNowId]];
+            } else {
+                $buyNowIds = BuyNow::whereIn('name', ['buyNowWithoutPrice', 'buyNowWithPrice'])->pluck('id')->map(fn($i) => (int) $i)->toArray();
+                $must[] = ['terms' => ['buy_now_id' => $buyNowIds]];
+            }
+        }
+
+        if ($request->has(['year_from', 'year_to'])) {
+            $must[] = ['range' => [
+                'year' => [
+                    'gte' => (int) $request->input('year_from'),
+                    'lte' => (int) $request->input('year_to'),
+                ]
+            ]];
+        }
+
+        if ($request->has(['odometer_min', 'odometer_max'])) {
+            $must[] = ['range' => [
+                'odometer_mi' => [
+                    'gte' => (int) str_replace(',', '', $request->input('odometer_min')),
+                    'lte' => (int) str_replace(',', '', $request->input('odometer_max')),
+                ]
+            ]];
+        }
+
+        if ($request->has('auction_date')) {
+            $dates = $request->input('auction_date');
+            if (is_array($dates) && count($dates) === 2) {
+                $must[] = ['range' => [
+                    'sale_date' => [
+                        'gte' => \Carbon\Carbon::parse($dates[0])->format('Y-m-d'),
+                        'lte' => \Carbon\Carbon::parse($dates[1])->format('Y-m-d'),
+                    ]
+                ]];
+            }
+        }
+
+        $filters = [
+            'manufacturers' => 'manufacturer_id',
+            'vehicle_models' => 'vehicle_model_id',
+            'vehicle_types' => 'vehicle_type_id',
+            'conditions' => 'condition_id',
+            'fuels' => 'fuel_id',
+            'seller_types' => 'seller_type_id',
+            'drive_wheels' => 'drive_wheel_id',
+            'transmissions' => 'transmission_id',
+            'damages' => 'damage_id',
+        ];
+
+        foreach ($filters as $key => $column) {
+            if ($request->has($key) && is_array($request->input($key))) {
+                $values = array_map('intval', $request->input($key));
+                $must[] = ['terms' => [$column => $values]];
+            }
+        }
+
+        $currentDate = \Carbon\Carbon::now()->toDateString();
+        $currentDateMillis = \Carbon\Carbon::parse($currentDate)->timestamp * 1000;
+        $saleDateOrder = $request->input('sale_date_order', 'sooner');
+
+        $sort = [];
+
+        if ($request->has('bid_amount')) {
+            $order = $request->input('bid_amount') === 'highest' ? 'desc' : 'asc';
+            Log::info('bid_amount_logic', ['order' => $order]);
+            $sort[] = [
+                'bid' => [
+                    'order' => $order
+                ]
+            ];
+        }
+
+        if ($request->has('buy_now_sort')) {
+            $sort[] = [
+                '_script' => [
+                    'type' => 'number',
+                    'script' => [
+                        'source' => "doc['buy_now'].size() != 0 && doc['buy_now'].value > 0 ? 1 : 0",
+                        'lang' => 'painless'
+                    ],
+                    'order' => 'desc'
+                ]
+            ];
+        }
+
+        $sort[] = [
+            '_script' => [
+                'type' => 'number',
+                'script' => [
+                    'source' => "doc['sale_date'].value.toInstant().toEpochMilli() >= params.date ? 1 : 0",
+                    'params' => ['date' => $currentDateMillis],
+                    'lang' => 'painless',
+                ],
+                'order' => 'desc'
+            ]
+        ];
+
+        $sort[] = [
+            'sale_date' => $saleDateOrder === 'farthest' ? 'desc' : 'asc'
+        ];
+
+        $params = [
+            'index' => $index,
+            'body' => [
+                'size' => $size,
+                'query' => ['bool' => ['must' => $must]],
+                'sort' => $sort,
+                'track_total_hits' => true
+            ]
+        ];
+
+        if ($searchAfter && is_array($searchAfter)) {
+            $params['body']['search_after'] = $searchAfter;
+        } else {
+            $params['body']['from'] = $from;
+        }
+
+        $results = $client->search($params);
+
+        $hits = $results['hits']['hits'];
+        $vehicles = collect($hits)->map(fn($hit) => $hit['_source']);
+        $count = $results['hits']['total']['value'] ?? 0;
+        $nextSearchAfter = end($hits)['sort'] ?? null;
+
+        return sendResponse(true, 200, 'Vehicle Informations Fetched Successfully!', [
+            'count' => $count,
+            'data' => $vehicles,
+            'next_search_after' => $nextSearchAfter
+        ], 200);
+
+    } catch (\Exception $ex) {
+        return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 500);
+    }
+}
+
+    public function vehicleInformationsWithPagination(Request $request)
     {
         try {
             $client = app('ElasticsearchKvmFour');
@@ -280,10 +441,6 @@ class VehicleController extends Controller
             $page = (int) $request->input('page', 1);
             $size = (int) $request->input('size', 10);
             $from = ($page - 1) * $size;
-
-            if ($from + $size > 10000) {
-                return sendResponse(false, 400, 'Cannot paginate beyond 10,000 results. Use filters or load earlier pages.', null, 400);
-            }
 
             $must = [['exists' => ['field' => 'sale_date']]];
 
