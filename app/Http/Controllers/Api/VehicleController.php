@@ -413,6 +413,15 @@ class VehicleController extends Controller
 
         $results = $client->search($params);
 
+        $lastSortValues = end($results['hits']['hits'])['sort'] ?? null;
+        if ($lastSortValues && isset($lastSortValues[2])) {
+            try {
+                $lastSortValues[2] = \Carbon\Carbon::createFromTimestampMs($lastSortValues[2])->toIso8601String();
+            } catch (\Exception $e) {
+                // Skip formatting if not a timestamp
+            }
+        }
+
         $hits = $results['hits']['hits'];
         $vehicles = collect($hits)->map(fn($hit) => $hit['_source']);
         $count = $results['hits']['total']['value'] ?? 0;
