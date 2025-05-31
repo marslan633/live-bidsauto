@@ -361,24 +361,14 @@ class VehicleController extends Controller
             $saleDateOrder = $request->input('sale_date_order', 'sooner');
 
             if ($request->has('bid_amount')) {
-                $order = strtolower($request->input('bid_amount')) === 'highest' ? 'desc' : 'asc';
+                $order = $request->input('bid_amount') === 'highest' ? 'desc' : 'asc';
 
                 $sort[] = [
                     '_script' => [
                         'type' => 'number',
                         'script' => [
-                            'source' => "
-                                if (doc['bid'].size() == 0 || doc['bid'].empty) {
-                                    return params.fallback;
-                                } else {
-                                    return doc['bid'].value;
-                                }
-                            ",
-                            'params' => [
-                                // For 'desc', nulls should be treated as very small
-                                // For 'asc', nulls should be treated as very large
-                                'fallback' => $order === 'desc' ? -1 : 999999999
-                            ],
+                            // fallback to 0 if bid is null/missing
+                            'source' => "doc['bid'].size() == 0 ? 0 : doc['bid'].value",
                             'lang' => 'painless'
                         ],
                         'order' => $order
@@ -388,6 +378,18 @@ class VehicleController extends Controller
 
 
 
+            if ($request->has('buy_now_sort')) {
+                $sort[] = [
+                    '_script' => [
+                        'type' => 'number',
+                        'script' => [
+                            'source' => "doc['buy_now'].size() != 0 && doc['buy_now'].value > 0 ? 1 : 0",
+                            'lang' => 'painless'
+                        ],
+                        'order' => 'desc'
+                    ]
+                ];
+            }
 
             $sort = [
                 [
