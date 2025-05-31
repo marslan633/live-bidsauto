@@ -362,7 +362,7 @@ class VehicleController extends Controller
 
             if ($request->has('bid_amount')) {
                 $order = $request->input('bid_amount') === 'highest' ? 'desc' : 'asc';
-
+                Log::info('bid_amount_logic', ['order' => $order]);
                 $sort[] = [
                     'bid' => [
                         'order' => $order
