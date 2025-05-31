@@ -364,9 +364,14 @@ class VehicleController extends Controller
                 $order = $request->input('bid_amount') === 'highest' ? 'desc' : 'asc';
 
                 $sort[] = [
-                    'bid' => [
-                        'order' => $order,
-                        'missing' => $order === 'desc' ? '_last' : '_first'  // push nulls to the bottom
+                    '_script' => [
+                        'type' => 'number',
+                        'script' => [
+                            // fallback to 0 if bid is null/missing
+                            'source' => "doc['bid'].size() == 0 ? 0 : doc['bid'].value",
+                            'lang' => 'painless'
+                        ],
+                        'order' => $order
                     ]
                 ];
             }
