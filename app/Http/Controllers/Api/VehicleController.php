@@ -360,22 +360,6 @@ class VehicleController extends Controller
             $currentDateMillis = \Carbon\Carbon::parse($currentDate)->timestamp * 1000;
             $saleDateOrder = $request->input('sale_date_order', 'sooner');
 
-
-            $sort = [
-                [
-                    '_script' => [
-                        'type' => 'number',
-                        'script' => [
-                            'source' => "doc['sale_date'].value.toInstant().toEpochMilli() >= params.date ? 1 : 0",
-                            'params' => ['date' => $currentDateMillis],
-                            'lang' => 'painless',
-                        ],
-                        'order' => 'desc'
-                    ]
-                ],
-                ['sale_date' => $saleDateOrder === 'farthest' ? 'desc' : 'asc']
-            ];
-
             if ($request->has('bid_amount')) {
                 $order = $request->input('bid_amount') === 'highest' ? 'desc' : 'asc';
                 Log::info('bid_amount_logic', ['order' => $order]);
@@ -399,6 +383,22 @@ class VehicleController extends Controller
                     ]
                 ];
             }
+
+            $sort[] = [
+                '_script' => [
+                    'type' => 'number',
+                    'script' => [
+                        'source' => "doc['sale_date'].value.toInstant().toEpochMilli() >= params.date ? 1 : 0",
+                        'params' => ['date' => $currentDateMillis],
+                        'lang' => 'painless',
+                    ],
+                    'order' => 'desc'
+                ]
+            ];
+
+            $sort[] = [
+                'sale_date' => $saleDateOrder === 'farthest' ? 'desc' : 'asc'
+            ];
 
 
             // Final ES Query
