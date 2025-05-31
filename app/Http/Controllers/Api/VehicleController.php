@@ -384,7 +384,7 @@ class VehicleController extends Controller
                 ];
             }
 
-            $sort = [
+            $sort[] = [
                 [
                     '_script' => [
                         'type' => 'number',
