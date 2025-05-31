@@ -420,6 +420,16 @@ class VehicleController extends Controller
         $count = $results['hits']['total']['value'] ?? 0;
         $nextSearchAfter = end($hits)['sort'] ?? null;
 
+
+
+if ($nextSearchAfter && isset($nextSearchAfter[2])) {
+    try {
+        $nextSearchAfter[2] = \Carbon\Carbon::createFromTimestampMs($nextSearchAfter[2])->toIso8601String();
+    } catch (\Exception $e) {
+        // leave the original value if it’s not a valid timestamp
+    }
+}
+
         return sendResponse(true, 200, 'Vehicle Informations Fetched Successfully!', [
             'count' => $count,
             'data' => $vehicles,
