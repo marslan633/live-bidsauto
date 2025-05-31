@@ -16,7 +16,7 @@ if (config('app.app_kvm_three') === true) {
 }
 
 if (config('app.app_kvm_four') === true) {
-    // app(Schedule::class)->command('index:vehicle-records')->dailyAt('19:35')->withoutOverlapping();
+    app(Schedule::class)->command('index:vehicle-records')->dailyAt('09:10')->withoutOverlapping();
     // app(Schedule::class)->command('index:vehicle-record-archiveds')->dailyAt('17:25')->withoutOverlapping();
     // app(Schedule::class)->command('index:sale-auction-histories')->dailyAt('17:23')->withoutOverlapping();
     // app(Schedule::class)->command('process:delete-expired-data')->everyFifteenMinutes()->withoutOverlapping();

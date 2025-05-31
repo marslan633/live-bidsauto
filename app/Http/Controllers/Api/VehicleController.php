@@ -365,6 +365,11 @@ class VehicleController extends Controller
                 $sort[] = ['bid' => $order];
             }
 
+            if ($request->has('buy_now_sort')) {
+                $order = $request->input('buy_now_sort') == true ? 'desc' : 'asc';
+                $sort[] = ['bid' => $order];
+            }
+
             $sort = [
                 [
                     '_script' => [
