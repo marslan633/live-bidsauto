@@ -79,7 +79,7 @@ class StoreVehicleArchivedToElasticsearch implements ShouldQueue
             // Bulk Insert Logic (Commented)
             $bulkData[] = [
                 'index' => [
-                    '_index' => 'vehicle_record_archiveds',  // Different index for archived records
+                    '_index' => 'vehicle_records',  // Different index for archived records
                     '_id' => $vehicle->id,
                 ]
             ];
@@ -92,7 +92,7 @@ class StoreVehicleArchivedToElasticsearch implements ShouldQueue
             try {
                 // Prepare the upsert parameters
                 $params = [
-                    'index' => 'vehicle_record_archiveds',
+                    'index' => 'vehicle_records',
                     'id'    => $vehicle->id,
                     'body'  => [
                         'script' => [

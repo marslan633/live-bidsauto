@@ -30,6 +30,7 @@ class SetupElasticsearchClassesKvmFour extends Command
                         'vin' => ['type' => 'keyword'],
                         'year' => ['type' => 'integer'],
                         'odometer_mi' => ['type' => 'integer'],
+                        'data_source' => ['type' => 'integer'],
                         'buy_now_id' => ['type' => 'integer'],
                         'sale_date' => [
                             'type' => 'date',
@@ -65,6 +66,7 @@ class SetupElasticsearchClassesKvmFour extends Command
                         'year' => ['type' => 'integer'],
                         'lot_id' => ['type' => 'keyword'],
                         'vin' => ['type' => 'keyword'],
+                        'data_source' => ['type' => 'integer'],
                         'odometer_mi' => ['type' => 'integer'],
                         'buy_now_id' => ['type' => 'integer'],
                         'sale_date' => [

@@ -108,10 +108,10 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
 
 
             // Extract API IDs from batchData
-            $apiIds = array_column($batchData, 'api_id');
+            $lotIds = array_column($batchData, 'lot_id');
 
             // Fetch existing records by API ID
-            $existingRecords = DB::table('vehicle_records')->whereIn('api_id', $apiIds)->pluck('id', 'api_id');
+            $existingRecords = DB::table('vehicle_records')->whereIn('lot_id', $lotIds)->pluck('id', 'lot_id');
 
             // Lists for new and updated records
             $newRecords = [];
@@ -120,11 +120,12 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
 
             foreach ($batchData as $record) {
                 try {
-                    if (isset($existingRecords[$record['api_id']])) {
+                    if (isset($existingRecords[$record['lot_id']])) {
                         // Existing record - update full data
-                        $record['id'] = $existingRecords[$record['api_id']]; // Add ID for update
+                        $record['id'] = $existingRecords[$record['lot_id']]; // Add ID for update
                         $record['processed_at'] = Carbon::now();
                         $record['updated_at'] = Carbon::now();
+                        $record['data_source'] = 1;
                         $updatedRecords[] = $record;
                     } else {
                         // New record - insert
@@ -132,6 +133,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                         $record['processed_at'] = Carbon::now();
                         $record['created_at'] = Carbon::now();
                         $record['updated_at'] = Carbon::now();
+                        $record['data_source'] = 1;
                         $newRecords[] = $record;
                     }
                 } catch (\Exception $e) {

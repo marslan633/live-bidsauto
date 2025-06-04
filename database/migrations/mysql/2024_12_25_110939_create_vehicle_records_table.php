@@ -95,6 +95,7 @@ return new class extends Migration
             $table->foreign('location_id')->references('id')->on('locations')->onDelete('set null');
             $table->foreign('selling_branch')->references('id')->on('selling_branches')->onDelete('set null');
             $table->foreign('domain_id')->references('id')->on('domains')->onDelete('set null');
+            $table->integer('data_source')->comment('1=active, 2=archived')->default(1);
         });
     }
 

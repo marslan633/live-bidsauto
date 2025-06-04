@@ -162,7 +162,7 @@ class IndexVehicleRecordArchiveds extends Command
             $query->where('updated_at', '>=', $minutes)
                   ->whereNotNull('sale_date');
         }
-
+        $query->where('data_source', 2);
         // Use Laravel's chunk method to process records in batches of 500
         $query->chunk($chunkSize, function ($vehicles) use ($dispatchChunkSize) {
             // Dispatch the job with the chunk, which will include relationships eager-loaded in the job

@@ -317,16 +317,15 @@ class VehicleController extends Controller
         try {
             $client = app('ElasticsearchKvmFour');
 
-            $index = $request->input('data_source', 'active') === 'archived'
-                ? 'vehicle_record_archiveds'
-                : 'vehicle_records';
+            $index = 'vehicle_records';
+            $dataSourceValue = $request->input('data_source') === 'active' ? 1 : 2;
 
             $page = (int) $request->input('page', 1);
             $size = (int) $request->input('size', 10);
             $from = ($page - 1) * $size;
 
             $must = [['exists' => ['field' => 'sale_date']]];
-
+            $must[] = ['term' => ['data_source' => $dataSourceValue]];
             // Domain Filter
             if ($request->has('domain_id')) {
                 $domainIds = array_map('intval', (array) $request->input('domain_id'));
@@ -659,20 +658,21 @@ class VehicleController extends Controller
 {
     try {
         // Determine the index based on the 'data_source' parameter
-        $data_source = $request->input('data_source', 'active'); // Default to 'active'
-        $index = $data_source === 'archived' ? 'vehicle_record_archiveds' : 'vehicle_records';
+        $index = 'vehicle_records';
+        $dataSourceValue = $request->input('data_source') === 'active' ? 1 : 2;
         $client = app('ElasticsearchKvmFour');
 
         // Debug Log: Check Index
         Log::info('Search Index: ', ['index' => $index]);
 
+        $must = [['term' => ['data_source' => $dataSourceValue]]];
         // Base query for vehicle records
         $query = [
             'index' => $index,
             'body' => [
                 'query' => [
                     'bool' => [
-                        'must' => []
+                        'must' => $must
                     ]
                 ],
                 'size' => 1
@@ -1007,10 +1007,9 @@ class VehicleController extends Controller
         try {
             $client = app('ElasticsearchKvmFour');
 
-            $index = $request->input('data_source', 'active') === 'archived'
-                ? 'vehicle_record_archiveds'
-                : 'vehicle_records';
+            $index = 'vehicle_records';
 
+            $dataSourceValue = $request->input('data_source') === 'active' ? 1 : 2;
 
             if($request->has('manufacturers')){
                 $filters = [
@@ -1043,7 +1042,7 @@ class VehicleController extends Controller
             $activeFilterKey = in_array($listing, $validListings) ? $listing : null;
 
             $must = [['exists' => ['field' => 'sale_date']]];
-
+            $must[] = ['term' => ['data_source' => $dataSourceValue]];
             if ($request->has('domain_id')) {
                 $must[] = ['terms' => ['domain_id' => $request->input('domain_id')]];
             }

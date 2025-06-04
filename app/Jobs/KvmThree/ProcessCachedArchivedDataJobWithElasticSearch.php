@@ -123,8 +123,8 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
             // Extract lot IDs
             $lotIds = array_column($batchData, 'lot_id');
 
-            // Fetch existing archived records by lot_id
-            $existingRecords = DB::table('vehicle_record_archiveds')
+            // Fetch existing records by lot_id
+            $existingRecords = DB::table('vehicle_records')
                 ->whereIn('lot_id', $lotIds)
                 ->pluck('id', 'lot_id');
 
@@ -153,6 +153,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                         $record['id'] = $existingRecords[$record['lot_id']];
                         $updatedRecordIds[] = $record['lot_id'];
                         $record['updated_at'] = now();
+                        $record['data_source'] = 2;
                         $updatedRecords[] = $record;
                     }
 
@@ -185,10 +186,9 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                 // Log::info('existingSaleRecords', ['existingSaleRecords' => json_encode($existingSaleRecords)]);
                 // Log::info('updatedSaleRecords', ['updatedSaleRecords' => json_encode($updatedSaleRecords)]);
                 foreach($updatedRecords as $item_one){
-
-                    DB::table('vehicle_record_archiveds')->where('id', $item_one['id'])->update($item_one);
+                    DB::table('vehicle_records')->where('id', $item_one['id'])->update($item_one);
                 }
-                // DB::table('vehicle_record_archiveds')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
+                // DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
                 Log::info('Updated Records Ids', ['data' => json_encode($updatedRecordIds)]);
             }
 
