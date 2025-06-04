@@ -66,7 +66,7 @@ class VehicleController extends Controller
             'data' => $records,
         ]);
     }
-    }
+
 
     public function deleteMyVehicle($id)
     {
@@ -1410,17 +1410,11 @@ class VehicleController extends Controller
         try {
             // Query the VehicleRecord model and filter by sale_date
             $vehicleRecords = VehicleRecord::selectRaw("
-            COUNT(
-                CASE
-                    WHEN sale_date IS NOT NULL
-                     AND STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') >= ?
-                    THEN 1
-                END
-            ) as sale_records,
+                COUNT(CASE WHEN sale_date IS NOT NULL THEN 1 END) as sale_records,
                 COUNT(CASE WHEN sale_date IS NULL THEN 1 END) as no_sale_records,
                 MAX(updated_at) as latest_update_time_utc
             ")
-                ->first();
+            ->first();
 
             $vehicleRecordArchiveds = VehicleRecordArchived::count();
 
