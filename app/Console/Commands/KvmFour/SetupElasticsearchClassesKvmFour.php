@@ -16,6 +16,11 @@ class SetupElasticsearchClassesKvmFour extends Command
 
         $indices = [
             'vehicle_records' => [
+                'settings' => [
+                    'index' => [
+                        'max_result_window' => 50000,
+                    ],
+                ],
                 'mappings' => [
                     'properties' => [
                         'id' => ['type' => 'integer'],
@@ -47,6 +52,11 @@ class SetupElasticsearchClassesKvmFour extends Command
             ],
 
             'vehicle_record_archiveds' => [
+                'settings' => [
+                    'index' => [
+                        'max_result_window' => 50000,
+                    ],
+                ],
                 'mappings' => [
                     'properties' => [
                         'id' => ['type' => 'integer'],

@@ -100,17 +100,17 @@ class ProcessCachedDataToDatabasesWithElasticSearch extends Command
             $hits = $response['hits']['hits'];
 
             if (count($hits) === 0) {
-                $clientkvmOne->index([
-                    'index' => 'error_logs',
-                    'body' => [
-                        'server_name' => 'KVM4.3',
-                        'error_type' => 'General',
-                        'command_name' => 'process:process-cached-data-to-databases-with-elasticsearch',
-                        'error' => 'NO DATA: vehicle_process_cached_api_data index empty',
-                        'created_at' => now()->toIso8601String(),
-                        'updated_at' => now()->toIso8601String(),
-                    ],
-                ]);
+                // $clientkvmOne->index([
+                //     'index' => 'error_logs',
+                //     'body' => [
+                //         'server_name' => 'KVM4.3',
+                //         'error_type' => 'General',
+                //         'command_name' => 'process:process-cached-data-to-databases-with-elasticsearch',
+                //         'error' => 'NO DATA: vehicle_process_cached_api_data index empty',
+                //         'created_at' => now()->toIso8601String(),
+                //         'updated_at' => now()->toIso8601String(),
+                //     ],
+                // ]);
                 return;
             }
 

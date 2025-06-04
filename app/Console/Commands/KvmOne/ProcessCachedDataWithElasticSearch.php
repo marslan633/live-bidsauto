@@ -62,17 +62,17 @@ class ProcessCachedDataWithElasticSearch extends Command
             $hits = $response['hits']['hits'];
 
             if (empty($hits)) {
-                $client->index([
-                    'index' => 'error_logs',
-                    'body' => [
-                        'server_name' => 'KVM4.1',
-                        'error_type' => 'General Error',
-                        'command_name' => 'process:cached-data-with-elasticsearch',
-                        'error' => "No cached data found.",
-                        'created_at' => now()->toIso8601String(),
-                        'updated_at' => now()->toIso8601String(),
-                    ],
-                ]);
+                // $client->index([
+                //     'index' => 'error_logs',
+                //     'body' => [
+                //         'server_name' => 'KVM4.1',
+                //         'error_type' => 'General Error',
+                //         'command_name' => 'process:cached-data-with-elasticsearch',
+                //         'error' => "No cached data found.",
+                //         'created_at' => now()->toIso8601String(),
+                //         'updated_at' => now()->toIso8601String(),
+                //     ],
+                // ]);
                 return;
             }
 

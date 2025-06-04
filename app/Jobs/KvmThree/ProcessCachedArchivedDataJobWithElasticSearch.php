@@ -36,17 +36,17 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
             $data = unCompressData($this->cacheKey->cache_value);
             // Log::info('Uncompressed Log', ['data', json_encode($data)]);
             if (!$data) {
-                $client->index([
-                    'index' => 'error_logs',
-                    'body' => [
-                        'server_name' => 'KVM4.3',
-                        'error_type' => 'General Error',
-                        'command_name' => 'cached_archived_data_queue_with_elasticsearch',
-                        'error' => 'No archived data found for key: ' . $this->cacheKey->_id,
-                        'created_at' => now()->toIso8601String(),
-                        'updated_at' => now()->toIso8601String(),
-                    ],
-                ]);
+                // $client->index([
+                //     'index' => 'error_logs',
+                //     'body' => [
+                //         'server_name' => 'KVM4.3',
+                //         'error_type' => 'General Error',
+                //         'command_name' => 'cached_archived_data_queue_with_elasticsearch',
+                //         'error' => 'No archived data found for key: ' . $this->cacheKey->_id,
+                //         'created_at' => now()->toIso8601String(),
+                //         'updated_at' => now()->toIso8601String(),
+                //     ],
+                // ]);
                 return;
             }
 

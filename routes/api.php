@@ -22,7 +22,9 @@ Route::prefix('vehicles')->group(function () {
 });
 
 Route::post('filter-attributes', [VehicleController::class, 'filterAttributes']);
+
 Route::post('vehicles-with-filter-attributes', [VehicleController::class, 'vehicleInformationsWithFilters']);
+Route::get('get-updated-records', [VehicleController::class, 'getUpdatedRecords']);
 Route::get('filtered-records-count', [VehicleController::class, 'filteredRecordsCount'])->name('filtered.records.count');
 Route::post('/sendQuote', [VehicleController::class, 'sendQuote']);
 Route::get('cron-job-history', [VehicleController::class, 'cronJobHistory']);

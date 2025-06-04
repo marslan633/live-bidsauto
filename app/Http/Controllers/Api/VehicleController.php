@@ -24,6 +24,50 @@ use Illuminate\Support\Facades\Mail;
 
 class VehicleController extends Controller
 {
+
+    public function getUpdatedRecords(Request $request){
+
+        // Validate input
+        $request->validate([
+            'table' => 'required|string|in:vehicle_records,vehicle_record_archiveds',
+            'interval' => 'required|integer|min:1',
+            'unit' => 'required|string|in:minutes,hours',
+            'time_field' => 'required|string|in:created_at,updated_at',
+        ]);
+
+        $table = $request->input('table');
+        $interval = $request->input('interval');
+        $unit = $request->input('unit');
+        $timeField = $request->input('time_field');
+
+        // Calculate the cutoff datetime
+        $cutoff = now();
+
+        if ($unit === 'minutes') {
+            $cutoff = $cutoff->subMinutes($interval);
+        } else {
+            $cutoff = $cutoff->subHours($interval);
+        }
+
+        $columns = [
+            'sale_date', 'bid', 'bid_updated_at', 'buy_now', 'lot_id',
+            'vin', 'buy_now_updated_at', 'status', 'created_at', 'updated_at'
+        ];
+
+        // Query the table filtering by created_at or updated_at
+        $records = DB::table($table)
+            ->select($columns)
+            ->where($timeField, '>=', $cutoff)
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'count' => $records->count(),
+            'data' => $records,
+        ]);
+    }
+    }
+
     public function deleteMyVehicle($id)
     {
         try {
@@ -1365,11 +1409,17 @@ class VehicleController extends Controller
     {
         try {
             // Query the VehicleRecord model and filter by sale_date
-            $vehicleRecords = VehicleRecord::selectRaw('
-                COUNT(CASE WHEN sale_date IS NOT NULL THEN 1 END) as sale_records,
+            $vehicleRecords = VehicleRecord::selectRaw("
+            COUNT(
+                CASE
+                    WHEN sale_date IS NOT NULL
+                     AND STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ') >= ?
+                    THEN 1
+                END
+            ) as sale_records,
                 COUNT(CASE WHEN sale_date IS NULL THEN 1 END) as no_sale_records,
                 MAX(updated_at) as latest_update_time_utc
-            ')
+            ")
                 ->first();
 
             $vehicleRecordArchiveds = VehicleRecordArchived::count();

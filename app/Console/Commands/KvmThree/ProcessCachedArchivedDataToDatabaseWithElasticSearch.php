@@ -97,17 +97,17 @@ class ProcessCachedArchivedDataToDatabaseWithElasticSearch extends Command
 
 
             if (count($hits) == 0) {
-                $client->index([
-                    'index' => 'error_logs',
-                    'body' => [
-                        'server_name' => 'KVM4.3',
-                        'error_type' => 'General',
-                        'command_name' => 'process:cached-archived-data-to-database-with-elasticsearch',
-                        'error' => 'NOT DATA:PROCESS CACHED ARCHIVED DATA TO DATABASE CREATED',
-                        'created_at' => now()->toIso8601String(),
-                        'updated_at' => now()->toIso8601String(),
-                    ],
-                ]);
+                // $client->index([
+                //     'index' => 'error_logs',
+                //     'body' => [
+                //         'server_name' => 'KVM4.3',
+                //         'error_type' => 'General',
+                //         'command_name' => 'process:cached-archived-data-to-database-with-elasticsearch',
+                //         'error' => 'NOT DATA:PROCESS CACHED ARCHIVED DATA TO DATABASE CREATED',
+                //         'created_at' => now()->toIso8601String(),
+                //         'updated_at' => now()->toIso8601String(),
+                //     ],
+                // ]);
                 return;
             }
 

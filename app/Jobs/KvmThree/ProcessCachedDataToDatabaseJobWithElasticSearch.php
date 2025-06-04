@@ -66,17 +66,17 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 $this->insertBatch($batchData, $this->cacheKey->_id);
                 $batchData = []; // Reset batch
             }else{
-                $clientkvmOne->index([
-                    'index' => 'error_logs',
-                    'body' => [
-                        'server_name' => 'KVM4.3',
-                        'error_type' => 'General',
-                        'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
-                        'error' => "Batch Condition Not Meet",
-                        'created_at' => now()->toIso8601String(),
-                        'updated_at' => now()->toIso8601String(),
-                    ],
-                ]);
+                // $clientkvmOne->index([
+                //     'index' => 'error_logs',
+                //     'body' => [
+                //         'server_name' => 'KVM4.3',
+                //         'error_type' => 'General',
+                //         'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+                //         'error' => "Batch Condition Not Meet",
+                //         'created_at' => now()->toIso8601String(),
+                //         'updated_at' => now()->toIso8601String(),
+                //     ],
+                // ]);
             }
 
         } catch (\Exception $e) {
@@ -211,7 +211,6 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                     // ]);
                 }
             } else {
-                Log::warning();
                 $clientkvmOne->index([
                     'index' => 'error_logs',
                     'body' => [
