@@ -156,7 +156,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                         $record['data_source'] = 2;
                         $updatedRecords[] = $record;
                     }
-
+                    unset($record['data_source']);
                     if (isset($existingSaleRecords[$record['lot_id']]) && isset($existingRecords[$record['lot_id']])) {
                         // Existing record - update full data
 
