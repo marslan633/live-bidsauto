@@ -16,7 +16,6 @@ class DeleteElasticsearchClassesKvmFour extends Command
 
         $indices = [
             'vehicle_records',
-            'vehicle_record_archiveds',
             'sale_auction_histories'
         ];
 

@@ -52,45 +52,6 @@ class SetupElasticsearchClassesKvmFour extends Command
                 ],
             ],
 
-            'vehicle_record_archiveds' => [
-                'settings' => [
-                    'index' => [
-                        'max_result_window' => 50000,
-                    ],
-                ],
-                'mappings' => [
-                    'properties' => [
-                        'id' => ['type' => 'integer'],
-                        'manufacturer_id' => ['type' => 'integer'],
-                        'vehicle_model_id' => ['type' => 'integer'],
-                        'year' => ['type' => 'integer'],
-                        'lot_id' => ['type' => 'keyword'],
-                        'vin' => ['type' => 'keyword'],
-                        'data_source' => ['type' => 'integer'],
-                        'odometer_mi' => ['type' => 'integer'],
-                        'buy_now_id' => ['type' => 'integer'],
-                        'sale_date' => [
-                            'type' => 'date',
-                            'format' => 'strict_date_optional_time||yyyy-MM-dd'
-                        ],
-                        'bid' => [
-                            'type' => 'double',
-                            'null_value'=> 0
-                        ],
-                        'final_bid_updated_at' => ['type' => 'keyword'],
-                        'year_id' => ['type' => 'integer', 'null_value' => 0],
-                        'domain_id' => ['type' => 'integer'],
-                        'condition_id' => ['type' => 'integer'],
-                        'fuel_id' => ['type' => 'integer'],
-                        'seller_type_id' => ['type' => 'integer'],
-                        'drive_wheel_id' => ['type' => 'integer'],
-                        'transmission_id' => ['type' => 'integer'],
-                        'detailed_title_id' => ['type' => 'integer'],
-                        'damage_id' => ['type' => 'integer'],
-                    ],
-                ],
-            ],
-
             'sale_auction_histories' => [
                 'mappings' => [
                     'properties' => [
