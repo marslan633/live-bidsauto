@@ -2,7 +2,7 @@
 use Illuminate\Console\Scheduling\Schedule;
 
 if (config('app.app_kvm_one') === true) {
-     app(Schedule::class)->command('process:api-data-with-elasticsearch')->dailyAt('11:05')->withoutOverlapping();
+     app(Schedule::class)->command('process:api-data-with-elasticsearch')->dailyAt('08:40')->withoutOverlapping();
      app(Schedule::class)->command('process:cached-data-with-elasticsearch')->everyFiveMinutes()->withoutOverlapping();
     //  app(Schedule::class)->command('process:archived-data-with-elasticsearch')->dailyAt('18:38')->withoutOverlapping();
     app(Schedule::class)->command('process:delete-cached-data-with-elasticsearch')->everyThirtyMinutes()->withoutOverlapping();
@@ -16,7 +16,7 @@ if (config('app.app_kvm_three') === true) {
 }
 
 if (config('app.app_kvm_four') === true) {
-    app(Schedule::class)->command('index:vehicle-records')->dailyAt('09:10')->withoutOverlapping();
+    // app(Schedule::class)->command('index:vehicle-records')->dailyAt('09:10')->withoutOverlapping();
     // app(Schedule::class)->command('index:vehicle-record-archiveds')->dailyAt('17:25')->withoutOverlapping();
     // app(Schedule::class)->command('index:sale-auction-histories')->dailyAt('17:23')->withoutOverlapping();
     // app(Schedule::class)->command('process:delete-expired-data')->everyFifteenMinutes()->withoutOverlapping();
