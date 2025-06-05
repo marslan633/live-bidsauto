@@ -176,6 +176,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                             $saleRecord['odometer_mi'] = $existingRecords[$record['lot_id']]->odometer_mi;
                             $saleRecord['seller_id'] = $existingRecords[$record['lot_id']]->seller_id;
                             $saleRecord['updated_at'] = now();
+                            unset($saleRecord['data_source']);
                             $updatedSaleRecords[] = $saleRecord;
                         }else{
                             $newSaleRecord = $record;
@@ -186,6 +187,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                             $newSaleRecord['seller_id'] = $existingRecords[$record['lot_id']]->seller_id;
                             $newSaleRecord['created_at'] = now();
                             $newSaleRecord['updated_at'] = now();
+                            unset($newSaleRecord['data_source']);
                             $newSaleRecords[] = $newSaleRecord;
                         }
                     }elseif(!isset($existingSaleRecords[$record['lot_id']]) && isset($existingRecords[$record['lot_id']])){
