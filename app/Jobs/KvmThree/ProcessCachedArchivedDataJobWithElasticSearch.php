@@ -233,18 +233,6 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                 // DB::table('sale_auction_histories')->where('id', $saleRecord[0]['id'])->update($saleRecord[0]);
                 // DB::table('sale_auction_histories')->upsert($saleRecord, ['id'], array_keys($saleRecord[0]));
                 Log::info('Updated Records Sale Ids', ['data' => json_encode($updatedRecordIds)]);
-            }else{
-                $client->index([
-                    'index' => 'error_logs',
-                    'body' => [
-                        'server_name' => 'KVM4.3',
-                        'error_type' => 'General',
-                        'command_name' => 'cached_archived_data_queue_with_elasticsearch',
-                        'error' => "Updated Sale Records Not Found",
-                        'created_at' => now()->toIso8601String(),
-                        'updated_at' => now()->toIso8601String(),
-                    ],
-                ]);
             }
 
             if(!empty($newSaleRecords)){
