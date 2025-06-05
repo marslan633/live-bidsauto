@@ -115,7 +115,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
     {
         $client = app('ElasticsearchKvmOne');
 
-        try {
+        // try {
             if (empty($batchData)) {
                 return;
             }
@@ -304,19 +304,19 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
 
             Log::info('Vehicle Process Cached Api Data Delete');
             Log::info("Batch processed successfully with " . count($updatedRecords) . " updated records.");
-        } catch (\Exception $e) {
-            // DB::rollBack();
-            $client->index([
-                'index' => 'error_logs',
-                'body' => [
-                    'server_name' => 'KVM4.3',
-                    'error_type' => 'Internal Server Error',
-                    'command_name' => 'cached_archived_data_queue_with_elasticsearch',
-                    'error' => "Batch processing failed:: " . json_encode($e->getMessage()),
-                    'created_at' => now()->toIso8601String(),
-                    'updated_at' => now()->toIso8601String(),
-                ],
-            ]);
-        }
+        // } catch (\Exception $e) {
+        //     // DB::rollBack();
+        //     $client->index([
+        //         'index' => 'error_logs',
+        //         'body' => [
+        //             'server_name' => 'KVM4.3',
+        //             'error_type' => 'Internal Server Error',
+        //             'command_name' => 'cached_archived_data_queue_with_elasticsearch',
+        //             'error' => "Batch processing failed:: " . json_encode($e->getMessage()),
+        //             'created_at' => now()->toIso8601String(),
+        //             'updated_at' => now()->toIso8601String(),
+        //         ],
+        //     ]);
+        // }
     }
 }
