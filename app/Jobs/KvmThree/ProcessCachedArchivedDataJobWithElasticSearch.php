@@ -238,6 +238,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
             }
 
             if(!empty($newSaleRecords)){
+                Log::info('New Sale Record', ['newSaleRecords' => json_encode($newSaleRecords)]);
                 DB::table('sale_auction_histories')->insert($newSaleRecords);
             }
 
