@@ -132,9 +132,10 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                 ->select('id', 'lot_id', 'sale_date', 'vin', 'odometer_mi', 'seller_id', 'domain_id')
                 ->get()
                 ->keyBy('lot_id');
+
             Log::info('Vehicle Vin Records', ['existingRecords' => json_encode($existingRecords)]);
             $existingSaleRecords = DB::table('sale_auction_histories')
-                ->whereIn('lot_id', $lotIds)
+                ->whereIn('vin', $vins)
                 ->orderBy('created_at', 'desc')
                 ->pluck('id', 'lot_id');
             Log::info('Vehicle Sale Records', ['existingSaleRecords' => json_encode($existingSaleRecords)]);
@@ -157,10 +158,9 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                         $updatedRecord['data_source'] = 2;
                         $updatedRecords[] = $updatedRecord;
                     }
+
                     if (isset($existingSaleRecords[$record['lot_id']]) && isset($existingRecords[$record['lot_id']])) {
                         // Existing record - update full data
-
-
                         // Check If Record Exists or not
                         $checkExistingSaleAuctionHistoryRecord = DB::connection('mysql')->table('sale_auction_histories')->where([
                             'vin' => $record['vin'],

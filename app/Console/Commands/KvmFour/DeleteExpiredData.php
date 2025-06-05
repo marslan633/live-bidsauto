@@ -63,14 +63,26 @@ class DeleteExpiredData extends Command
                 'size' => 1000, // Fetch 1000 records at a time
                 'body' => [
                     'query' => [
-                        'range' => [
-                            'sale_date' => [
-                                'lt' => $currentDateTime // Delete records where sale_date < current date and time
+                        'bool' => [
+                            'must' => [
+                                [
+                                    'range' => [
+                                        'sale_date' => [
+                                            'lt' => $currentDateTime // Delete records where sale_date < current date and time
+                                        ]
+                                    ]
+                                ],
+                                [
+                                    'term' => [
+                                        'data_source' => 1 // Match records with data_source = 1
+                                    ]
+                                ]
                             ]
                         ]
                     ]
                 ]
             ];
+
 
             // Perform the search query to get the first batch
             $response = $client->search($params);

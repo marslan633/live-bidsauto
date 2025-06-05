@@ -58,7 +58,7 @@ class ProcessArchivedDataWithElasticSearch extends Command
         ]);
         $hits = $response['hits']['hits'];
 
-        $minutes = 4320; // Default minutes value
+        $minutes = 40; // Default minutes value
 
         if (!empty($hits)) {
             $lastCron = $hits[0]['_source'];
@@ -66,9 +66,9 @@ class ProcessArchivedDataWithElasticSearch extends Command
                 $endTime = Carbon::parse($lastCron['end_time']);
                 $timeDifference = max(0, $endTime->diffInMinutes(now()));
 
-                if ($timeDifference > 20) {
+                if ($timeDifference > 30) {
                     $minutes = $timeDifference + 10;
-                } elseif ($timeDifference === 20) {
+                } elseif ($timeDifference === 30) {
                     $minutes = $timeDifference + 5;
                 }
             }

@@ -60,7 +60,7 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
             $params = [
                 'index' => 'vehicle_archived_api_data',
                 'scroll' => '1m', // Set scroll time context
-                'size' => 500, // Fetch 200 records at a time
+                'size' => 100, // Fetch 200 records at a time
                 'body' => [
                     'query' => [
                         'bool' => [
