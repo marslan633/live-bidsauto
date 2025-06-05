@@ -99,6 +99,7 @@ class SetupElasticsearchClassesKvmFour extends Command
                         'sale_date' => ['type' => 'keyword'],
                         'lot_id' => ['type' => 'integer'],
                         'bid' => ['type' => 'float'],
+                        'final_bid_updated_at' => ['type' => 'keyword'],
                         'odometer_mi' => ['type' => 'integer'],
                         'status_id' => ['type' => 'integer'],
                         'seller_id' => ['type' => 'integer'],

@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('sale_date')->nullable();
             $table->unsignedBigInteger('lot_id')->nullable();
             $table->unsignedBigInteger('bid')->nullable();
+            $table->string('final_bid_updated_at')->nullable();
             $table->unsignedBigInteger('odometer_mi')->nullable();
             $table->unsignedBigInteger('status_id')->nullable();
             $table->unsignedBigInteger('seller_id')->nullable();

@@ -94,12 +94,14 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
 
         if (
             !is_null($car['lot']) &&
+            !is_null($car['vin']) &&
             isset($car['status']['id']) && !is_null($car['status']['id']) &&
             !is_null($car['bid']) &&
             !is_null($car['final_bid_updated_at'])
         ) {
             return [
                 'lot_id' => $car['lot'],
+                'vin' => $car['vin'],
                 'status_id' => $car['status']['id'],
                 'bid' => $car['bid'],
                 'final_bid_updated_at' => $car['final_bid_updated_at'],
@@ -121,21 +123,20 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
             // DB::beginTransaction();
 
             // Extract lot IDs
+            $vins = array_column($batchData, 'vin');
             $lotIds = array_column($batchData, 'lot_id');
 
             // Fetch existing records by lot_id
             $existingRecords = DB::table('vehicle_records')
-                ->whereIn('lot_id', $lotIds)
-                ->pluck('id', 'lot_id');
+                ->whereIn('vin', $vins)
+                ->select('id', 'lot_id', 'sale_date', 'vin', 'odometer_mi', 'seller_id', 'domain_id')
+                ->get()
+                ->keyBy('lot_id');
 
             $existingSaleRecords = DB::table('sale_auction_histories')
                 ->whereIn('lot_id', $lotIds)
                 ->orderBy('created_at', 'desc')
-                ->pluck('id');
-
-
-                // lot_id
-                // 1
+                ->pluck('id', 'lot_id');
 
             // Separate new and update data
 
@@ -143,27 +144,60 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
             $updatedRecordIds = [];
             $failedRecords = []; // ❌ Store records that failed
             $updatedSaleRecords = [];
-
+            $newSaleRecords = [];
             foreach ($batchData as $record) {
                 try{
 
-
                     if (isset($existingRecords[$record['lot_id']])) {
                         // Existing record - update full data
-                        $record['id'] = $existingRecords[$record['lot_id']];
+                        $record['id'] = $existingRecords[$record['lot_id']]->id;
                         $updatedRecordIds[] = $record['lot_id'];
                         $record['updated_at'] = now();
                         $record['data_source'] = 2;
                         $updatedRecords[] = $record;
                     }
 
-                    if (isset($existingSaleRecords[$record['lot_id']])) {
+                    if (isset($existingSaleRecords[$record['lot_id']]) && isset($existingRecords[$record['lot_id']])) {
                         // Existing record - update full data
-                        $saleRecord = $record;
-                        $saleRecord['id'] = $existingSaleRecords[$record['lot_id']];
-                        $saleRecord['status_id'] = $record['status_id'];
-                        $saleRecord['bid'] = $record['status_id'];
-                        $updatedSaleRecords[] = $saleRecord;
+
+
+                        // Check If Record Exists or not
+                        $checkExistingSaleAuctionHistoryRecord = DB::connection('mysql')->table('sale_auction_histories')->where([
+                            'vin' => $record['vin'],
+                            'lot_id' => $record['lot_id'],
+                            'sale_date' => $existingRecords[$record['lot_id']]->sale_date
+                        ])->first();
+
+                        if(!is_null($checkExistingSaleAuctionHistoryRecord)){
+                            $saleRecord = $record;
+                            // vin, bid, lot_id, status_id, final_bid_updated_at
+                            $saleRecord['id'] = $existingRecords[$record['lot_id']]->id;
+                            $saleRecord['sale_date'] = $existingRecords[$record['lot_id']]->sale_date;
+                            $saleRecord['odometer_mi'] = $existingRecords[$record['lot_id']]->odometer_mi;
+                            $saleRecord['seller_id'] = $existingRecords[$record['lot_id']]->seller_id;
+                            $saleRecord['updated_at'] = now();
+                            $updatedSaleRecords[] = $saleRecord;
+                        }else{
+                            $newSaleRecord = $record;
+                         // vin, bid, lot_id, status_id, final_bid_updated_at
+                            $newSaleRecord['sale_date'] = $existingRecords[$record['lot_id']]->sale_date;
+                            $newSaleRecord['odometer_mi'] = $existingRecords[$record['lot_id']]->odometer_mi;
+                            $newSaleRecord['domain_id'] = $existingRecords[$record['lot_id']]->domain_id;
+                            $newSaleRecord['seller_id'] = $existingRecords[$record['lot_id']]->seller_id;
+                            $newSaleRecord['created_at'] = now();
+                            $newSaleRecord['updated_at'] = now();
+                            $newSaleRecords[] = $newSaleRecord;
+                        }
+                    }elseif(!isset($existingSaleRecords[$record['lot_id']]) && isset($existingRecords[$record['lot_id']])){
+                        $newSaleRecord = $record;
+                         // vin, bid, lot_id, status_id, final_bid_updated_at
+                        $newSaleRecord['sale_date'] = $existingRecords[$record['lot_id']]->sale_date;
+                        $newSaleRecord['odometer_mi'] = $existingRecords[$record['lot_id']]->odometer_mi;
+                        $newSaleRecord['domain_id'] = $existingRecords[$record['lot_id']]->domain_id;
+                        $newSaleRecord['seller_id'] = $existingRecords[$record['lot_id']]->seller_id;
+                        $newSaleRecord['created_at'] = now();
+                        $newSaleRecord['updated_at'] = now();
+                        $newSaleRecords[] = $newSaleRecord;
                     }
 
                 }catch (\Exception $e) {
@@ -211,6 +245,10 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                         'updated_at' => now()->toIso8601String(),
                     ],
                 ]);
+            }
+
+            if(!empty($newSaleRecords)){
+                DB::table('sale_auction_histories')->insert($newSaleRecords);
             }
 
             try{
