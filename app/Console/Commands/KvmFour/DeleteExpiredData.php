@@ -83,7 +83,6 @@ class DeleteExpiredData extends Command
                 ]
             ];
 
-
             // Perform the search query to get the first batch
             $response = $client->search($params);
             $scrollId = $response['_scroll_id'];

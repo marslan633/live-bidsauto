@@ -1413,9 +1413,10 @@ class VehicleController extends Controller
                 COUNT(CASE WHEN sale_date IS NULL THEN 1 END) as no_sale_records,
                 MAX(updated_at) as latest_update_time_utc
             ")
+            ->where('data_source', 1)
             ->first();
 
-            $vehicleRecordArchiveds = VehicleRecordArchived::count();
+            $vehicleRecordArchiveds = VehicleRecord::where('data_source', 2)->count();
 
             // Prepare data for response
             $data = [
