@@ -132,12 +132,12 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                 ->select('id', 'lot_id', 'sale_date', 'vin', 'odometer_mi', 'seller_id', 'domain_id')
                 ->get()
                 ->keyBy('lot_id');
-
+            Log::info('Vehicle Vin Records', ['existingRecords' => json_encode($existingRecords)]);
             $existingSaleRecords = DB::table('sale_auction_histories')
                 ->whereIn('lot_id', $lotIds)
                 ->orderBy('created_at', 'desc')
                 ->pluck('id', 'lot_id');
-
+            Log::info('Vehicle Sale Records', ['existingSaleRecords' => json_encode($existingSaleRecords)]);
             // Separate new and update data
 
             $updatedRecords = [];
