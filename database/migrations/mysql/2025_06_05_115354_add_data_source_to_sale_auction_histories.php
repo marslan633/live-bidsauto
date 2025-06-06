@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('sale_auction_histories', function (Blueprint $table) {
-            $table->integer('data_source');
+            $table->integer('data_source')->default(2);
         });
     }
 
