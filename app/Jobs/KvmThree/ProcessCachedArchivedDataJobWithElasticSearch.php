@@ -186,6 +186,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                             $newSaleRecord['seller_id'] = $existingRecords[$record['lot_id']]->seller_id;
                             $newSaleRecord['created_at'] = now();
                             $newSaleRecord['updated_at'] = now();
+                            unset($newSaleRecord['id']); // ✅ Prevent duplicate primary key
                             Log::info('Sale Record 1', ['newSaleRecord' => json_encode($newSaleRecord)]);
                             $newSaleRecords[] = $newSaleRecord;
                         }
@@ -198,6 +199,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                         $newSaleRecord['seller_id'] = $existingRecords[$record['lot_id']]->seller_id;
                         $newSaleRecord['created_at'] = now();
                         $newSaleRecord['updated_at'] = now();
+                        unset($newSaleRecord['id']); // ✅ Prevent duplicate primary key
                         Log::info('Sale Record 2', ['newSaleRecord' => json_encode($newSaleRecord)]);
                         $newSaleRecords[] = $newSaleRecord;
                     }
