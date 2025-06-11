@@ -134,7 +134,9 @@ class ProcessApiDataWithElasticSearch extends Command
                         $params['body'][] = [
                             'cache_value' => compressData($chunk->toArray()),
                             'created_at' => $now->format('Y-m-d H:i:s'),
+                            'updated_at' => $now->format('Y-m-d H:i:s'),
                             'expires_at' => $expiry->format('Y-m-d H:i:s'),
+                            'status' => 'pending'
                         ];
 
                         $client->bulk($params);

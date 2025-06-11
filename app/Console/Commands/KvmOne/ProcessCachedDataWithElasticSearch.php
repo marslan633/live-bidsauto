@@ -57,6 +57,13 @@ class ProcessCachedDataWithElasticSearch extends Command
                 'size' => 200,
                 'sort' => ['created_at:desc'],
                 '_source' => ['cache_value'], // optional optimization
+                'body' => [
+                    'query' => [
+                        'term' => [
+                            'status' => 'pending'
+                        ]
+                    ]
+                ]
             ]);
 
             $hits = $response['hits']['hits'];
@@ -133,13 +140,20 @@ class ProcessCachedDataWithElasticSearch extends Command
 
                 // If the document exists, delete it
                 if ($response) {
-                    $client->delete([
+                    $client->update([
                         'index' => 'vehicle_api_data',
                         'id'    => $docId,
+                        'body'  => [
+                            'doc' => [
+                                'status'     => 'completed',
+                                'updated_at' => now()->format('Y-m-d H:i:s'),
+                            ]
+                        ]
                     ]);
-                    Log::info("Document with ID $docId deleted successfully.");
+
+                    Log::info("Document with ID $docId updated to completed.");
                 } else {
-                    Log::info("Document with ID $docId not found, skipping delete.");
+                    Log::info("Document with ID $docId not found, skipping update.");
                 }
 
 
