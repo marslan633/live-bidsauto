@@ -51,7 +51,7 @@ class ProcessApiDataWithElasticSearch extends Command
             if (!empty($lastCron['end_time'])) {
                 $endTime = Carbon::parse($lastCron['end_time']);
                 $timeDifference = max(0, $endTime->diffInMinutes(now()));
-                Log::info('Time Difference Active ', $timeDifference);
+                Log::info('Time Difference Active '. $timeDifference);
                 if ($timeDifference > 25) {
                     $minutes = $timeDifference + 10;
                 } elseif ($timeDifference === 25) {
@@ -60,7 +60,7 @@ class ProcessApiDataWithElasticSearch extends Command
             }
         }
 
-        Log::info('Minutes ', $minutes);
+        Log::info('Minutes '. $minutes);
 
         $params = [
             'index' => 'cron_run_histories',
