@@ -21,7 +21,7 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
      *
      * @var string
      */
-    protected $description = 'Delete records with status "pending" from Elasticsearch index "vehicle_archived_api_data" older than 30 minutes to 1 hour ago';
+    protected $description = 'Delete records with status "completed" from Elasticsearch index "vehicle_archived_api_data" older than 30 minutes to 1 hour ago';
 
     /**
      * Create a new command instance.
@@ -40,11 +40,11 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
      */
     public function handle()
     {
-        Log::info('Checking total pending records older than 30 minutes in vehicle_archived_api_data...');
+        Log::info('Checking total completed records older than 30 minutes in vehicle_archived_api_data...');
 
         $client = app('ElasticsearchKvmOne');
         $now = Carbon::now()->utc();
-        $cutoffTime = $now->subMinutes(30)->toDateTimeString();
+        $cutoffTime = $now->subMinutes(60)->toDateTimeString();
 
         // Step 1: Get total matching records
         $countResponse = $client->count([
@@ -53,7 +53,7 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
                 'query' => [
                     'bool' => [
                         'must' => [
-                            ['match' => ['status' => 'pending']]
+                            ['match' => ['status' => 'completed']]
                         ],
                         'filter' => [
                             ['range' => ['updated_at' => ['lte' => $cutoffTime]]]
@@ -66,12 +66,12 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
         $totalRecords = $countResponse['count'] ?? 0;
         Log::info("Total matching records: " . $totalRecords);
 
-        if ($totalRecords <= 50) {
-            Log::info("Nothing to delete. 50 or fewer records found.");
+        if ($totalRecords <= 200) {
+            Log::info("Nothing to delete. 200 or fewer records found.");
             return;
         }
 
-        $recordsToDelete = $totalRecords - 50;
+        $recordsToDelete = $totalRecords - 200;
         Log::info("Preparing to delete " . $recordsToDelete . " records...");
 
         // Step 2: Search and delete using scroll
@@ -83,7 +83,7 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
                 'query' => [
                     'bool' => [
                         'must' => [
-                            ['match' => ['status' => 'pending']]
+                            ['match' => ['status' => 'completed']]
                         ],
                         'filter' => [
                             ['range' => ['updated_at' => ['lte' => $cutoffTime]]]
