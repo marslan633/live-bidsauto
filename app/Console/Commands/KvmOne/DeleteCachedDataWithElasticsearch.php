@@ -40,11 +40,11 @@ class DeleteCachedDataWithElasticsearch extends Command
      */
     public function handle()
     {
-        $this->info('Checking total pending records older than 30 minutes...');
+        Log::info('Checking total pending records older than 30 minutes...');
 
         $client = app('ElasticsearchKvmOne');
         $now = Carbon::now()->utc();
-        $cutoffTime = $now->subMinutes(30)->toDateTimeString(); // 30 mins ago
+        $cutoffTime = $now->subMinutes(10)->toDateTimeString(); // 30 mins ago
 
         // Step 1: Get total matching records
         $countResponse = $client->count([
@@ -64,15 +64,15 @@ class DeleteCachedDataWithElasticsearch extends Command
         ]);
 
         $totalRecords = $countResponse['count'] ?? 0;
-        $this->info("Total matching records: $totalRecords");
+        Log::info("Total matching records: ". $totalRecords);
 
-        if ($totalRecords <= 200) {
-            $this->info("Nothing to delete. 200 or fewer records found.");
+        if ($totalRecords <= 50) {
+            Log::info("Nothing to delete. 50 or fewer records found.");
             return;
         }
 
-        $recordsToDelete = $totalRecords - 200;
-        $this->info("Preparing to delete $recordsToDelete records...");
+        $recordsToDelete = $totalRecords - 50;
+        Log::info("Preparing to delete ".$recordsToDelete." records...");
 
         // Step 2: Search and delete only $recordsToDelete using scroll
         $params = [
@@ -125,7 +125,7 @@ class DeleteCachedDataWithElasticsearch extends Command
 
             if (!empty($deleteParams)) {
                 $bulkResponse = $client->bulk(['body' => $deleteParams]);
-                $this->info("Deleted " . count($deleteParams) . " documents.");
+                Log::info("Deleted " . count($deleteParams) . " documents.");
             }
 
             if ($deletedCount >= $recordsToDelete) break;
@@ -137,7 +137,7 @@ class DeleteCachedDataWithElasticsearch extends Command
 
         } while (!empty($response['hits']['hits']));
 
-        $this->info("Completed deletion. Total deleted: $deletedCount");
+        Log::info("Completed deletion. Total deleted: ". $deletedCount);
     }
 
 }

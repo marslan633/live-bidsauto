@@ -40,149 +40,105 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
      */
     public function handle()
     {
-        $this->info('Starting to delete pending records older than 30 to 60 minutes from vehicle_archived_api_data...');
+        Log::info('Checking total pending records older than 30 minutes in vehicle_archived_api_data...');
 
         $client = app('ElasticsearchKvmOne');
-
         $now = Carbon::now()->utc();
-        $startTime = $now->copy()->subMinutes(60)->toIso8601String(); // 60 mins ago
-        $endTime = $now->copy()->subMinutes(30)->toIso8601String();   // 30 mins ago
+        $cutoffTime = $now->subMinutes(30)->toDateTimeString();
 
-        Log::info('Checking records to delete', [
-            'start_time' => $startTime,
-            'end_time' => $endTime,
+        // Step 1: Get total matching records
+        $countResponse = $client->count([
+            'index' => 'vehicle_archived_api_data',
+            'body' => [
+                'query' => [
+                    'bool' => [
+                        'must' => [
+                            ['match' => ['status' => 'pending']]
+                        ],
+                        'filter' => [
+                            ['range' => ['updated_at' => ['lte' => $cutoffTime]]]
+                        ]
+                    ]
+                ]
+            ]
         ]);
 
-        try {
-            // Step 1: Count matching records
-            $countResponse = $client->count([
-                'index' => 'vehicle_archived_api_data',
-                'body' => [
-                    'query' => [
-                        'bool' => [
-                            'must' => [
-                                ['match' => ['status' => 'pending']]
-                            ],
-                            'filter' => [
-                                ['range' => [
-                                    'updated_at' => [
-                                        'gte' => $startTime,
-                                        'lte' => $endTime
-                                    ]
-                                ]]
-                            ]
+        $totalRecords = $countResponse['count'] ?? 0;
+        Log::info("Total matching records: " . $totalRecords);
+
+        if ($totalRecords <= 50) {
+            Log::info("Nothing to delete. 50 or fewer records found.");
+            return;
+        }
+
+        $recordsToDelete = $totalRecords - 50;
+        Log::info("Preparing to delete " . $recordsToDelete . " records...");
+
+        // Step 2: Search and delete using scroll
+        $params = [
+            'index' => 'vehicle_archived_api_data',
+            'scroll' => '1m',
+            'size' => 300,
+            'body' => [
+                'query' => [
+                    'bool' => [
+                        'must' => [
+                            ['match' => ['status' => 'pending']]
+                        ],
+                        'filter' => [
+                            ['range' => ['updated_at' => ['lte' => $cutoffTime]]]
                         ]
                     ]
+                ],
+                'sort' => [
+                    ['updated_at' => ['order' => 'asc']]
                 ]
-            ]);
+            ]
+        ];
 
-            $totalRecords = $countResponse['count'] ?? 0;
-            $this->info("Total records matching: $totalRecords");
+        $deletedCount = 0;
+        $response = $client->search($params);
+        $scrollId = $response['_scroll_id'] ?? null;
 
-            if ($totalRecords <= 200) {
-                $this->info("Nothing to delete. 200 or fewer records found.");
-                return;
+        do {
+            $hits = $response['hits']['hits'];
+
+            if (empty($hits)) {
+                break;
             }
 
-            $recordsToDelete = $totalRecords - 200;
-            $this->info("Preparing to delete $recordsToDelete records...");
+            $deleteParams = [];
 
-            // Step 2: Search matching documents
-            $params = [
-                'index' => 'vehicle_archived_api_data',
-                'scroll' => '1m',
-                'size' => 300,
-                'body' => [
-                    'query' => [
-                        'bool' => [
-                            'must' => [
-                                ['match' => ['status' => 'pending']]
-                            ],
-                            'filter' => [
-                                ['range' => [
-                                    'updated_at' => [
-                                        'gte' => $startTime,
-                                        'lte' => $endTime
-                                    ]
-                                ]]
-                            ]
-                        ]
-                    ],
-                    'sort' => [
-                        ['updated_at' => ['order' => 'asc']]
-                    ]
-                ]
-            ];
-
-            $deletedCount = 0;
-            $response = $client->search($params);
-            $scrollId = $response['_scroll_id'] ?? null;
-
-            do {
-                $hits = $response['hits']['hits'];
-
-                if (empty($hits)) break;
-
-                $deleteParams = [];
-
-                foreach ($hits as $hit) {
-                    if ($deletedCount >= $recordsToDelete) break;
-
-                    if (!empty($hit['_id'])) {
-                        $deleteParams[] = [
-                            'delete' => [
-                                '_index' => 'vehicle_archived_api_data',
-                                '_id' => $hit['_id']
-                            ]
-                        ];
-                        $deletedCount++;
-                    }
-                }
-
-                if (!empty($deleteParams)) {
-                    $bulkResponse = $client->bulk(['body' => $deleteParams]);
-
-                    if (isset($bulkResponse['errors']) && $bulkResponse['errors']) {
-                        $client->index([
-                            'index' => 'error_logs',
-                            'body' => [
-                                'server_name' => 'KVM4.1',
-                                'error_type' => 'Internal Server Error',
-                                'command_name' => 'process:delete-cached-archived-data-with-elasticsearch',
-                                'error' => 'Bulk delete errors: ' . json_encode($bulkResponse),
-                                'created_at' => now()->toIso8601String(),
-                                'updated_at' => now()->toIso8601String(),
-                            ],
-                        ]);
-                    } else {
-                        $this->info("Deleted " . count($deleteParams) . " records.");
-                    }
-                }
-
+            foreach ($hits as $hit) {
                 if ($deletedCount >= $recordsToDelete) break;
 
-                $response = $client->scroll([
-                    'scroll_id' => $scrollId,
-                    'scroll' => '1m'
-                ]);
+                if (isset($hit['_id'])) {
+                    $deleteParams[] = [
+                        'delete' => [
+                            '_index' => 'vehicle_archived_api_data',
+                            '_id' => $hit['_id']
+                        ]
+                    ];
+                    $deletedCount++;
+                }
+            }
 
-            } while (!empty($response['hits']['hits']));
+            if (!empty($deleteParams)) {
+                $bulkResponse = $client->bulk(['body' => $deleteParams]);
+                Log::info("Deleted " . count($deleteParams) . " documents.");
+            }
 
-            $this->info("Completed deletion. Total deleted: $deletedCount");
+            if ($deletedCount >= $recordsToDelete) break;
 
-        } catch (\Exception $e) {
-            $client->index([
-                'index' => 'error_logs',
-                'body' => [
-                    'server_name' => 'KVM4.1',
-                    'error_type' => 'Internal Server Error',
-                    'command_name' => 'process:delete-cached-archived-data-with-elasticsearch',
-                    'error' => 'Error deleting records: ' . json_encode($e->getMessage()),
-                    'created_at' => now()->toIso8601String(),
-                    'updated_at' => now()->toIso8601String(),
-                ],
+            $response = $client->scroll([
+                'scroll_id' => $scrollId,
+                'scroll' => '1m'
             ]);
-        }
+
+        } while (!empty($response['hits']['hits']));
+
+        Log::info("Completed deletion. Total deleted: " . $deletedCount);
     }
+
 
 }
