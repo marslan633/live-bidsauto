@@ -1,11 +1,12 @@
 <?php
+
 use Illuminate\Console\Scheduling\Schedule;
 
 if (config('app.app_kvm_one') === true) {
-     app(Schedule::class)->command('process:api-data-with-elasticsearch')->dailyAt('15:30')->withoutOverlapping();
+    app(Schedule::class)->command('process:api-data-with-elasticsearch')->dailyAt('15:30')->withoutOverlapping();
     //  app(Schedule::class)->command('process:api-data-with-elasticsearch')->cron('*/20 * * * *')->withoutOverlapping();
-     app(Schedule::class)->command('process:cached-data-with-elasticsearch')->everyFiveMinutes()->withoutOverlapping();
-     app(Schedule::class)->command('process:archived-data-with-elasticsearch')->hourly()->withoutOverlapping();
+    app(Schedule::class)->command('process:cached-data-with-elasticsearch')->everyFiveMinutes()->withoutOverlapping();
+    app(Schedule::class)->command('process:archived-data-with-elasticsearch')->hourly()->withoutOverlapping();
     app(Schedule::class)->command('process:delete-cached-data-with-elasticsearch')->everyThirtyMinutes()->withoutOverlapping();
     // app(Schedule::class)->command('process:delete-cached-archived-data-with-elasticsearch')->hourly()->withoutOverlapping();
 }

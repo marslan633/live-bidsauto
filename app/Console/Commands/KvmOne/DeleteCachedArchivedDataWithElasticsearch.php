@@ -40,83 +40,106 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
      */
     public function handle()
     {
-        $this->info('Starting to delete completed status records older than 30 minutes to 1 hour from vehicle_archived_api_data...');
+        $this->info('Starting to delete completed records older than 30 to 60 minutes from vehicle_archived_api_data...');
 
-        // Elasticsearch client
         $client = app('ElasticsearchKvmOne');
 
-        // Time range: 30 minutes ago to now
-        $now = Carbon::now()->utc(); // Ensure you're using UTC to match Elasticsearch
-        $startTime = $now->subMinutes(60)->toIso8601String(); // 30 minutes ago
+        $now = Carbon::now()->utc();
+        $startTime = $now->copy()->subMinutes(60)->toIso8601String(); // 60 mins ago
+        $endTime = $now->copy()->subMinutes(30)->toIso8601String();   // 30 mins ago
 
-        // Log the start time and current time for debugging purposes
-        Log::info('Deleting records with status "completed" between', [
+        Log::info('Checking records to delete', [
             'start_time' => $startTime,
-            'now' => $now->toIso8601String(),
+            'end_time' => $endTime,
         ]);
 
         try {
-            // Search for documents with status "completed" and within the time range
-            $params = [
+            // Step 1: Count matching records
+            $countResponse = $client->count([
                 'index' => 'vehicle_archived_api_data',
-                'scroll' => '1m', // Set scroll time context
-                'size' => 100, // Fetch 200 records at a time
                 'body' => [
                     'query' => [
                         'bool' => [
                             'must' => [
-                                [
-                                    'match' => [
-                                        'status' => 'completed'  // Filter by completed status
-                                    ]
-                                ]
+                                ['match' => ['status' => 'completed']]
                             ],
                             'filter' => [
-                                [
-                                    'range' => [
-                                        'updated_at' => [
-                                            'lte' => $startTime // Delete records older than 30 minutes
-                                        ]
+                                ['range' => [
+                                    'updated_at' => [
+                                        'gte' => $startTime,
+                                        'lte' => $endTime
                                     ]
-                                ]
+                                ]]
                             ]
                         ]
                     ]
                 ]
-            ];
+            ]);
 
-            // Perform search query
-            $response = $client->search($params);
-            Log::info('Elasticsearch response', ['response' => json_encode($response)]);
+            $totalRecords = $countResponse['count'] ?? 0;
+            $this->info("Total records matching: $totalRecords");
 
-            // Get the scroll ID from the response
-            $scrollId = $response['_scroll_id'] ?? null;
-            if (!$scrollId) {
-                $this->error('Scroll ID is missing in the response.');
+            if ($totalRecords <= 200) {
+                $this->info("Nothing to delete. 200 or fewer records found.");
                 return;
             }
 
-            // Continue scrolling and deleting until no more results are returned
+            $recordsToDelete = $totalRecords - 200;
+            $this->info("Preparing to delete $recordsToDelete records...");
+
+            // Step 2: Search matching documents
+            $params = [
+                'index' => 'vehicle_archived_api_data',
+                'scroll' => '1m',
+                'size' => 300,
+                'body' => [
+                    'query' => [
+                        'bool' => [
+                            'must' => [
+                                ['match' => ['status' => 'completed']]
+                            ],
+                            'filter' => [
+                                ['range' => [
+                                    'updated_at' => [
+                                        'gte' => $startTime,
+                                        'lte' => $endTime
+                                    ]
+                                ]]
+                            ]
+                        ]
+                    ],
+                    'sort' => [
+                        ['updated_at' => ['order' => 'asc']]
+                    ]
+                ]
+            ];
+
+            $deletedCount = 0;
+            $response = $client->search($params);
+            $scrollId = $response['_scroll_id'] ?? null;
+
             do {
                 $hits = $response['hits']['hits'];
 
-                if (count($hits) == 0) {
-                    break;
-                }
+                if (empty($hits)) break;
 
-                // Prepare delete operations
                 $deleteParams = [];
+
                 foreach ($hits as $hit) {
-                    $deleteParams[] = [
-                        'delete' => [
-                            '_index' => 'vehicle_archived_api_data',
-                            '_id' => $hit['_id']
-                        ]
-                    ];
+                    if ($deletedCount >= $recordsToDelete) break;
+
+                    if (!empty($hit['_id'])) {
+                        $deleteParams[] = [
+                            'delete' => [
+                                '_index' => 'vehicle_archived_api_data',
+                                '_id' => $hit['_id']
+                            ]
+                        ];
+                        $deletedCount++;
+                    }
                 }
 
-                  // Perform bulk delete
-                  if (!empty($deleteParams)) {
+                if (!empty($deleteParams)) {
                     $bulkResponse = $client->bulk(['body' => $deleteParams]);
 
                     if (isset($bulkResponse['errors']) && $bulkResponse['errors']) {
@@ -132,19 +155,20 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
                             ],
                         ]);
                     } else {
-                        $this->info('Successfully deleted ' . count($deleteParams) . ' records.');
+                        $this->info("Deleted " . count($deleteParams) . " records.");
                     }
                 }
 
-                // Fetch next batch of results using scroll
+                if ($deletedCount >= $recordsToDelete) break;
+
                 $response = $client->scroll([
                     'scroll_id' => $scrollId,
                     'scroll' => '1m'
                 ]);
 
-            } while (count($hits) > 0);
+            } while (!empty($response['hits']['hits']));
 
-            $this->info('Completed deleting records.');
+            $this->info("Completed deletion. Total deleted: $deletedCount");
 
         } catch (\Exception $e) {
             $client->index([
@@ -160,4 +184,5 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
             ]);
         }
     }
+
 }
