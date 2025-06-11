@@ -65,7 +65,7 @@ class ProcessArchivedDataWithElasticSearch extends Command
             if (!empty($lastCron['end_time'])) {
                 $endTime = Carbon::parse($lastCron['end_time']);
                 $timeDifference = max(0, $endTime->diffInMinutes(now()));
-                Log::info('Time Difference Active '. $timeDifference);
+                Log::info('Time Difference Archived '. $timeDifference);
                 if ($timeDifference > 30) {
                     $minutes = $timeDifference + 10;
                 } elseif ($timeDifference === 30) {
@@ -73,7 +73,7 @@ class ProcessArchivedDataWithElasticSearch extends Command
                 }
             }
         }
-        Log::info('Minutes '. $minutes);
+        Log::info('Minutes Archived '. $minutes);
 
         $params = [
             'index' => 'cron_run_histories',

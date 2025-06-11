@@ -60,7 +60,7 @@ class ProcessApiDataWithElasticSearch extends Command
             }
         }
 
-        Log::info('Minutes '. $minutes);
+        Log::info('Minutes Active '. $minutes);
 
         $params = [
             'index' => 'cron_run_histories',
