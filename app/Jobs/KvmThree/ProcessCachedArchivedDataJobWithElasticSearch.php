@@ -126,19 +126,19 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
             $vins = array_column($batchData, 'vin');
             $lotIds = array_column($batchData, 'lot_id');
 
-            // Fetch existing records by lot_id
+            // Fetch existing records by vin
             $existingRecords = DB::table('vehicle_records')
                 ->whereIn('vin', $vins)
                 ->select('id', 'lot_id', 'sale_date', 'vin', 'odometer_mi', 'seller_id', 'domain_id')
                 ->get()
                 ->keyBy('lot_id');
+            // Log::info('Vehicle Vin Records', ['existingRecords' => json_encode($existingRecords)]);
 
-            Log::info('Vehicle Vin Records', ['existingRecords' => json_encode($existingRecords)]);
             $existingSaleRecords = DB::table('sale_auction_histories')
                 ->whereIn('vin', $vins)
                 ->orderBy('created_at', 'desc')
                 ->pluck('id', 'lot_id');
-            Log::info('Vehicle Sale Records', ['existingSaleRecords' => json_encode($existingSaleRecords)]);
+            // Log::info('Vehicle Sale Records', ['existingSaleRecords' => json_encode($existingSaleRecords)]);
             // Separate new and update data
 
             $updatedRecords = [];
@@ -157,29 +157,41 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                         $updatedRecord = $record;
                         $updatedRecord['data_source'] = 2;
                         $updatedRecords[] = $updatedRecord;
-                    }
 
-                    if (isset($existingSaleRecords[$record['lot_id']]) && isset($existingRecords[$record['lot_id']])) {
-                        // Existing record - update full data
-                        // Check If Record Exists or not
-                        $checkExistingSaleAuctionHistoryRecord = DB::connection('mysql')->table('sale_auction_histories')->where([
-                            'vin' => $record['vin'],
-                            'lot_id' => $record['lot_id'],
-                            'sale_date' => $existingRecords[$record['lot_id']]->sale_date
-                        ])->first();
+                        if (isset($existingSaleRecords[$record['lot_id']]) && isset($existingRecords[$record['lot_id']])) {
+                            // Existing record - update full data
+                            // Check If Record Exists or not
+                            $checkExistingSaleAuctionHistoryRecord = DB::connection('mysql')->table('sale_auction_histories')->where([
+                                'vin' => $record['vin'],
+                                'lot_id' => $record['lot_id'],
+                                'sale_date' => $existingRecords[$record['lot_id']]->sale_date
+                            ])->first();
 
-                        if(!is_null($checkExistingSaleAuctionHistoryRecord)){
-                            $saleRecord = $record;
-                            // vin, bid, lot_id, status_id, final_bid_updated_at
-                            $saleRecord['id'] = $existingRecords[$record['lot_id']]->id;
-                            $saleRecord['sale_date'] = $existingRecords[$record['lot_id']]->sale_date;
-                            $saleRecord['odometer_mi'] = $existingRecords[$record['lot_id']]->odometer_mi;
-                            $saleRecord['seller_id'] = $existingRecords[$record['lot_id']]->seller_id;
-                            $saleRecord['updated_at'] = now();
-                            $updatedSaleRecords[] = $saleRecord;
-                        }else{
+                            if(!is_null($checkExistingSaleAuctionHistoryRecord)){
+                                $saleRecord = $record;
+                                // vin, bid, lot_id, status_id, final_bid_updated_at
+                                $saleRecord['id'] = $existingRecords[$record['lot_id']]->id;
+                                $saleRecord['sale_date'] = $existingRecords[$record['lot_id']]->sale_date;
+                                $saleRecord['odometer_mi'] = $existingRecords[$record['lot_id']]->odometer_mi;
+                                $saleRecord['seller_id'] = $existingRecords[$record['lot_id']]->seller_id;
+                                $saleRecord['updated_at'] = now();
+                                $updatedSaleRecords[] = $saleRecord;
+                            }else{
+                                $newSaleRecord = $record;
+                             // vin, bid, lot_id, status_id, final_bid_updated_at
+                                $newSaleRecord['sale_date'] = $existingRecords[$record['lot_id']]->sale_date;
+                                $newSaleRecord['odometer_mi'] = $existingRecords[$record['lot_id']]->odometer_mi;
+                                $newSaleRecord['domain_id'] = $existingRecords[$record['lot_id']]->domain_id;
+                                $newSaleRecord['seller_id'] = $existingRecords[$record['lot_id']]->seller_id;
+                                $newSaleRecord['created_at'] = now();
+                                $newSaleRecord['updated_at'] = now();
+                                unset($newSaleRecord['id']); // ✅ Prevent duplicate primary key
+                                Log::info('Sale Record 1', ['newSaleRecord' => json_encode($newSaleRecord)]);
+                                $newSaleRecords[] = $newSaleRecord;
+                            }
+                        }elseif(!isset($existingSaleRecords[$record['lot_id']]) && isset($existingRecords[$record['lot_id']])){
                             $newSaleRecord = $record;
-                         // vin, bid, lot_id, status_id, final_bid_updated_at
+                             // vin, bid, lot_id, status_id, final_bid_updated_at
                             $newSaleRecord['sale_date'] = $existingRecords[$record['lot_id']]->sale_date;
                             $newSaleRecord['odometer_mi'] = $existingRecords[$record['lot_id']]->odometer_mi;
                             $newSaleRecord['domain_id'] = $existingRecords[$record['lot_id']]->domain_id;
@@ -187,22 +199,12 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                             $newSaleRecord['created_at'] = now();
                             $newSaleRecord['updated_at'] = now();
                             unset($newSaleRecord['id']); // ✅ Prevent duplicate primary key
-                            Log::info('Sale Record 1', ['newSaleRecord' => json_encode($newSaleRecord)]);
+                            Log::info('Sale Record 2', ['newSaleRecord' => json_encode($newSaleRecord)]);
                             $newSaleRecords[] = $newSaleRecord;
                         }
-                    }elseif(!isset($existingSaleRecords[$record['lot_id']]) && isset($existingRecords[$record['lot_id']])){
-                        $newSaleRecord = $record;
-                         // vin, bid, lot_id, status_id, final_bid_updated_at
-                        $newSaleRecord['sale_date'] = $existingRecords[$record['lot_id']]->sale_date;
-                        $newSaleRecord['odometer_mi'] = $existingRecords[$record['lot_id']]->odometer_mi;
-                        $newSaleRecord['domain_id'] = $existingRecords[$record['lot_id']]->domain_id;
-                        $newSaleRecord['seller_id'] = $existingRecords[$record['lot_id']]->seller_id;
-                        $newSaleRecord['created_at'] = now();
-                        $newSaleRecord['updated_at'] = now();
-                        unset($newSaleRecord['id']); // ✅ Prevent duplicate primary key
-                        Log::info('Sale Record 2', ['newSaleRecord' => json_encode($newSaleRecord)]);
-                        $newSaleRecords[] = $newSaleRecord;
+
                     }
+
 
                 }catch (\Exception $e) {
                     $failedRecords[] = $record;
