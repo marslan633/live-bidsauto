@@ -21,7 +21,7 @@ class DeleteCachedDataWithElasticsearch extends Command
      *
      * @var string
      */
-    protected $description = 'Delete records with status "completed" and older than 30 minutes from Elasticsearch index "vehicle_process_cached_api_data"';
+    protected $description = 'Delete records with status "pending" and older than 30 minutes from Elasticsearch index "vehicle_process_cached_api_data"';
 
     /**
      * Create a new command instance.
@@ -40,7 +40,7 @@ class DeleteCachedDataWithElasticsearch extends Command
      */
     public function handle()
     {
-        $this->info('Checking total completed records older than 30 minutes...');
+        $this->info('Checking total pending records older than 30 minutes...');
 
         $client = app('ElasticsearchKvmOne');
         $now = Carbon::now()->utc();
@@ -53,7 +53,7 @@ class DeleteCachedDataWithElasticsearch extends Command
                 'query' => [
                     'bool' => [
                         'must' => [
-                            ['match' => ['status' => 'completed']]
+                            ['match' => ['status' => 'pending']]
                         ],
                         'filter' => [
                             ['range' => ['updated_at' => ['lte' => $cutoffTime]]]
@@ -83,7 +83,7 @@ class DeleteCachedDataWithElasticsearch extends Command
                 'query' => [
                     'bool' => [
                         'must' => [
-                            ['match' => ['status' => 'completed']]
+                            ['match' => ['status' => 'pending']]
                         ],
                         'filter' => [
                             ['range' => ['updated_at' => ['lte' => $cutoffTime]]]

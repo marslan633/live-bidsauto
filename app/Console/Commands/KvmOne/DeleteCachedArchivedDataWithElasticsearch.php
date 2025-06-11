@@ -21,7 +21,7 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
      *
      * @var string
      */
-    protected $description = 'Delete records with status "completed" from Elasticsearch index "vehicle_archived_api_data" older than 30 minutes to 1 hour ago';
+    protected $description = 'Delete records with status "pending" from Elasticsearch index "vehicle_archived_api_data" older than 30 minutes to 1 hour ago';
 
     /**
      * Create a new command instance.
@@ -40,7 +40,7 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
      */
     public function handle()
     {
-        $this->info('Starting to delete completed records older than 30 to 60 minutes from vehicle_archived_api_data...');
+        $this->info('Starting to delete pending records older than 30 to 60 minutes from vehicle_archived_api_data...');
 
         $client = app('ElasticsearchKvmOne');
 
@@ -61,7 +61,7 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
                     'query' => [
                         'bool' => [
                             'must' => [
-                                ['match' => ['status' => 'completed']]
+                                ['match' => ['status' => 'pending']]
                             ],
                             'filter' => [
                                 ['range' => [
@@ -96,7 +96,7 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
                     'query' => [
                         'bool' => [
                             'must' => [
-                                ['match' => ['status' => 'completed']]
+                                ['match' => ['status' => 'pending']]
                             ],
                             'filter' => [
                                 ['range' => [
