@@ -48,6 +48,104 @@ class SetupElasticsearchClassesKvmFour extends Command
                         'transmission_id' => ['type' => 'integer'],
                         'detailed_title_id' => ['type' => 'integer'],
                         'damage_id' => ['type' => 'integer'],
+                        // New Mappings
+                        'actual_cash_value' => ['type' => 'keyword'], // Before => long
+                        'airbags' => [
+                            'type' => 'text',
+                            'fields' => [
+                                'keyword' => [
+                                    'type' => 'keyword',
+                                    'ignore_above' => 256,
+                                ],
+                            ],
+                        ],
+                        'api_id' => ['type' => 'keyword'], // Before => long
+                        'body_type_id' => ['type' => 'keyword'], // Before => long
+                        'clean_wholesale_price' => ['type' => 'keyword'], // Before => long
+                        'color_id' => ['type' => 'keyword'], // Before => long
+                        'cylinders' => ['type' => 'keyword'], // Before => long
+                        'engine_id' => ['type' => 'keyword'], // Before => long
+                        'estimate_repair_price' => ['type' => 'keyword'], // Before => long
+                        'final_bid' => ['type' => 'keyword'], // Before => long
+                        'generation_id' => ['type' => 'keyword'], // Before => long
+                        'image_id' => ['type' => 'keyword'], // Before => long
+                        'is_new' => ['type' => 'keyword'], // Before => long
+                        'keys_available' => ['type' => 'keyword'], // Before => long
+                        'location_id' => ['type' => 'keyword'], // Before => long
+                        'odometer_id' => ['type' => 'keyword'], // Before => long
+                        'odometer_km' => ['type' => 'keyword'], // Before => long
+                        'salvage_id' => ['type' => 'keyword'], // Before => long
+                        'seller_id' => ['type' => 'keyword'], // Before => long
+                        'status_id' => ['type' => 'keyword'], // Before => long
+                        'vehicle_type_id' => ['type' => 'keyword'], // Before => long
+                        'year_id' => ['type' => 'keyword'], // Before => long
+                        'buy_now_updated_at' => ['type' => 'keyword'], // Before => date
+                        'final_bid_updated_at' => ['type' => 'keyword'], // Before => date
+                        'sale_date_updated_at' => ['type' => 'keyword'], // Before => date
+                        'bid_updated_at' => [
+                            'type' => 'text',
+                            'fields' => [
+                                'keyword' => [
+                                    'type' => 'keyword',
+                                    'ignore_above' => 256,
+                                ],
+                            ],
+                        ],
+                        'external_id' => [
+                            'type' => 'text',
+                            'fields' => [
+                                'keyword' => [
+                                    'type' => 'keyword',
+                                    'ignore_above' => 256,
+                                ],
+                            ],
+                        ],
+                        'grade_iaai' => [
+                            'type' => 'text',
+                            'fields' => [
+                                'keyword' => [
+                                    'type' => 'keyword',
+                                    'ignore_above' => 256,
+                                ],
+                            ],
+                        ],
+                        'odometer_status' => [
+                            'type' => 'text',
+                            'fields' => [
+                                'keyword' => [
+                                    'type' => 'keyword',
+                                    'ignore_above' => 256,
+                                ],
+                            ],
+                        ],
+                        'pre_accident_price' => [
+                            'type' => 'text',
+                            'fields' => [
+                                'keyword' => [
+                                    'type' => 'keyword',
+                                    'ignore_above' => 256,
+                                ],
+                            ],
+                        ],
+                        'processed_at' => [
+                            'type' => 'text',
+                            'fields' => [
+                                'keyword' => [
+                                    'type' => 'keyword',
+                                    'ignore_above' => 256,
+                                ],
+                            ],
+                        ],
+                        'title' => [
+                            'type' => 'text',
+                            'fields' => [
+                                'keyword' => [
+                                    'type' => 'keyword',
+                                    'ignore_above' => 256,
+                                ],
+                            ],
+                        ],
+
                     ],
                 ],
             ],
@@ -66,6 +164,7 @@ class SetupElasticsearchClassesKvmFour extends Command
                         'seller_id' => ['type' => 'integer'],
                         'created_at' => ['type' => 'keyword'],
                         'updated_at' => ['type' => 'keyword'],
+                        'data_source' => ['type' => 'keyword'] // Before long
                     ],
                 ],
             ],
