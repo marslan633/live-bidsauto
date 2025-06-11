@@ -434,7 +434,7 @@ function processLotData($lot)
         ];
 
     }
-    Log::info('Pre Accident Price', ['pre_accident_price' => $lot['pre_accident_price'] ?? null]);
+    // Log::info('Pre Accident Price', ['pre_accident_price' => $lot['pre_accident_price'] ?? null]);
 
     // Update Vehicle Record with Lot Information
     $lotConvertedData['salvage_id'] = $lot['id'] ?? null;
