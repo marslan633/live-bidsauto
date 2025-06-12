@@ -155,6 +155,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                         $updatedRecordIds[] = $record['lot_id'];
                         $record['updated_at'] = now();
                         $updatedRecord = $record;
+                        Log::info('Lot Id'. $record['id']);
                         $updatedRecord['data_source'] = 2;
                         Log::info('updatedRecord', ['updatedRecord' => json_encode($updatedRecord)]);
                         $updatedRecords[] = $updatedRecord;
