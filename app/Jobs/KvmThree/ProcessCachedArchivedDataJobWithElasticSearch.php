@@ -233,17 +233,15 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                     DB::table('vehicle_records')->where('id', $item_one['id'])->update($item_one);
                     Log::info('Vehcile Archived Record Updated ' . $item_one['id'], ['data' => json_encode($item_one)]);
                 }
-                // DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
-                // Log::info('Updated Records Ids', ['data' => json_encode($updatedRecordIds)]);
+            }else{
+                Log::info('updatedRecords empty' . count($updatedRecords));
             }
 
             if (!empty($updatedSaleRecords)) {
                 foreach($updatedSaleRecords as $item_two){
                     DB::table('sale_auction_histories')->where('id', $item_two['id'])->update($item_two);
-                    Log::info('Sale Record Updated ' . $item_one['id'], ['data' => json_encode($item_two)]);
+                    Log::info('Sale Record Updated ' . $item_two['id'], ['data' => json_encode($item_two)]);
                 }
-                // DB::table('sale_auction_histories')->where('id', $saleRecord[0]['id'])->update($saleRecord[0]);
-                // DB::table('sale_auction_histories')->upsert($saleRecord, ['id'], array_keys($saleRecord[0]));
             }
 
             if(!empty($newSaleRecords)){
