@@ -156,8 +156,8 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                         $record['updated_at'] = now();
                         $updatedRecord = $record;
                         $updatedRecord['data_source'] = 2;
+                        Log::info('updatedRecord', ['updatedRecord' => json_encode($updatedRecord)]);
                         $updatedRecords[] = $updatedRecord;
-                        Log::info('updatedRecords', ['updatedRecords' => json_encode($updatedRecords)]);
                         if (isset($existingSaleRecords[$record['lot_id']]) && isset($existingRecords[$record['lot_id']])) {
                             // Existing record - update full data
                             // Check If Record Exists or not
@@ -202,6 +202,8 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                             Log::info('Sale Record 2', ['newSaleRecord' => json_encode($newSaleRecord)]);
                             $newSaleRecords[] = $newSaleRecord;
                         }
+                    }else{
+                        Log::info('Lot Id not set');
                     }
 
 
@@ -221,10 +223,11 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                     ]);
                 }
             }
+            Log::info('updatedRecords', ['updatedRecords' => json_encode($updatedRecords)]);
+
             // ✅ Bulk Update Existing Records
             if (!empty($updatedRecords)) {
                 Log::info('Not Empty');
-                Log::info('updatedSaleRecords', ['updatedSaleRecords' => json_encode($updatedSaleRecords)]);
                 foreach($updatedRecords as $item_one){
                     DB::table('vehicle_records')->where('id', $item_one['id'])->update($item_one);
                     Log::info('Vehcile Archived Record Updated ' . $item_one['id'], ['data' => json_encode($item_one)]);
