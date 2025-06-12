@@ -148,14 +148,16 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
             $newSaleRecords = [];
             foreach ($batchData as $record) {
                 try{
+                    Log::info('Lot Record', ['record' => json_encode($record)]);
+                    Log::info('Lot Id'. $record['lot_id']);
 
                     if (isset($existingRecords[$record['lot_id']])) {
                         // Existing record - update full data
                         $record['id'] = $existingRecords[$record['lot_id']]->id;
+                        Log::info('Record Id'. $record['id']);
                         $updatedRecordIds[] = $record['lot_id'];
                         $record['updated_at'] = now();
                         $updatedRecord = $record;
-                        Log::info('Lot Id'. $record['id']);
                         $updatedRecord['data_source'] = 2;
                         Log::info('updatedRecord', ['updatedRecord' => json_encode($updatedRecord)]);
                         $updatedRecords[] = $updatedRecord;
@@ -224,6 +226,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                     ]);
                 }
             }
+
             Log::info('updatedRecords', ['updatedRecords' => json_encode($updatedRecords)]);
 
             // ✅ Bulk Update Existing Records
