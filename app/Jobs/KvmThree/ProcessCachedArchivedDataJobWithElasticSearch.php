@@ -157,7 +157,6 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                         $updatedRecord = $record;
                         $updatedRecord['data_source'] = 2;
                         $updatedRecords[] = $updatedRecord;
-
                         if (isset($existingSaleRecords[$record['lot_id']]) && isset($existingRecords[$record['lot_id']])) {
                             // Existing record - update full data
                             // Check If Record Exists or not
@@ -202,8 +201,8 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                             Log::info('Sale Record 2', ['newSaleRecord' => json_encode($newSaleRecord)]);
                             $newSaleRecords[] = $newSaleRecord;
                         }
-
                     }
+
 
 
                 }catch (\Exception $e) {
@@ -227,18 +226,19 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                 // Log::info('updatedSaleRecords', ['updatedSaleRecords' => json_encode($updatedSaleRecords)]);
                 foreach($updatedRecords as $item_one){
                     DB::table('vehicle_records')->where('id', $item_one['id'])->update($item_one);
+                    Log::info('Vehcile Archived Record Updated ' . $item_one['id'], ['data' => json_encode($item_one)]);
                 }
                 // DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
-                Log::info('Updated Records Ids', ['data' => json_encode($updatedRecordIds)]);
+                // Log::info('Updated Records Ids', ['data' => json_encode($updatedRecordIds)]);
             }
 
             if (!empty($updatedSaleRecords)) {
                 foreach($updatedSaleRecords as $item_two){
                     DB::table('sale_auction_histories')->where('id', $item_two['id'])->update($item_two);
+                    Log::info('Sale Record Updated ' . $item_one['id'], ['data' => json_encode($item_two)]);
                 }
                 // DB::table('sale_auction_histories')->where('id', $saleRecord[0]['id'])->update($saleRecord[0]);
                 // DB::table('sale_auction_histories')->upsert($saleRecord, ['id'], array_keys($saleRecord[0]));
-                Log::info('Updated Records Sale Ids', ['data' => json_encode($updatedRecordIds)]);
             }
 
             if(!empty($newSaleRecords)){

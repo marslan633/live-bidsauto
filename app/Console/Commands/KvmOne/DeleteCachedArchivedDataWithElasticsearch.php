@@ -44,7 +44,7 @@ class DeleteCachedArchivedDataWithElasticsearch extends Command
 
         $client = app('ElasticsearchKvmOne');
         $now = Carbon::now()->utc();
-        $cutoffTime = $now->subMinutes(60)->toDateTimeString();
+        $cutoffTime = $now->subMinutes(60)->toIso8601String();
 
         // Step 1: Get total matching records
         $countResponse = $client->count([

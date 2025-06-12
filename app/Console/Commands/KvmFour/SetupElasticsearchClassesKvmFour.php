@@ -49,7 +49,7 @@ class SetupElasticsearchClassesKvmFour extends Command
                         'detailed_title_id' => ['type' => 'integer'],
                         'damage_id' => ['type' => 'integer'],
                         // New Mappings
-                        'actual_cash_value' => ['type' => 'keyword'], // Before => long
+                        'actual_cash_value' => ['type' => 'keyword'],
                         'airbags' => [
                             'type' => 'text',
                             'fields' => [
@@ -59,26 +59,26 @@ class SetupElasticsearchClassesKvmFour extends Command
                                 ],
                             ],
                         ],
-                        'api_id' => ['type' => 'keyword'], // Before => long
-                        'body_type_id' => ['type' => 'keyword'], // Before => long
-                        'clean_wholesale_price' => ['type' => 'keyword'], // Before => long
-                        'color_id' => ['type' => 'keyword'], // Before => long
-                        'cylinders' => ['type' => 'keyword'], // Before => long
-                        'engine_id' => ['type' => 'keyword'], // Before => long
-                        'estimate_repair_price' => ['type' => 'keyword'], // Before => long
-                        'final_bid' => ['type' => 'keyword'], // Before => long
-                        'generation_id' => ['type' => 'keyword'], // Before => long
-                        'image_id' => ['type' => 'keyword'], // Before => long
-                        'is_new' => ['type' => 'keyword'], // Before => long
-                        'keys_available' => ['type' => 'keyword'], // Before => long
-                        'location_id' => ['type' => 'keyword'], // Before => long
-                        'odometer_id' => ['type' => 'keyword'], // Before => long
-                        'odometer_km' => ['type' => 'keyword'], // Before => long
-                        'salvage_id' => ['type' => 'keyword'], // Before => long
-                        'seller_id' => ['type' => 'keyword'], // Before => long
-                        'status_id' => ['type' => 'keyword'], // Before => long
-                        'vehicle_type_id' => ['type' => 'keyword'], // Before => long
-                        'year_id' => ['type' => 'keyword'], // Before => long
+                        'api_id' => ['type' => 'long'],
+                        'body_type_id' => ['type' => 'long'],
+                        'clean_wholesale_price' => ['type' => 'long'],
+                        'color_id' => ['type' => 'long'],
+                        'cylinders' => ['type' => 'long'],
+                        'engine_id' => ['type' => 'long'],
+                        'estimate_repair_price' => ['type' => 'long'],
+                        'final_bid' => ['type' => 'long'],
+                        'generation_id' => ['type' => 'long'],
+                        'image_id' => ['type' => 'long'],
+                        'is_new' => ['type' => 'long'],
+                        'keys_available' => ['type' => 'long'],
+                        'location_id' => ['type' => 'long'],
+                        'odometer_id' => ['type' => 'long'],
+                        'odometer_km' => ['type' => 'long'],
+                        'salvage_id' => ['type' => 'long'],
+                        'seller_id' => ['type' => 'long'],
+                        'status_id' => ['type' => 'long'],
+                        'vehicle_type_id' => ['type' => 'long'],
+                        'year_id' => ['type' => 'long'],
                         'buy_now_updated_at' => ['type' => 'keyword'], // Before => date
                         'final_bid_updated_at' => ['type' => 'keyword'], // Before => date
                         'sale_date_updated_at' => ['type' => 'keyword'], // Before => date
