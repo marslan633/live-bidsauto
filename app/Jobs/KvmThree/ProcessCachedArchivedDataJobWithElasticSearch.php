@@ -171,7 +171,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                         if (!is_null($checkExistingSaleAuctionHistoryRecord)) {
                             $saleRecord = $record;
                             // vin, bid, lot_id, status_id, final_bid_updated_at
-                            $saleRecord['id'] = $existingSaleRecords[$record['lot_id']];
+                            $saleRecord['id'] = $checkExistingSaleAuctionHistoryRecord->id;
                             $saleRecord['sale_date'] = $existingRecords[$record['lot_id']]->sale_date;
                             $saleRecord['odometer_mi'] = $existingRecords[$record['lot_id']]->odometer_mi;
                             $saleRecord['seller_id'] = $existingRecords[$record['lot_id']]->seller_id;
