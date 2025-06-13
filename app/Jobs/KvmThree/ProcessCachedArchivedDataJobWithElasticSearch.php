@@ -130,12 +130,11 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                 ->select('id', 'lot_id', 'sale_date', 'vin', 'odometer_mi', 'seller_id', 'domain_id')
                 ->get()
                 ->keyBy('lot_id');
-            Log::info('Vehicle Vin Records', ['existingRecords' => json_encode($existingRecords)]);
+
 
             $existingSaleRecords = DB::table('sale_auction_histories')
                 ->whereIn('vin', $vins)
                 ->pluck('id', 'lot_id');
-            Log::info('Vehicle Sale Records', ['existingSaleRecords' => json_encode($existingSaleRecords)]);
             // Separate new and update data
 
             $updatedRecords = [];
@@ -150,12 +149,10 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                     if (isset($existingRecords[$record['lot_id']])) {
                         // Existing record - update full data
                         $record['id'] = $existingRecords[$record['lot_id']]->id;
-                        Log::info('Updated Record Id '. $record['id']);
                         $updatedRecordIds[] = $record['lot_id'];
                         $record['updated_at'] = now();
                         $updatedRecord = $record;
                         $updatedRecord['data_source'] = 2;
-                        Log::info('updatedRecord ' . ++$key, ['updatedRecord' => json_encode($updatedRecord)]);
                         $updatedRecords[] = $updatedRecord;
                     }
 
@@ -236,8 +233,8 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
             }
 
             if (!empty($newSaleRecords)) {
-                Log::info('New Sale Record', ['newSaleRecords' => json_encode($newSaleRecords)]);
                 DB::table('sale_auction_histories')->insert($newSaleRecords);
+                Log::info('New Sale Record', ['newSaleRecords' => json_encode($newSaleRecords)]);
             }
 
             try {
