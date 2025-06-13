@@ -54,13 +54,13 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
 
             foreach ($data as $car) {
                 $preparedData = $this->prepareArchivedData((array) $car);
-                if($preparedData){
+                if ($preparedData) {
                     $batchData[] = $preparedData;
                 }
             }
 
-             // Process batch when the limit is reached
-             if (count($batchData) > 0) {
+            // Process batch when the limit is reached
+            if (count($batchData) > 0) {
                 Log::info('Batch Start Insert');
                 $this->insertBatch($batchData);
                 Log::info('Batch End Insert');
@@ -69,8 +69,6 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
 
             // Log success and remove cache
             Log::info("Data for cache key '{$this->cacheKey->_id}' processed successfully.");
-
-
         } catch (\Exception $e) {
             // Log any errors encountered during processing
             $client->index([
@@ -84,7 +82,6 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                     'updated_at' => now()->toIso8601String(),
                 ],
             ]);
-
         }
     }
 
@@ -113,6 +110,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
 
     private function insertBatch(array $batchData)
     {
+
         $client = app('ElasticsearchKvmOne');
 
         try {
@@ -132,12 +130,9 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                 ->select('id', 'lot_id', 'sale_date', 'vin', 'odometer_mi', 'seller_id', 'domain_id')
                 ->get()
                 ->keyBy('lot_id');
+            Log::info('Vehicle Vin Records', ['existingRecords' => json_encode($existingRecords)]);
 
-            $existingSaleRecords = DB::table('sale_auction_histories')
-                ->whereIn('vin', $vins)
-                ->orderBy('created_at', 'desc')
-                ->pluck('id', 'lot_id');
-            Log::info('Vehicle Sale Records', ['existingSaleRecords' => json_encode($existingSaleRecords)]);
+
             // Separate new and update data
 
             $updatedRecords = [];
@@ -145,70 +140,23 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
             $failedRecords = []; // ❌ Store records that failed
             $updatedSaleRecords = [];
             $newSaleRecords = [];
-            foreach ($batchData as $record) {
-                try{
-                    Log::info('Lot Id'. $record['lot_id']);
-                    Log::info('Lot Record', ['record' => json_encode($record)]);
+            foreach ($batchData as $key => $record) {
+                Log::info('Api Record ' . ++$key, ['record' => json_encode($record)]);
+                try {
 
                     if (isset($existingRecords[$record['lot_id']])) {
                         // Existing record - update full data
                         $record['id'] = $existingRecords[$record['lot_id']]->id;
-                        Log::info('Record Id'. $record['id']);
                         $updatedRecordIds[] = $record['lot_id'];
                         $record['updated_at'] = now();
                         $updatedRecord = $record;
                         $updatedRecord['data_source'] = 2;
-                        Log::info('updatedRecord', ['updatedRecord' => json_encode($updatedRecord)]);
+                        Log::info('updatedRecord ' . ++$key, ['updatedRecord' => json_encode($updatedRecord)]);
                         $updatedRecords[] = $updatedRecord;
-
-                    }else{
-                        Log::info('Lot Id not set');
                     }
 
-                    if (isset($existingSaleRecords[$record['lot_id']]) && isset($existingRecords[$record['lot_id']])) {
-                        // Existing record - update full data
-                        // Check If Record Exists or not
-                        $checkExistingSaleAuctionHistoryRecord = DB::connection('mysql')->table('sale_auction_histories')->where([
-                            'vin' => $record['vin'],
-                            'lot_id' => $record['lot_id'],
-                            'sale_date' => $existingRecords[$record['lot_id']]->sale_date
-                        ])->first();
 
-                        if(!is_null($checkExistingSaleAuctionHistoryRecord)){
-                            $saleRecord = $record;
-                            // vin, bid, lot_id, status_id, final_bid_updated_at
-                            $saleRecord['id'] = $existingRecords[$record['lot_id']]->id;
-                            $saleRecord['sale_date'] = $existingRecords[$record['lot_id']]->sale_date;
-                            $saleRecord['odometer_mi'] = $existingRecords[$record['lot_id']]->odometer_mi;
-                            $saleRecord['seller_id'] = $existingRecords[$record['lot_id']]->seller_id;
-                            $saleRecord['updated_at'] = now();
-                            $updatedSaleRecords[] = $saleRecord;
-                        }else{
-                            $newSaleRecord = $record;
-                            // vin, bid, lot_id, status_id, final_bid_updated_at
-                            $newSaleRecord['sale_date'] = $existingRecords[$record['lot_id']]->sale_date;
-                            $newSaleRecord['odometer_mi'] = $existingRecords[$record['lot_id']]->odometer_mi;
-                            $newSaleRecord['domain_id'] = $existingRecords[$record['lot_id']]->domain_id;
-                            $newSaleRecord['seller_id'] = $existingRecords[$record['lot_id']]->seller_id;
-                            $newSaleRecord['created_at'] = now();
-                            $newSaleRecord['updated_at'] = now();
-                            unset($newSaleRecord['id']); // ✅ Prevent duplicate primary key
-                            $newSaleRecords[] = $newSaleRecord;
-                        }
-                    }elseif(!isset($existingSaleRecords[$record['lot_id']]) && isset($existingRecords[$record['lot_id']])){
-                        $newSaleRecord = $record;
-                         // vin, bid, lot_id, status_id, final_bid_updated_at
-                        $newSaleRecord['sale_date'] = $existingRecords[$record['lot_id']]->sale_date;
-                        $newSaleRecord['odometer_mi'] = $existingRecords[$record['lot_id']]->odometer_mi;
-                        $newSaleRecord['domain_id'] = $existingRecords[$record['lot_id']]->domain_id;
-                        $newSaleRecord['seller_id'] = $existingRecords[$record['lot_id']]->seller_id;
-                        $newSaleRecord['created_at'] = now();
-                        $newSaleRecord['updated_at'] = now();
-                        unset($newSaleRecord['id']); // ✅ Prevent duplicate primary key
-                        $newSaleRecords[] = $newSaleRecord;
-                    }
-
-                }catch (\Exception $e) {
+                } catch (\Exception $e) {
                     $failedRecords[] = $record;
                     $client->index([
                         'index' => 'error_logs',
@@ -224,32 +172,20 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                 }
             }
 
-            Log::info('updatedRecords', ['updatedRecords' => json_encode($updatedRecords)]);
 
             // ✅ Bulk Update Existing Records
             if (!empty($updatedRecords)) {
                 Log::info('Not Empty');
-                foreach($updatedRecords as $item_one){
+                foreach ($updatedRecords as $item_one) {
                     DB::table('vehicle_records')->where('id', $item_one['id'])->update($item_one);
                     Log::info('Vehcile Archived Record Updated ' . $item_one['id'], ['data' => json_encode($item_one)]);
                 }
-            }else{
+            } else {
                 Log::info('updatedRecords empty' . count($updatedRecords));
             }
 
-            if (!empty($updatedSaleRecords)) {
-                foreach($updatedSaleRecords as $item_two){
-                    DB::table('sale_auction_histories')->where('id', $item_two['id'])->update($item_two);
-                    Log::info('Sale Record Updated ' . $item_two['id'], ['data' => json_encode($item_two)]);
-                }
-            }
 
-            if(!empty($newSaleRecords)){
-                Log::info('New Sale Record', ['newSaleRecords' => json_encode($newSaleRecords)]);
-                DB::table('sale_auction_histories')->insert($newSaleRecords);
-            }
-
-            try{
+            try {
 
                 $response = $client->exists([
                     'index' => 'vehicle_archived_api_data',
@@ -257,7 +193,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                 ]);
 
                 if ($response) {
-                    try{
+                    try {
                         $client->update([
                             'index' => 'vehicle_archived_api_data',
                             'id' => $this->cacheKey->_id,
@@ -268,7 +204,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                             ]
                         ]);
                         Log::info("✅ Elasticsearch Processed document status updated for _id: " . $this->cacheKey->_id);
-                    }  catch (\Throwable $e) {
+                    } catch (\Throwable $e) {
                         $client->index([
                             'index' => 'error_logs',
                             'body' => [
@@ -294,7 +230,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                         ],
                     ]);
                 }
-            }catch (\Throwable $e) {
+            } catch (\Throwable $e) {
                 $client->index([
                     'index' => 'error_logs',
                     'body' => [
@@ -308,8 +244,6 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                 ]);
             }
 
-
-            Log::info('Vehicle Process Cached Api Data Delete');
             Log::info("Batch processed successfully with " . count($updatedRecords) . " updated records.");
         } catch (\Exception $e) {
             // DB::rollBack();
