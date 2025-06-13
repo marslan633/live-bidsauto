@@ -712,7 +712,7 @@ class VehicleController extends Controller
                                 'vin' => $record['vin']
                             ]
                         ],
-                        'size' => 10  // Adjust size if needed
+                        // 'size' => 10  // Adjust size if needed
                     ]
                 ];
 

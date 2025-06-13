@@ -217,7 +217,6 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                 }
             }
 
-
             // ✅ Bulk Update Existing Records
             if (!empty($updatedRecords)) {
                 Log::info('Not Empty');
