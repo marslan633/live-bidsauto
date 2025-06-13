@@ -44,7 +44,7 @@ class ProcessApiDataWithElasticSearch extends Command
 
         $hits = $response['hits']['hits'];
 
-        $minutes = 700;
+        $minutes = 25;
 
         if (!empty($hits)) {
             $lastCron = $hits[0]['_source'];
