@@ -77,7 +77,7 @@ class ProcessCachedDataToDatabasesWithElasticSearch extends Command
             // Fetch data from Elasticsearch index
             $response = $clientkvmOne->search([
                 'index' => 'vehicle_process_cached_api_data',
-                'size' => 100, // Number of records to return
+                'size' => 150, // Number of records to return
                 'sort' => [
                     'created_at:desc' // Sort by created_at in descending order
                 ],
