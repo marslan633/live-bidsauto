@@ -663,7 +663,6 @@ class VehicleController extends Controller
             $client = app('ElasticsearchKvmFour');
 
             // Debug Log: Check Index
-            // Log::info('Search Index: ', ['index' => $index]);
 
             $must = [['term' => ['data_source' => $dataSourceValue]]];
             // Base query for vehicle records
@@ -687,7 +686,6 @@ class VehicleController extends Controller
             }
 
             // Debug Log: Search Query
-            // Log::info('Search Query: ', ['query' => $query]);
 
             // Execute the main search query
             $response = $client->search($query);
