@@ -1408,20 +1408,30 @@ class VehicleController extends Controller
     {
         try {
             // Query the VehicleRecord model and filter by sale_date
+            // $vehicleRecords = VehicleRecord::selectRaw("
+            //     COUNT(CASE WHEN sale_date IS NOT NULL THEN 1 END) as sale_records,
+            //     COUNT(CASE WHEN sale_date IS NULL THEN 1 END) as no_sale_records,
+            //     MAX(updated_at) as latest_update_time_utc
+            // ")
+            // ->where('data_source', 1)
+            // ->first();
+
+
             $vehicleRecords = VehicleRecord::selectRaw("
-                COUNT(CASE WHEN sale_date IS NOT NULL THEN 1 END) as sale_records,
+                COUNT(CASE WHEN sale_date >= ? THEN 1 END) as sale_records,
                 COUNT(CASE WHEN sale_date IS NULL THEN 1 END) as no_sale_records,
                 MAX(updated_at) as latest_update_time_utc
-            ")
+            ", [Carbon::now()->toDateString()])
             ->where('data_source', 1)
             ->first();
 
             $vehicleRecordArchiveds = VehicleRecord::where('data_source', 2)->count();
-
+            $saleAuctionHistories = DB::table('sale_auction_histories')->count();
             // Prepare data for response
             $data = [
                 'sale_records' => $vehicleRecords->sale_records,
                 'no_sale_records' => $vehicleRecords->no_sale_records,
+                'sale_auction_histories' => $saleAuctionHistories,
                 'archived_vehicle_record' => $vehicleRecordArchiveds,
                 'latest_update_time_utc' => $vehicleRecords->latest_update_time_utc,
             ];
