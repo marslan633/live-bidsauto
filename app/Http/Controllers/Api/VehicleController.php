@@ -1414,14 +1414,14 @@ class VehicleController extends Controller
             // ->where('data_source', 1)
             // ->first();
 
-
             $vehicleRecords = VehicleRecord::selectRaw("
-                COUNT(CASE WHEN sale_date >= ? THEN 1 END) as sale_records,
+                COUNT(CASE WHEN DATE_FORMAT(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), '%Y-%m-%d %H:%i') <= ? THEN 1 END) as sale_records,
                 COUNT(CASE WHEN sale_date IS NULL THEN 1 END) as no_sale_records,
                 MAX(updated_at) as latest_update_time_utc
-            ", [Carbon::now()->toDateString()])
+            ", [now()->format('Y-m-d H:i')])
             ->where('data_source', 1)
             ->first();
+
 
             $vehicleRecordArchiveds = VehicleRecord::where('data_source', 2)->count();
             $saleAuctionHistories = DB::table('sale_auction_histories')->count();

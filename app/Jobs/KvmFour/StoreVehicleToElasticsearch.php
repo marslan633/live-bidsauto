@@ -10,6 +10,7 @@ use Illuminate\Queue\SerializesModels;
 use Elasticsearch\ClientBuilder;
 use Illuminate\Support\Facades\Log;
 use App\Models\VehicleRecord;
+use Carbon\Carbon;
 
 class StoreVehicleToElasticsearch implements ShouldQueue
 {
@@ -63,7 +64,18 @@ class StoreVehicleToElasticsearch implements ShouldQueue
             Log::info('Indexing Vehicle', ['vehicle_id' => $vehicle->id]);
 
             // Including all relationships in the vehicle data
-            $vehicleData = $vehicle->toArray();
+            if ($vehicle->data_source == 1) {
+                // Convert sale_date to a Carbon instance
+                $saleDate = Carbon::parse($vehicle->sale_date);
+
+                // Check if sale_date is greater than or equal to the current date and time
+                if ($saleDate >= now()) {
+                    $vehicleData = $vehicle->toArray();
+                }
+            } elseif ($vehicle->data_source == 2) {
+                // Handle the second condition for data source 2
+                $vehicleData = $vehicle->toArray();
+            }
 
             // $bulkData[] = [
             //     'index' => [
