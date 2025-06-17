@@ -160,3 +160,15 @@ Route::get('/test-archived-dates', function(Request $request){
     ]);
 
 });
+
+
+Route::get('/test-sale-date', function(Request $request){
+      // Convert sale_date to a Carbon instance
+      $saleDate = Carbon::parse($request->sale_date);
+
+      // Check if sale_date is greater than or equal to the current date and time
+      if ($saleDate >= now()) {
+          return 'Active';
+        }
+    return 'Expired';
+});

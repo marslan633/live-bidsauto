@@ -46,6 +46,11 @@ class ProcessApiDataWithElasticSearch extends Command
 
         $minutes = 25;
 
+
+        // End Time From Cron Run History
+        // Current Time
+        // Get Hours with tell hour if odd or even
+
         if (!empty($hits)) {
             $lastCron = $hits[0]['_source'];
             if (!empty($lastCron['end_time'])) {
