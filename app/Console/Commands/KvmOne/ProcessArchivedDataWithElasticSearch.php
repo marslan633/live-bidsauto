@@ -142,6 +142,7 @@ class ProcessArchivedDataWithElasticSearch extends Command
 
 
                             foreach($chunk as $item){
+                                $item = (object) $item;
                                 $insertLotData = [
                                     'lot_id' => $item->lot,
                                     'vin' => $item->vin,

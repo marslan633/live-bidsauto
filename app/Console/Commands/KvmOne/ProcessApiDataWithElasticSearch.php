@@ -143,6 +143,7 @@ class ProcessApiDataWithElasticSearch extends Command
                         // Insert lots
                         $lotsParams = ['body' => []];
                         foreach ($chunk as $item) {
+                            $item = (object) $item;
                             $lotsParams['body'][] = [
                                 'index' => [
                                     '_index' => 'lots_by_carstat',
