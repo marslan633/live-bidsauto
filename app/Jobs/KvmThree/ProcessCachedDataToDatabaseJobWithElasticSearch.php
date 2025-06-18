@@ -105,7 +105,6 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 return;
             }
 
-
             // Extract API IDs from batchData
             $lotIds = array_column($batchData, 'lot_id');
 
@@ -159,9 +158,69 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             // ✅ Bulk Update Existing Records
             if (!empty($updatedRecords)) {
                 foreach ($updatedRecords as $item) {
+                    // Database Record
                     DB::table('vehicle_records')->where('id', $item['id'])->update($item);
+                    $getVehicleRecord = DB::table('vehicle_records')->where('id', $item['id'])->first();
+
+                    if(!is_null($getVehicleRecord)){
+                        $checkRecordSaleDate = Carbon::parse($getVehicleRecord->sale_date);
+                        $currentSaleDate = Carbon::parse($item['sale_date']);
+
+
+                        // Condition 1: Sale Date Matched AND data_source = 2 update the record | update or create auction history
+                        // Condition 2: Sale Date Not Macthed And Status != 3 And data_source = 2 update or create auction history
+                        // Condition 3: Sale Date Not Macthed And Status == 3(sale) Active and Update
+
+                        if($checkRecordSaleDate == $currentSaleDate && $checkRecordSaleDate->data_source == 2){
+                            Log::info('Contion 1', ['record' => json_encode($item)]);
+
+                            // DB::table('vehicle_records')->where('id', $getVehicleRecord->id)->update($item);
+                        }elseif($checkRecordSaleDate != $currentSaleDate && $checkRecordSaleDate->status_id != 3 && $checkRecordSaleDate->data_source == 2){
+                            Log::info('Contion 2', ['record' => json_encode($item)]);
+                            // DB::table('vehicle_records')->where('id', $getVehicleRecord->id)->update($item);
+                        }elseif($checkRecordSaleDate != $currentSaleDate && $checkRecordSaleDate->status_id == 3){
+                            Log::info('Contion 3', ['record' => json_encode($item)]);
+                            // $item['data_source'] = 1;
+                            // DB::table('vehicle_records')->where('id', $getVehicleRecord->id)->update($item);
+                        }
+
+
+                        if(($checkRecordSaleDate == $currentSaleDate && $checkRecordSaleDate->data_source == 2)
+                        || ($checkRecordSaleDate != $currentSaleDate && $checkRecordSaleDate->status_id != 3 && $checkRecordSaleDate->data_source == 2)){
+                                $saleAuctionRecord = DB::table('sale_auction_histories')
+                                ->where([
+                                    'vin' => $item['vin'],
+                                    'lot_id' => $item['lot_id'],
+                                    'sale_date' => $item['sale_date'],
+                                ])->first();
+                                $saleData = [
+                                    'vin' => $item['vin'],
+                                    'domain_id' => $item['domain_id'],
+                                    'sale_date' => $item['sale_date'],
+                                    'lot_id' => $item['lot_id'],
+                                    'bid' => $item['bid'],
+                                    'odometer_mi' => $item['odometer_mi'],
+                                    'status_id' => $item['status_id'],
+                                    'seller_id' => $item['seller_id'],
+                                    'created_at' => now(),
+                                    'updated_at' => now()
+                                ];
+                                if($saleAuctionRecord){
+                                    unset($saleData['created_at']);
+                                    // DB::connection('mysql')
+                                    //     ->table('sale_auction_histories')
+                                    //     ->where('id', $saleAuctionRecord->id)
+                                    //     ->update($saleData);
+                                    Log::info('Sale Auctio History Record Updadted', ['record' => json_encode($saleAuctionRecord)]);
+                                }else{
+                                    // DB::table('sale_auction_histories')->insert($saleData);
+                                    Log::info('Sale Auctio History Record Created', ['record' => json_encode($saleData)]);
+                                }
+                        }
+
+
+                    }
                 }
-                // DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
             }
         } catch (\Throwable $e) {
             $clientkvmOne->index([
