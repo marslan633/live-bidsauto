@@ -158,6 +158,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             // ✅ Bulk Update Existing Records
             if (!empty($updatedRecords)) {
                 foreach ($updatedRecords as $item) {
+                    Log::info('item', ['item' => json_encode($item)]);
                     // Database Record
                     DB::table('vehicle_records')->where('id', $item['id'])->update($item);
                     $getVehicleRecord = DB::table('vehicle_records')->where('id', $item['id'])->first();
