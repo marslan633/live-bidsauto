@@ -15,6 +15,57 @@ class SetupElasticsearchClassesKvmOne extends Command
         $client = app('ElasticsearchKvmOne');
 
         $indices = [
+            'lots_archived_by_carstat' => [
+                'mappings' => [
+                    'properties' => [
+                        'lot_id' => ['type' => 'keyword'],
+                        'vin' => ['type' => 'keyword'],
+                        'bid' => ['type' => 'keyword'],
+                        'final_bid_updated_at' => ['type' => 'keyword'],
+                        'status' => ['type' => 'keyword'],
+                        'created_at' => [
+                            'type' => 'date',
+                            'format' => 'yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis'
+                        ],
+                        'updated_at' => [
+                            'type' => 'date',
+                            'format' => 'yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis'
+                        ]                    ]
+                ]
+            ],
+
+            'lots_by_carstat' => [
+                'mappings' => [
+                    'properties' => [
+                        'lot_id' => ['type' => 'keyword'],
+                        'vin' => ['type' => 'keyword'],
+                        'bid' => ['type' => 'keyword'],
+                        'bid_updated_at' => ['type' => 'keyword'],
+                        'buy_now' => ['type' => 'keyword'],
+                        'buy_now_updated_at' => ['type' => 'keyword'],
+                        'final_bid' => ['type' => 'keyword'],
+                        'final_bid_updated_at' => ['type' => 'keyword'],
+                        'status' => ['type' => 'keyword'],
+                        'carstat_created_at' => [
+                            'type' => 'date',
+                            'format' => 'strict_date_optional_time||yyyy-MM-dd\'T\'HH:mm:ss.SSSSSSZ||epoch_millis'
+                        ],
+                        'carstat_updated_at' => [
+                            'type' => 'date',
+                            'format' => 'strict_date_optional_time||yyyy-MM-dd\'T\'HH:mm:ss.SSSSSSZ||epoch_millis'
+                        ],
+                        'created_at' => [
+                            'type' => 'date',
+                            'format' => 'yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis'
+                        ],
+                        'updated_at' => [
+                            'type' => 'date',
+                            'format' => 'yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis'
+                        ],
+                    ]
+                ]
+            ],
+
             'vehicle_api_data' => [
                 'mappings' => [
                     'properties' => [

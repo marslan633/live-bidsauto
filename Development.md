@@ -1,60 +1,31 @@
-// $existingSaleRecords = DB::table('sale_auction_histories')
-            //     ->whereIn('vin', $vins)
-            //     ->orderBy('created_at', 'desc')
-            //     ->pluck('id', 'lot_id');
-            // Log::info('Vehicle Sale Records', ['existingSaleRecords' => json_encode($existingSaleRecords)]); 
- 
-  if (isset($existingSaleRecords[$record['lot_id']]) && isset($existingRecords[$record['lot_id']])) {
-                        // Existing record - update full data
-                        // Check If Record Exists or not
-                        $checkExistingSaleAuctionHistoryRecord = DB::connection('mysql')->table('sale_auction_histories')->where([
-                            'vin' => $record['vin'],
-                            'lot_id' => $record['lot_id'],
-                            'sale_date' => $existingRecords[$record['lot_id']]->sale_date
-                        ])->first();
+$minutes = 25;
 
-                        if (!is_null($checkExistingSaleAuctionHistoryRecord)) {
-                            $saleRecord = $record;
-                            // vin, bid, lot_id, status_id, final_bid_updated_at
-                            $saleRecord['id'] = $existingRecords[$record['lot_id']]->id;
-                            $saleRecord['sale_date'] = $existingRecords[$record['lot_id']]->sale_date;
-                            $saleRecord['odometer_mi'] = $existingRecords[$record['lot_id']]->odometer_mi;
-                            $saleRecord['seller_id'] = $existingRecords[$record['lot_id']]->seller_id;
-                            $saleRecord['updated_at'] = now();
-                            $updatedSaleRecords[] = $saleRecord;
-                        } else {
-                            $newSaleRecord = $record;
-                            // vin, bid, lot_id, status_id, final_bid_updated_at
-                            $newSaleRecord['sale_date'] = $existingRecords[$record['lot_id']]->sale_date;
-                            $newSaleRecord['odometer_mi'] = $existingRecords[$record['lot_id']]->odometer_mi;
-                            $newSaleRecord['domain_id'] = $existingRecords[$record['lot_id']]->domain_id;
-                            $newSaleRecord['seller_id'] = $existingRecords[$record['lot_id']]->seller_id;
-                            $newSaleRecord['created_at'] = now();
-                            $newSaleRecord['updated_at'] = now();
-                            unset($newSaleRecord['id']); // ✅ Prevent duplicate primary key
-                            $newSaleRecords[] = $newSaleRecord;
-                        }
-                    } elseif (!isset($existingSaleRecords[$record['lot_id']]) && isset($existingRecords[$record['lot_id']])) {
-                        $newSaleRecord = $record;
-                        // vin, bid, lot_id, status_id, final_bid_updated_at
-                        $newSaleRecord['sale_date'] = $existingRecords[$record['lot_id']]->sale_date;
-                        $newSaleRecord['odometer_mi'] = $existingRecords[$record['lot_id']]->odometer_mi;
-                        $newSaleRecord['domain_id'] = $existingRecords[$record['lot_id']]->domain_id;
-                        $newSaleRecord['seller_id'] = $existingRecords[$record['lot_id']]->seller_id;
-                        $newSaleRecord['created_at'] = now();
-                        $newSaleRecord['updated_at'] = now();
-                        unset($newSaleRecord['id']); // ✅ Prevent duplicate primary key
-                        $newSaleRecords[] = $newSaleRecord;
-                    }
+if (!empty($hits)) {
+    $lastCron = $hits[0]['_source'];
+    if (!empty($lastCron['end_time'])) {
+        $endTime = Carbon::parse($lastCron['end_time']);
+        $timeDifference = max(0, $endTime->diffInMinutes(now()));
+        Log::info('Time Difference Active '. $timeDifference);
+        if ($timeDifference > 25) {
+            $minutes = $timeDifference + 10;
+        } elseif ($timeDifference === 25) {
+            $minutes = $timeDifference + 5;
+        }
+    }
+}
 
-    if (!empty($updatedSaleRecords)) {
-                foreach ($updatedSaleRecords as $item_two) {
-                    DB::table('sale_auction_histories')->where('id', $item_two['id'])->update($item_two);
-                    Log::info('Sale Record Updated ' . $item_two['id'], ['data' => json_encode($item_two)]);
-                }
-            }
+// Get the current hour
+$currentHour = now()->hour;
 
-            if (!empty($newSaleRecords)) {
-                Log::info('New Sale Record', ['newSaleRecords' => json_encode($newSaleRecords)]);
-                DB::table('sale_auction_histories')->insert($newSaleRecords);
-            }
+// Check if the current hour is one of the specific hours (0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22)
+if (in_array($currentHour, range(0, 24, 2))) {
+    Log::info('Current time is an even hour: ' . $currentHour);
+    // Print something for even hours like 0, 2, 4, 6, etc.
+} else {
+    $currentMinute = now()->minute;
+    // Check if it's 0:30, 1:00, 1:30, etc.
+    if (($currentMinute == 30) || ($currentHour == 0 && $currentMinute == 0)) {
+        Log::info('Current time is 0:30, 1:00, 1:30, etc.');
+        // Print something else for these times
+    }
+}

@@ -46,11 +46,6 @@ class ProcessApiDataWithElasticSearch extends Command
 
         $minutes = 25;
 
-
-        // End Time From Cron Run History
-        // Current Time
-        // Get Hours with tell hour if odd or even
-
         if (!empty($hits)) {
             $lastCron = $hits[0]['_source'];
             if (!empty($lastCron['end_time'])) {
@@ -145,6 +140,44 @@ class ProcessApiDataWithElasticSearch extends Command
                         ];
 
                         $client->bulk($params);
+
+                        // Insert lots
+                        $lotsParams = ['body' => []];
+                        foreach ($chunk as $item) {
+                            $lotsParams['body'][] = [
+                                'index' => [
+                                    '_index' => 'lots_by_carstat',
+                                ]
+                            ];
+
+                            $lotsParams['body'][] = [
+                                'lot_id' => $item->lots[0]->lot ?? null,
+                                'vin' => $item->vin,
+                                'bid' => $item->bid,
+                                'bid_updated_at' => $item->bid_updated_at,
+                                'buy_now' => $item->buy_now,
+                                'buy_now_updated_at' => $item->buy_now_updated_at,
+                                'final_bid' => $item->final_bid,
+                                'final_bid_updated_at' => $item->final_bid_updated_at,
+                                'status' => $item->status->name ?? null,
+                                'carstat_created_at' => $item->created_at,
+                                'carstat_updated_at' => $item->updated_at,
+                                'created_at' => $now->format('Y-m-d H:i:s'),
+                                'updated_at' => $now->format('Y-m-d H:i:s')
+                            ];
+                        }
+
+                        if (!empty($lotsParams['body'])) {
+                            try {
+                                $client->bulk($lotsParams);
+                            } catch (\Exception $e) {
+                                Log::info('Failed to bulk insert into lots_by_carstat', [
+                                    'error' => $e->getMessage(),
+                                    'trace' => $e->getTraceAsString()
+                                ]);
+                            }
+                        }
+
                     });
 
                 }

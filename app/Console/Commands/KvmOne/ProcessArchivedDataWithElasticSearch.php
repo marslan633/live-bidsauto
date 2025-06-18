@@ -140,6 +140,30 @@ class ProcessArchivedDataWithElasticSearch extends Command
                                 'body'  => $insertData
                             ]);
 
+
+                            foreach($chunk as $item){
+                                $insertLotData = [
+                                    'lot_id' => $item->lot,
+                                    'vin' => $item->vin,
+                                    'bid' => $item->bid,
+                                    'final_bid_updated_at' => $item->final_bid_updated_at,
+                                    'status' => $item->status->name ?? null,
+                                    'created_at' => now()->format('Y-m-d H:i:s'),
+                                    'updated_at' => now()->format('Y-m-d H:i:s')
+                                ];
+
+                                try {
+                                    $client->index([
+                                        'index' => 'lots_archived_by_carstat',
+                                        'body'  => $insertLotData
+                                    ]);
+                                } catch (\Exception $e) {
+                                    Log::info('Error inserting lot lots_archived_by_carstat', [
+                                        'lot_id' => $item->lot ?? null,
+                                        'error' => $e->getMessage()
+                                    ]);
+                                }
+                            }
                         });
 
                         // Log::info('Stored Cached Data', ['total_records' => count($data)]);
