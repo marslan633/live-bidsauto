@@ -151,8 +151,8 @@ class ProcessApiDataWithElasticSearch extends Command
                             ];
 
                             $lotsParams['body'][] = [
-                                'lot_id' => $item->lots[0]->lot,
                                 'vin' => $item->vin,
+                                'lot_id' => $item->lots[0]->lot,
                                 'bid' => $item->lots[0]->bid,
                                 'bid_updated_at' => $item->lots[0]->bid_updated_at,
                                 'buy_now' => $item->lots[0]->buy_now,
