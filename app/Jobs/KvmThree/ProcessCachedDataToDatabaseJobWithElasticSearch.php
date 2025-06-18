@@ -176,7 +176,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                             Log::info('Condition 1', ['record' => json_encode($item)]);
 
                             // DB::table('vehicle_records')->where('id', $getVehicleRecord->id)->update($item);
-                        }elseif($checkRecordSaleDate != $currentSaleDate && $getVehicleRecord->status_id != 3 && $checkRecordSaleDate->data_source == 2){
+                        }elseif($checkRecordSaleDate != $currentSaleDate && $getVehicleRecord->status_id != 3 && $getVehicleRecord->data_source == 2){
                             Log::info('Condition 2', ['record' => json_encode($item)]);
                             // DB::table('vehicle_records')->where('id', $getVehicleRecord->id)->update($item);
                         }elseif($checkRecordSaleDate != $currentSaleDate && $getVehicleRecord->status_id == 3){
