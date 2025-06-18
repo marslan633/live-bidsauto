@@ -144,10 +144,10 @@ class ProcessArchivedDataWithElasticSearch extends Command
                             foreach($chunk as $item){
                                 $item = (object) $item;
                                 $insertLotData = [
-                                    'lot_id' => $item->lot,
-                                    'vin' => $item->vin,
-                                    'bid' => $item->bid,
-                                    'final_bid_updated_at' => $item->final_bid_updated_at,
+                                    'lot_id' => $item->lot ?? null,
+                                    'vin' => $item->vin ?? null,
+                                    'bid' => $item->bid ?? null,
+                                    'final_bid_updated_at' => $item->final_bid_updated_at ?? null,
                                     'status' => $item->status->name ?? null,
                                     'created_at' => now()->format('Y-m-d H:i:s'),
                                     'updated_at' => now()->format('Y-m-d H:i:s')

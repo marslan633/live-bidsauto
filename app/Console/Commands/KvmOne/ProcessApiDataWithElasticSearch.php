@@ -151,17 +151,17 @@ class ProcessApiDataWithElasticSearch extends Command
                             ];
 
                             $lotsParams['body'][] = [
-                                'vin' => $item->vin,
-                                'lot_id' => $item->lots[0]['lot'],
-                                'bid' => $item->lots[0]['bid'],
-                                'bid_updated_at' => $item->lots[0]['bid_updated_at'],
-                                'buy_now' => $item->lots[0]['buy_now'],
-                                'buy_now_updated_at' => $item->lots[0]['buy_now_updated_at'],
-                                'final_bid' => $item->lots[0]['final_bid'],
-                                'final_bid_updated_at' => $item->lots[0]['final_bid_updated_at'],
-                                'status' => $item->lots[0]['status']['name'],
-                                'carstat_created_at' => $item->lots[0]['created_at'],
-                                'carstat_updated_at' => $item->lots[0]['updated_at'],
+                                'vin' => $item->vin ?? null,
+                                'lot_id' => $item->lots[0]['lot'] ?? null,
+                                'bid' => $item->lots[0]['bid'] ?? null,
+                                'bid_updated_at' => $item->lots[0]['bid_updated_at'] ?? null,
+                                'buy_now' => $item->lots[0]['buy_now'] ?? null,
+                                'buy_now_updated_at' => $item->lots[0]['buy_now_updated_at'] ?? null,
+                                'final_bid' => $item->lots[0]['final_bid'] ?? null,
+                                'final_bid_updated_at' => $item->lots[0]['final_bid_updated_at'] ?? null,
+                                'status' => isset($item->lots[0]['status']['name']) ? $item->lots[0]['status']['name'] : null,
+                                'carstat_created_at' => $item->lots[0]['created_at'] ?? null,
+                                'carstat_updated_at' => $item->lots[0]['updated_at'] ?? null,
                                 'created_at' => $now->format('Y-m-d H:i:s'),
                                 'updated_at' => $now->format('Y-m-d H:i:s')
                             ];
