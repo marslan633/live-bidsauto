@@ -35,6 +35,7 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
         Log::info('Archived Expired Job Handle Function Calling');
         $client = app('ElasticsearchKvmOne');
         foreach($this->records as $record){
+                $record = (array) $record;
                 try {
                 $now = Carbon::now();
                 $saleDate = Carbon::parse($record['sale_date']);
