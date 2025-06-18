@@ -164,7 +164,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
 
                     if(!is_null($getVehicleRecord)){
                         $checkRecordSaleDate = Carbon::parse($getVehicleRecord->sale_date);
-                        $currentSaleDate = Carbon::parse($item['sale_date']);
+                        $currentSaleDate = $item['sale_date'];
 
 
                         // Condition 1: Sale Date Matched AND data_source = 2 update the record | update or create auction history
