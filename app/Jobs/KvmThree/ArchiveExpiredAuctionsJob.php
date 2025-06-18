@@ -47,11 +47,14 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
                     //     'data_source' => 2,
                     //     'updated_at' => $now
                     // ]);
+
                     Log::info('Expired and Status Sale Record Updadted', ['record' => json_encode([
                         'id' => $record['id'],
                         'status_id' => 7,
                         'data_source' => 2,
-                        'updated_at' => $now
+                        'updated_at' => $now,
+                        'lot_id' => $record['lot_id'],
+                        'sale_date' => $record['sale_date']
                     ])]);
                 }elseif($saleDate > now() && $record['status_id'] != 3){
                     // DB::table('vehicle_records')->where('id', $record['id'])->update([
@@ -61,7 +64,9 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
                     Log::info('Active and Status Not Sale Record Updadted', ['record' => json_encode([
                         'id' => $record['id'],
                         'data_source' => 2,
-                        'updated_at' => $now
+                        'updated_at' => $now,
+                        'lot_id' => $record['lot_id'],
+                        'sale_date' => $record['sale_date']
                     ])]);
                 }
 
