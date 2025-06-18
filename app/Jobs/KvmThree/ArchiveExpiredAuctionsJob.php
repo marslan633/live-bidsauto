@@ -96,7 +96,7 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
                     Log::info('Sale Auctio History Record Updadted', ['record' => json_encode($saleAuctionRecord)]);
                 }else{
                     // DB::table('sale_auction_histories')->insert($saleData);
-                    Log::info('Sale Auctio History Record Created', ['record' => json_encode($saleAuctionRecord)]);
+                    Log::info('Sale Auctio History Record Created', ['record' => json_encode($saleData)]);
                 }
             } catch (\Exception $e) {
                 $client->index([
