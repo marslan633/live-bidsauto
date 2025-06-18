@@ -44,7 +44,7 @@ class ProcessApiDataWithElasticSearch extends Command
 
         $hits = $response['hits']['hits'];
 
-        $minutes = 25;
+        $minutes = 45;
 
         if (!empty($hits)) {
             $lastCron = $hits[0]['_source'];
@@ -52,14 +52,13 @@ class ProcessApiDataWithElasticSearch extends Command
                 $endTime = Carbon::parse($lastCron['end_time']);
                 $timeDifference = max(0, $endTime->diffInMinutes(now()));
                 Log::info('Time Difference Active '. $timeDifference);
-                if ($timeDifference > 25) {
+                if ($timeDifference > 45) {
                     $minutes = $timeDifference + 10;
-                } elseif ($timeDifference === 25) {
+                } elseif ($timeDifference === 45) {
                     $minutes = $timeDifference + 5;
                 }
             }
         }
-
         Log::info('Minutes Active '. $minutes);
 
         $params = [
