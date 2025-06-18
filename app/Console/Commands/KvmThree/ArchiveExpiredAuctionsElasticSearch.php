@@ -86,16 +86,11 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
 
             $totalArchived = 0;
             DB::table('vehicle_records')
-            ->whereRaw(
-                "DATE_FORMAT(DATE_ADD(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), INTERVAL 28 HOUR), '%Y-%m-%d %H:%i') <= ?",
-                [now()->format('Y-m-d H:i')]
-            )
-            ->orderBy('created_at') // Required for Laravel 11 chunking
+            ->where('data_source', 1)
+            ->limit(50)
+            ->orderBy('created_at', 'asc')
             ->chunk($batchSize, function ($expiredRecords) use (&$totalArchived) {
-                foreach ($expiredRecords as $record) {
-                    Log::info('Expired Archived Record', ['record', json_encode($record)]);
-                   ArchiveExpiredAuctionsJob::dispatch($record->id);
-                }
+                   ArchiveExpiredAuctionsJob::dispatch($expiredRecords->toArray());
                 $totalArchived += count($expiredRecords);
             });
 

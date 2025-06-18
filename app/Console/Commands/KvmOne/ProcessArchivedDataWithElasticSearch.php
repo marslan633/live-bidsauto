@@ -65,7 +65,7 @@ class ProcessArchivedDataWithElasticSearch extends Command
             if (!empty($lastCron['end_time'])) {
                 $endTime = Carbon::parse($lastCron['end_time']);
                 $timeDifference = max(0, $endTime->diffInMinutes(now()));
-                Log::info('Time Difference Archived '. $timeDifference);
+                Log::info('Time Difference Archived ' . $timeDifference);
                 if ($timeDifference > 60) {
                     $minutes = $timeDifference + 10;
                 } elseif ($timeDifference === 60) {
@@ -73,7 +73,7 @@ class ProcessArchivedDataWithElasticSearch extends Command
                 }
             }
         }
-        Log::info('Minutes Archived '. $minutes);
+        Log::info('Minutes Archived ' . $minutes);
 
         $params = [
             'index' => 'cron_run_histories',
@@ -106,10 +106,10 @@ class ProcessArchivedDataWithElasticSearch extends Command
                 $response = Http::withHeaders([
                     'x-api-key' => config('app.car_api_key'),
                 ])
-                ->timeout(120)
-                ->retry(3, 1000)
-                ->get($apiUrl);
-                if(config('app.env') !== 'production'){
+                    ->timeout(120)
+                    ->retry(3, 1000)
+                    ->get($apiUrl);
+                if (config('app.env') !== 'production') {
                     Log::info("API URL: {$apiUrl}");
                 }
                 if ($response->successful()) {
@@ -125,7 +125,7 @@ class ProcessArchivedDataWithElasticSearch extends Command
                             // Prepare the chunk for insertion
                             $client = app('ElasticsearchKvmOne');
 
-                             // Prepare the chunk as one document
+                            // Prepare the chunk as one document
                             $insertData = [
                                 'cache_value' => compressData($chunk->toArray()),
                                 'created_at'  => now()->toIso8601String(),
@@ -141,7 +141,7 @@ class ProcessArchivedDataWithElasticSearch extends Command
                             ]);
 
 
-                            foreach($chunk as $item){
+                            foreach ($chunk as $item) {
                                 $item = (object) $item;
                                 $insertLotData = [
                                     'lot_id' => $item->lot ?? null,
@@ -261,6 +261,5 @@ class ProcessArchivedDataWithElasticSearch extends Command
             $adminEmails = explode(',', env('ADMIN_EMAIL'));
             Mail::to($adminEmails)->send(new CronJobFailedMail($e->getMessage(), $cronJobName));
         }
-
     }
 }

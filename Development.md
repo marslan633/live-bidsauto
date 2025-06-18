@@ -29,3 +29,9 @@ if (in_array($currentHour, range(0, 24, 2))) {
         // Print something else for these times
     }
 }
+
+
+->whereRaw(
+                "DATE_FORMAT(DATE_ADD(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), INTERVAL 28 HOUR), '%Y-%m-%d %H:%i') <= ?",
+                [now()->format('Y-m-d H:i')]
+            )
