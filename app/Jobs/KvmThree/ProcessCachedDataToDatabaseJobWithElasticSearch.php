@@ -211,10 +211,10 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                                     //     ->table('sale_auction_histories')
                                     //     ->where('id', $saleAuctionRecord->id)
                                     //     ->update($saleData);
-                                    Log::info('Sale Auctio History Record Updadted', ['record' => json_encode($saleAuctionRecord)]);
+                                    Log::info('Sale Auctio History Record Updadted Active', ['record' => json_encode($saleAuctionRecord)]);
                                 }else{
                                     // DB::table('sale_auction_histories')->insert($saleData);
-                                    Log::info('Sale Auctio History Record Created', ['record' => json_encode($saleData)]);
+                                    Log::info('Sale Auctio History Record Created Active', ['record' => json_encode($saleData)]);
                                 }
                         }
 
