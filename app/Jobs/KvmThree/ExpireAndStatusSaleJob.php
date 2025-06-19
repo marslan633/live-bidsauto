@@ -22,7 +22,7 @@ class ExpireAndStatusSaleJob implements ShouldQueue
      */
     public function __construct($records)
     {
-        $this->queue = 'exipre_and_status_sale_queue';
+        $this->queue = 'expire_and_status_sale_queue';
         $this->records = $records;
     }
 
