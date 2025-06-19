@@ -39,9 +39,9 @@ class ActiveAndStatusNotSaleJob implements ShouldQueue
         $updatedVehicleRecordsData = [];
         $updatedSaleData = [];
         $newSaleData = [];
-        foreach($this->records as $record){
+        try {
+            foreach($this->records as $record){
                 $record = (array) $record;
-                try {
                 $now = Carbon::now();
                     $updatedVehicleRecordsData[] = [
                         'id' => $record['id'],
@@ -86,22 +86,22 @@ class ActiveAndStatusNotSaleJob implements ShouldQueue
                     $newSaleData[] = $saleData;
                     Log::info('ActiveAndStatusNotSaleJob Sale Auctio History Record Created', ['record' => json_encode($saleData)]);
                 }
-                DB::table('vehicle_records')->upsert($updatedVehicleRecordsData,['id']);
-                DB::table('sale_auction_histories')->upsert($updatedSaleData,['id']);
-                DB::table('sale_auction_histories')->insert($newSaleData);
-            } catch (\Exception $e) {
-                $client->index([
-                    'index' => 'error_logs',
-                    'body' => [
-                        'server_name' => 'KVM4.3',
-                        'error_type' => 'Internal Server Error',
-                        'command_name' => 'active_and_status_not_sale_queue',
-                        'error' => "Error processing auction record VIN: {$record['vin']} - ". json_encode($e->getMessage()) ,
-                        'created_at' => now()->toIso8601String(),
-                        'updated_at' => now()->toIso8601String(),
-                    ],
-                ]);
             }
-            }
+            DB::table('vehicle_records')->upsert($updatedVehicleRecordsData,['id']);
+            DB::table('sale_auction_histories')->upsert($updatedSaleData,['id']);
+            DB::table('sale_auction_histories')->insert($newSaleData);
+        } catch (\Exception $e) {
+            $client->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.3',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'active_and_status_not_sale_queue',
+                    'error' => "Error processing auction record VIN: {$record['vin']} - ". json_encode($e->getMessage()) ,
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
+        }
     }
 }
