@@ -42,11 +42,11 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
                 if($saleDate < now() && $record['status_id'] == 3){
                     $record['status_id'] = 7;
                     $record['data_source'] = 2;
-                    // DB::table('vehicle_records')->where('id', $record['id'])->update([
-                    //     'status_id' => 7,
-                    //     'data_source' => 2,
-                    //     'updated_at' => $now
-                    // ]);
+                    DB::table('vehicle_records')->where('id', $record['id'])->update([
+                        'status_id' => 7,
+                        'data_source' => 2,
+                        'updated_at' => $now
+                    ]);
 
                     Log::info('Expired and Status Sale Record Updadted', ['record' => json_encode([
                         'id' => $record['id'],
@@ -57,10 +57,10 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
                         'sale_date' => $record['sale_date']
                     ])]);
                 }elseif($saleDate > now() && $record['status_id'] != 3){
-                    // DB::table('vehicle_records')->where('id', $record['id'])->update([
-                    //     'data_source' => 2,
-                    //     'updated_at' => $now
-                    // ]);
+                    DB::table('vehicle_records')->where('id', $record['id'])->update([
+                        'data_source' => 2,
+                        'updated_at' => $now
+                    ]);
                     Log::info('Active and Status Not Sale Record Updadted', ['record' => json_encode([
                         'id' => $record['id'],
                         'data_source' => 2,
@@ -94,13 +94,13 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
                 ];
                 if($saleAuctionRecord){
                     unset($saleData['created_at']);
-                    // DB::connection('mysql')
-                    //     ->table('sale_auction_histories')
-                    //     ->where('id', $saleAuctionRecord->id)
-                    //     ->update($saleData);
+                    DB::connection('mysql')
+                        ->table('sale_auction_histories')
+                        ->where('id', $saleAuctionRecord->id)
+                        ->update($saleData);
                     Log::info('Sale Auctio History Record Updadted', ['record' => json_encode($saleAuctionRecord)]);
                 }else{
-                    // DB::table('sale_auction_histories')->insert($saleData);
+                    DB::table('sale_auction_histories')->insert($saleData);
                     Log::info('Sale Auctio History Record Created', ['record' => json_encode($saleData)]);
                 }
             } catch (\Exception $e) {
