@@ -16,7 +16,7 @@ if (config('app.app_kvm_three') === true) {
     // app(Schedule::class)->command('process:process-cached-data-to-databases-with-elasticsearch')->everyTenMinutes()->withoutOverlapping();
     // app(Schedule::class)->command('process:cached-archived-data-to-database-with-elasticsearch')->cron('*/22 * * * *')->withoutOverlapping();
 
-    //app(Schedule::class)->command('process:expire-and-status-sale-with-elasticsearch')->everyFifteenMinutes()->withoutOverlapping();
+    //app(Schedule::class)->command('process:expire-and-status-sale-with-elasticsearch')->everyFiveMinutes()->withoutOverlapping();
 
    // app(Schedule::class)->command('process:active-and-status-not-sale-with-elasticsearch')->everyFifteenMinutes()->withoutOverlapping();
 }
