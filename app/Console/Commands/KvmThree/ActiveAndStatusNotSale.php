@@ -2,27 +2,23 @@
 
 namespace App\Console\Commands\KvmThree;
 
-use App\Jobs\KvmThree\ArchiveExpiredAuctionsJob;
+use App\Jobs\KvmThree\ActiveAndStatusNotSaleJob;
 use Illuminate\Console\Command;
+
+use App\Jobs\KvmThree\ExipreAndStatusSaleJob;
 use App\Models\VehicleRecord;
-use App\Models\VehicleRecordArchived;
-use App\Models\SaleAuctionHistory;
 use Illuminate\Support\Facades\Log;
 use Exception;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\CronJobFailedMail;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 
-class ArchiveExpiredAuctionsElasticSearch extends Command
+class ActiveAndStatusNotSale extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'process:expired-auction-archive-with-elasticsearch';
+    protected $signature = 'process:active-and-status-not-sale-with-elasticsearch';
 
     /**
      * The console command description.
@@ -49,7 +45,7 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
                     'query' => [
                         'bool' => [
                             'must' => [
-                                ['term' => ['cron_name' => 'process_auction_archive']],
+                                ['term' => ['cron_name' => 'process_active_status_not_sale']],
                                 ['term' => ['status' => 'success']]
                             ]
                         ]
@@ -87,7 +83,7 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
             $params = [
                 'index' => 'cron_run_histories',
                 'body'  => [
-                    'cron_name'   => 'process_auction_archive',
+                    'cron_name'   => 'process_active_status_not_sale',
                     'start_time'  => $startDateTime->toIso8601String(),
                     'status'      => 'running',
                     'created_at'  => now()->toIso8601String(),
@@ -107,7 +103,7 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
                     'body' => [
                         'server_name' => 'KVM4.3',
                         'error_type' => 'Internal Server Error',
-                        'command_name' => 'process:expired-auction-archive-with-elasticsearch',
+                        'command_name' => 'process:exipre-and-status-sale-with-elasticsearch',
                         'error' => 'Error: PROCESS AUCTION ARCHIVED DATA TO DATABASE CREATED',
                         'created_at' => now()->toIso8601String(),
                         'updated_at' => now()->toIso8601String(),
@@ -126,15 +122,18 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
 
             $totalArchived = 0;
             $query = VehicleRecord::query();
-            $query->where('data_source', 1);
+            $query->where('data_source', 1)->where('status', '!=', 3)->whereRaw(
+                "DATE_FORMAT(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), '%Y-%m-%d %H:%i') > ?",
+                [now()->format('Y-m-d H:i')]
+            );
             if (!$isFullFetch) {
                 $query->where('updated_at', '>=', $minutes);
             }
             $query->chunk(100, function ($expiredRecords) use (&$totalArchived) {
-                   ArchiveExpiredAuctionsJob::dispatch($expiredRecords->toArray());
+                ActiveAndStatusNotSaleJob::dispatch($expiredRecords->toArray());
                 $totalArchived += count($expiredRecords);
             });
-            Log::info("Successfully archived {$totalArchived} records.");
+            Log::info("ActiveAndStatusNotSale {$totalArchived} records.");
 
             if ($totalArchived === 0) {
                 $this->info("No expired auctions found.");
@@ -163,7 +162,7 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
                         'body' => [
                             'server_name' => 'KVM4.3',
                             'error_type' => 'Internal Server Error',
-                            'command_name' => 'process:expired-auction-archive-with-elasticsearch',
+                            'command_name' => 'process:exipre-and-status-sale-with-elasticsearch',
                             'error' => 'ERROR: PROCESS CACHED DATA TO DATABASE UPDATED',
                             'created_at' => now()->toIso8601String(),
                             'updated_at' => now()->toIso8601String(),
@@ -196,7 +195,7 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
                     'body' => [
                         'server_name' => 'KVM4.3',
                         'error_type' => 'Internal Server Error',
-                        'command_name' => 'process:expired-auction-archive-with-elasticsearch',
+                        'command_name' => 'process:exipre-and-status-sale-with-elasticsearch',
                         'error' => 'ERROR: PROCESS CACHED DATA TO DATABASE UPDATED',
                         'created_at' => now()->toIso8601String(),
                         'updated_at' => now()->toIso8601String(),
@@ -213,7 +212,7 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
                 'body' => [
                     'server_name' => 'KVM4.3',
                     'error_type' => 'Internal Server Error',
-                    'command_name' => 'process:expired-auction-archive-with-elasticsearch',
+                    'command_name' => 'process:exipre-and-status-sale-with-elasticsearch',
                     'error' => 'Error in auction:archive cron job - ' . json_encode($e->getMessage()),
                     'created_at' => now()->toIso8601String(),
                     'updated_at' => now()->toIso8601String(),
@@ -235,7 +234,7 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
             ]);
 
             // Send email notification
-            $cronJobName = 'process_auction_archive';
+            $cronJobName = 'process_active_status_not_sale';
             // $adminEmails = explode(',', env('ADMIN_EMAIL'));
             // Mail::to($adminEmails)->send(new CronJobFailedMail($e->getMessage(), $cronJobName));
         }
