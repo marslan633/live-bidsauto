@@ -143,7 +143,6 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
             $updatedSaleRecords = [];
             $newSaleRecords = [];
             foreach ($batchData as $key => $record) {
-                Log::info('Api Record ' . ++$key, ['record' => json_encode($record)]);
                 try {
 
                     if (isset($existingRecords[$record['lot_id']])) {
@@ -219,7 +218,6 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                 Log::info('Not Empty');
                 foreach ($updatedRecords as $item_one) {
                     DB::table('vehicle_records')->where('id', $item_one['id'])->update($item_one);
-                    Log::info('Vehcile Archived Record Updated ' . $item_one['id'], ['data' => json_encode($item_one)]);
                 }
             } else {
                 Log::info('updatedRecords empty' . count($updatedRecords));
@@ -228,13 +226,11 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
             if (!empty($updatedSaleRecords)) {
                 foreach ($updatedSaleRecords as $item_two) {
                     DB::table('sale_auction_histories')->where('id', $item_two['id'])->update($item_two);
-                    Log::info('Sale Record Updated ' . $item_two['id'], ['data' => json_encode($item_two)]);
                 }
             }
 
             if (!empty($newSaleRecords)) {
                 DB::table('sale_auction_histories')->insert($newSaleRecords);
-                Log::info('New Sale Record', ['newSaleRecords' => json_encode($newSaleRecords)]);
             }
 
             try {
@@ -255,7 +251,6 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                                 ]
                             ]
                         ]);
-                        Log::info("✅ Elasticsearch Processed document status updated for _id: " . $this->cacheKey->_id);
                     } catch (\Throwable $e) {
                         $client->index([
                             'index' => 'error_logs',
@@ -297,7 +292,6 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
             }
 
 
-            Log::info("Batch processed successfully with " . count($updatedRecords) . " updated records.");
         } catch (\Exception $e) {
             // DB::rollBack();
             $client->index([
