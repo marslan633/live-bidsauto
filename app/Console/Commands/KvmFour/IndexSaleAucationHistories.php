@@ -25,7 +25,7 @@ class IndexSaleAucationHistories extends Command
         $clientKvmFour = app('ElasticsearchKvmFour');
 
         // Only fetch records updated in the last 30 minutes
-        $minutes = intval(config('app.elastic_store_time'));
+        $minutes = 23;
 
 
         $cronRun = null;
@@ -76,15 +76,15 @@ class IndexSaleAucationHistories extends Command
                 if (!empty($lastCron['end_time'])) {
                     $endTime = Carbon::parse($lastCron['end_time']);
                     $timeDifference = max(0, $endTime->diffInMinutes(now()));
-
-                    if ($timeDifference > 20) {
+                    Log::info('Time Difference History '. $timeDifference);
+                    if ($timeDifference > 28) {
                         $minutes = $timeDifference + 10;
-                    } elseif ($timeDifference === 20) {
+                    } elseif ($timeDifference === 23) {
                         $minutes = $timeDifference + 5;
                     }
                 }
             }
-
+            Log::info('Time Minutes History '. $minutes);
             // $cronRunResponse = Http::timeout(120)->retry(3, 1000)->post($url, [
             //     'cron_name' => 'process_sale_auction_histories',
             //     'start_time' => now(),

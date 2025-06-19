@@ -23,7 +23,7 @@ class IndexVehicleRecords extends Command
         $clientKvmOne = app('ElasticsearchKvmOne');
         $clientKvmFour = app('ElasticsearchKvmFour');
 
-        $minutes = intval(config('app.elastic_store_time'));
+        $minutes = 15;
         $cronRun = null;
 
         try {
@@ -52,14 +52,15 @@ class IndexVehicleRecords extends Command
                 if (!empty($lastCron['end_time'])) {
                     $endTime = Carbon::parse($lastCron['end_time']);
                     $timeDifference = max(0, $endTime->diffInMinutes(now()));
-
-                    if ($timeDifference > 20) {
+                Log::info('Time Difference Active '. $timeDifference);
+                    if ($timeDifference > 15) {
                         $minutes = $timeDifference + 10;
-                    } elseif ($timeDifference === 20) {
+                    } elseif ($timeDifference === 15) {
                         $minutes = $timeDifference + 5;
                     }
                 }
             }
+                Log::info('Time Minutes Active '. $minutes);
 
             // Record the new cron run history
             $params = [
