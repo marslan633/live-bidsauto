@@ -5,7 +5,6 @@ namespace App\Console\Commands\KvmThree;
 use App\Jobs\KvmThree\ActiveAndStatusNotSaleJob;
 use Illuminate\Console\Command;
 
-use App\Jobs\KvmThree\ExipreAndStatusSaleJob;
 use App\Models\VehicleRecord;
 use Illuminate\Support\Facades\Log;
 use Exception;
@@ -103,7 +102,7 @@ class ActiveAndStatusNotSale extends Command
                     'body' => [
                         'server_name' => 'KVM4.3',
                         'error_type' => 'Internal Server Error',
-                        'command_name' => 'process:exipre-and-status-sale-with-elasticsearch',
+                        'command_name' => 'process:active-and-status-not-sale-with-elasticsearch',
                         'error' => 'Error: PROCESS AUCTION ARCHIVED DATA TO DATABASE CREATED',
                         'created_at' => now()->toIso8601String(),
                         'updated_at' => now()->toIso8601String(),
@@ -162,7 +161,7 @@ class ActiveAndStatusNotSale extends Command
                         'body' => [
                             'server_name' => 'KVM4.3',
                             'error_type' => 'Internal Server Error',
-                            'command_name' => 'process:exipre-and-status-sale-with-elasticsearch',
+                            'command_name' => 'process:active-and-status-not-sale-with-elasticsearch',
                             'error' => 'ERROR: PROCESS CACHED DATA TO DATABASE UPDATED',
                             'created_at' => now()->toIso8601String(),
                             'updated_at' => now()->toIso8601String(),
@@ -195,7 +194,7 @@ class ActiveAndStatusNotSale extends Command
                     'body' => [
                         'server_name' => 'KVM4.3',
                         'error_type' => 'Internal Server Error',
-                        'command_name' => 'process:exipre-and-status-sale-with-elasticsearch',
+                        'command_name' => 'process:active-and-status-not-sale-with-elasticsearch',
                         'error' => 'ERROR: PROCESS CACHED DATA TO DATABASE UPDATED',
                         'created_at' => now()->toIso8601String(),
                         'updated_at' => now()->toIso8601String(),
@@ -212,7 +211,7 @@ class ActiveAndStatusNotSale extends Command
                 'body' => [
                     'server_name' => 'KVM4.3',
                     'error_type' => 'Internal Server Error',
-                    'command_name' => 'process:exipre-and-status-sale-with-elasticsearch',
+                    'command_name' => 'process:active-and-status-not-sale-with-elasticsearch',
                     'error' => 'Error in auction:archive cron job - ' . json_encode($e->getMessage()),
                     'created_at' => now()->toIso8601String(),
                     'updated_at' => now()->toIso8601String(),

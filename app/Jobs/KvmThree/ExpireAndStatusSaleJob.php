@@ -11,7 +11,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class ExipreAndStatusSaleJob implements ShouldQueue
+class ExpireAndStatusSaleJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -85,10 +85,10 @@ class ExipreAndStatusSaleJob implements ShouldQueue
                 if($saleAuctionRecord){
                     unset($saleData['created_at']);
                     $updatedSaleData[] = array_merge(['id' => $saleAuctionRecord->id], $saleData);
-                    Log::info('ExipreAndStatusSaleJob Sale Auctio History Record Updated', ['record' => json_encode(array_merge(['id' => $saleAuctionRecord->id], $saleData))]);
+                    Log::info('ExpireAndStatusSaleJob Sale Auctio History Record Updated', ['record' => json_encode(array_merge(['id' => $saleAuctionRecord->id], $saleData))]);
                 }else{
                     $newSaleData[] = $saleData;
-                    Log::info('ExipreAndStatusSaleJob Sale Auctio History Record Created', ['record' => json_encode($saleData)]);
+                    Log::info('ExpireAndStatusSaleJob Sale Auctio History Record Created', ['record' => json_encode($saleData)]);
                 }
                 // DB::table('sale_records')->upsert($updatedVehicleRecordsData,['id']);
                 // DB::table('sale_auction_histories')->upsert($updatedSaleData,['id']);

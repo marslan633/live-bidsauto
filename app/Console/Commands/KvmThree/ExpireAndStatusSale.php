@@ -4,7 +4,7 @@ namespace App\Console\Commands\KvmThree;
 
 use Illuminate\Console\Command;
 
-use App\Jobs\KvmThree\ExipreAndStatusSaleJob;
+use App\Jobs\KvmThree\ExpireAndStatusSaleJob;
 use App\Models\VehicleRecord;
 use Illuminate\Support\Facades\Log;
 use Exception;
@@ -17,7 +17,7 @@ class ExipreAndStatusSale extends Command
      *
      * @var string
      */
-    protected $signature = 'process:exipre-and-status-sale-with-elasticsearch';
+    protected $signature = 'process:expire-and-status-sale-with-elasticsearch';
 
     /**
      * The console command description.
@@ -129,7 +129,7 @@ class ExipreAndStatusSale extends Command
                 $query->where('updated_at', '>=', $minutes);
             }
             $query->chunk(100, function ($expiredRecords) use (&$totalArchived) {
-                ExipreAndStatusSaleJob::dispatch($expiredRecords->toArray());
+                ExpireAndStatusSaleJob::dispatch($expiredRecords->toArray());
                 $totalArchived += count($expiredRecords);
             });
             Log::info("ExipreAndStatusSale {$totalArchived} records.");
