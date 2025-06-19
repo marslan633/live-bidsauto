@@ -87,9 +87,9 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
             $totalArchived = 0;
             DB::table('vehicle_records')
             ->where('data_source', 1)
-            ->limit(50)
+            ->limit(1000)
             ->orderBy('created_at', 'desc')
-            ->chunk($batchSize, function ($expiredRecords) use (&$totalArchived) {
+            ->chunk(100, function ($expiredRecords) use (&$totalArchived) {
                    ArchiveExpiredAuctionsJob::dispatch($expiredRecords->toArray());
                 $totalArchived += count($expiredRecords);
             });
