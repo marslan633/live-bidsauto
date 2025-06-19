@@ -128,9 +128,7 @@ class ExpireAndStatusSale extends Command
             if (!$isFullFetch) {
                 $query->where('updated_at', '>=', $minutes);
             }
-            $newQuery = $query;
-            Log::info('Total Records '. $newQuery->count());
-            $query->chunk(2, function ($expiredRecords) use (&$totalArchived) {
+            $query->chunk(100, function ($expiredRecords) use (&$totalArchived) {
                 ExpireAndStatusSaleJob::dispatch($expiredRecords->toArray());
                 $totalArchived += count($expiredRecords);
             });
