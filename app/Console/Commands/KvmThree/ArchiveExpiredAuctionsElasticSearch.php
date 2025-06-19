@@ -41,6 +41,44 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
         try {
             $url = config('app.cron_history_api_url') . '/cron-run-histories';
 
+
+            $response = $client->search([
+                'index' => 'cron_run_histories',
+                'body' => [
+                    'size' => 1,
+                    'query' => [
+                        'bool' => [
+                            'must' => [
+                                ['term' => ['cron_name' => 'process_auction_archive']],
+                                ['term' => ['status' => 'success']]
+                            ]
+                        ]
+                    ],
+                    'sort' => [
+                        ['start_time' => ['order' => 'desc']]
+                    ]
+                ]
+            ]);
+
+            $hits = $response['hits']['hits'];
+
+            $minutes = 45;
+
+            if (!empty($hits)) {
+                $lastCron = $hits[0]['_source'];
+                if (!empty($lastCron['end_time'])) {
+                    $endTime = Carbon::parse($lastCron['end_time']);
+                    $timeDifference = max(0, $endTime->diffInMinutes(now()));
+                    Log::info('Time Difference Active '. $timeDifference);
+                    if ($timeDifference > 45) {
+                        $minutes = $timeDifference + 10;
+                    } elseif ($timeDifference === 45) {
+                        $minutes = $timeDifference + 5;
+                    }
+                }
+            }
+            Log::info('Minutes Active '. $minutes);
+
             $cronRun = '';
             $startDateTime = Carbon::now();
             $this->info("Process Archived Expired Auction Data started at: " . $startDateTime);
@@ -83,13 +121,17 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
 
             // sale_date => 16-05-2025
             // expire_date = 17-05-2025
+            $minutes = Carbon::now()->subMinutes($minutes);
+            $isFullFetch = config('app.is_full_fetch', false);
 
             $totalArchived = 0;
-            DB::table('vehicle_records')
-            ->where('data_source', 1)
-            ->limit(1000)
-            ->orderBy('created_at', 'desc')
-            ->chunk(100, function ($expiredRecords) use (&$totalArchived) {
+            $query = VehicleRecord::query();
+            $query ->where('data_source', 1);
+            if (!$isFullFetch) {
+                $query->where('updated_at', '>=', $minutes)
+                    ->whereNotNull('sale_date');
+            }
+            $query->chunk(100, function ($expiredRecords) use (&$totalArchived) {
                    ArchiveExpiredAuctionsJob::dispatch($expiredRecords->toArray());
                 $totalArchived += count($expiredRecords);
             });
