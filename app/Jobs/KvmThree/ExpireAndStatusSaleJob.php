@@ -90,7 +90,7 @@ class ExpireAndStatusSaleJob implements ShouldQueue
                     $newSaleData[] = $saleData;
                     Log::info('ExpireAndStatusSaleJob Sale Auctio History Record Created', ['record' => json_encode($saleData)]);
                 }
-                DB::table('sale_records')->upsert($updatedVehicleRecordsData,['id']);
+                DB::table('vehicle_records')->upsert($updatedVehicleRecordsData,['id']);
                 DB::table('sale_auction_histories')->upsert($updatedSaleData,['id']);
                 DB::table('sale_auction_histories')->insert($newSaleData);
             } catch (\Exception $e) {
