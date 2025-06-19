@@ -125,9 +125,7 @@ class ExpireAndStatusSale extends Command
                 "DATE_FORMAT(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), '%Y-%m-%d %H:%i') < ?",
                 [now()->format('Y-m-d H:i')]
             )->limit(10);
-            if (!$isFullFetch) {
-                $query->where('updated_at', '>=', $minutes);
-            }
+
             $query->chunk(100, function ($expiredRecords) use (&$totalArchived) {
                 ExpireAndStatusSaleJob::dispatch($expiredRecords->toArray());
                 $totalArchived += count($expiredRecords);

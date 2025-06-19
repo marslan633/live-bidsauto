@@ -124,10 +124,8 @@ class ActiveAndStatusNotSale extends Command
             $query->where('data_source', 1)->where('status_id', '!=', 3)->whereRaw(
                 "DATE_FORMAT(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), '%Y-%m-%d %H:%i') > ?",
                 [now()->format('Y-m-d H:i')]
-            );
-            if (!$isFullFetch) {
-                $query->where('updated_at', '>=', $minutes);
-            }
+            )->limit(10);
+
             $query->chunk(100, function ($expiredRecords) use (&$totalArchived) {
                 ActiveAndStatusNotSaleJob::dispatch($expiredRecords->toArray());
                 $totalArchived += count($expiredRecords);
