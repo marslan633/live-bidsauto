@@ -63,19 +63,7 @@ class StoreVehicleToElasticsearch implements ShouldQueue
             // Prepare the bulk data for Elasticsearch
             Log::info('Indexing Vehicle', ['vehicle_id' => $vehicle->id]);
 
-            // Including all relationships in the vehicle data
-            if ($vehicle->data_source == 1) {
-                // Convert sale_date to a Carbon instance
-                $saleDate = Carbon::parse($vehicle->sale_date);
-
-                // Check if sale_date is greater than or equal to the current date and time
-                if ($saleDate >= now()) {
-                    $vehicleData = $vehicle->toArray();
-                }
-            } elseif ($vehicle->data_source == 2) {
-                // Handle the second condition for data source 2
-                $vehicleData = $vehicle->toArray();
-            }
+            $vehicleData = $vehicle->toArray();
 
             // $bulkData[] = [
             //     'index' => [
