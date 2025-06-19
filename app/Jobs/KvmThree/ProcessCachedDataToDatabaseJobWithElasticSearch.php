@@ -123,7 +123,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                         $record['id'] = $existingRecords[$record['lot_id']]; // Add ID for update
                         $record['processed_at'] = Carbon::now();
                         $record['updated_at'] = Carbon::now();
-                        $record['data_source'] = 1;
+                        // $record['data_source'] = 1;
                         $updatedRecords[] = $record;
                     } else {
                         // New record - insert
@@ -160,7 +160,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 foreach ($updatedRecords as $item) {
                     Log::info('item', ['item' => json_encode($item)]);
                     // Database Record
-                    DB::table('vehicle_records')->where('id', $item['id'])->update($item);
+                    // DB::table('vehicle_records')->where('id', $item['id'])->update($item);
                     $getVehicleRecord = DB::table('vehicle_records')->where('id', $item['id'])->first();
 
                     if(!is_null($getVehicleRecord)){
@@ -175,14 +175,14 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                         if($checkRecordSaleDate == $currentSaleDate && $getVehicleRecord->data_source == 2){
                             Log::info('Condition 1', ['record' => json_encode($item)]);
 
-                            // DB::table('vehicle_records')->where('id', $getVehicleRecord->id)->update($item);
+                            DB::table('vehicle_records')->where('id', $getVehicleRecord->id)->update($item);
                         }elseif($checkRecordSaleDate != $currentSaleDate && $getVehicleRecord->status_id != 3 && $getVehicleRecord->data_source == 2){
                             Log::info('Condition 2', ['record' => json_encode($item)]);
-                            // DB::table('vehicle_records')->where('id', $getVehicleRecord->id)->update($item);
+                            DB::table('vehicle_records')->where('id', $getVehicleRecord->id)->update($item);
                         }elseif($checkRecordSaleDate != $currentSaleDate && $getVehicleRecord->status_id == 3){
                             Log::info('Condition 3', ['record' => json_encode($item)]);
-                            // $item['data_source'] = 1;
-                            // DB::table('vehicle_records')->where('id', $getVehicleRecord->id)->update($item);
+                            $item['data_source'] = 1;
+                            DB::table('vehicle_records')->where('id', $getVehicleRecord->id)->update($item);
                         }
 
 
