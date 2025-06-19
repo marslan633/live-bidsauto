@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Exception;
 use Carbon\Carbon;
 
-class ExipreAndStatusSale extends Command
+class ExpireAndStatusSale extends Command
 {
     /**
      * The name and signature of the console command.
