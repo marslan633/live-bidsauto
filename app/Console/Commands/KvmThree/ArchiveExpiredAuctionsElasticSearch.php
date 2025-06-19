@@ -126,7 +126,7 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
 
             $totalArchived = 0;
             $query = VehicleRecord::query();
-            $query ->where('data_source', 1);
+            $query ->where('data_source', 1)->limit(100);
             if (!$isFullFetch) {
                 $query->where('updated_at', '>=', $minutes)
                     ->whereNotNull('sale_date');
