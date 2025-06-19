@@ -93,6 +93,7 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
                    ArchiveExpiredAuctionsJob::dispatch($expiredRecords->toArray());
                 $totalArchived += count($expiredRecords);
             });
+            Log::info("Successfully archived {$totalArchived} records.");
 
             if ($totalArchived === 0) {
                 $this->info("No expired auctions found.");
@@ -131,9 +132,6 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
 
                 return;
             }
-
-            $this->info("Successfully archived and deleted {$totalArchived} expired auctions.");
-            Log::info("Successfully archived and deleted {$totalArchived} expired auctions.");
 
             if($cronRun){
 
