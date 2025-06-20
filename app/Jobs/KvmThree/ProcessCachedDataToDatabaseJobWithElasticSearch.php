@@ -208,13 +208,13 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                                 ];
                                 if($saleAuctionRecord){
                                     unset($saleData['created_at']);
-                                    // DB::connection('mysql')
-                                    //     ->table('sale_auction_histories')
-                                    //     ->where('id', $saleAuctionRecord->id)
-                                    //     ->update($saleData);
+                                    DB::connection('mysql')
+                                        ->table('sale_auction_histories')
+                                        ->where('id', $saleAuctionRecord->id)
+                                        ->update($saleData);
                                     Log::info('Sale Auctio History Record Updadted Active', ['record' => json_encode($saleAuctionRecord)]);
                                 }else{
-                                    // DB::table('sale_auction_histories')->insert($saleData);
+                                    DB::table('sale_auction_histories')->insert($saleData);
                                     Log::info('Sale Auctio History Record Created Active', ['record' => json_encode($saleData)]);
                                 }
                         }

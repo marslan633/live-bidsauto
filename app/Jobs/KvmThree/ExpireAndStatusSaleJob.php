@@ -84,7 +84,7 @@ class ExpireAndStatusSaleJob implements ShouldQueue
                 ];
                 if($saleAuctionRecord){
                     unset($saleData['created_at']);
-                    $updatedSaleData[] = array_merge(['id' => $saleAuctionRecord->id], $saleData);
+                    $updatedSaleData[] = array_merge(['id' => $saleAuctionRecord->id], $updatedVehicleRecordsData);
                     Log::info('ExpireAndStatusSaleJob Sale Auctio History Record Updated', ['record' => json_encode(array_merge(['id' => $saleAuctionRecord->id], $saleData))]);
                 }else{
                     $newSaleData[] = $saleData;
