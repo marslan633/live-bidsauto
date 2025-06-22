@@ -195,7 +195,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                                     'sale_date' => $item['sale_date'],
                                 ])->first();
                                 $saleData = [
-                                    'vin' => $item['vin'],
+                                    'vin' => strtolower($item['vin']),
                                     'domain_id' => $item['domain_id'],
                                     'sale_date' => $item['sale_date'],
                                     'lot_id' => $item['lot_id'],
@@ -623,7 +623,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             'year' => $car['vehicle_record']['year'] ?? null,
             'year_id' => $year,
             'title' => $car['vehicle_record']['title'] ?? null,
-            'vin' => $car['vehicle_record']['vin'] ?? null,
+            'vin' => strtolower($car['vehicle_record']['vin']) ?? null,
             'cylinders' => $car['vehicle_record']['cylinders'] ?? null,
             // Lot Data Processing
             'salvage_id' => $car['vehicle_record']['salvage_id'] ?? null,

@@ -98,7 +98,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
         ) {
             return [
                 'lot_id' => $car['lot'],
-                'vin' => $car['vin'],
+                'vin' => strtolower($car['vin']),
                 'status_id' => $car['status']['id'],
                 'bid' => $car['bid'],
                 'final_bid_updated_at' => $car['final_bid_updated_at'],

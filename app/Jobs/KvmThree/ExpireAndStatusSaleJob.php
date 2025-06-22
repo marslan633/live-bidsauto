@@ -71,7 +71,7 @@ class ExpireAndStatusSaleJob implements ShouldQueue
                 ])->first();
 
                 $saleData = [
-                    'vin' => $record['vin'],
+                    'vin' => strtolower($record['vin']),
                     'domain_id' => $record['domain_id'],
                     'sale_date' => $record['sale_date'],
                     'lot_id' => $record['lot_id'],

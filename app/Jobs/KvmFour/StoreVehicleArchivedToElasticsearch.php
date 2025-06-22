@@ -74,7 +74,7 @@ class StoreVehicleArchivedToElasticsearch implements ShouldQueue
 
             // Including all relationships in the vehicle data
             $vehicleData = $vehicle->toArray();
-
+            $vehicleData['vin'] = strtolower($vehicleData['vin']);
             /*
             // Bulk Insert Logic (Commented)
             $bulkData[] = [

@@ -682,7 +682,7 @@ class VehicleController extends Controller
             if ($request->has('type') && $request->type === 'lot_id') {
                 $query['body']['query']['bool']['must'][] = ['match' => ['lot_id' => $id]];
             } elseif ($request->type === 'vin') {
-                $query['body']['query']['bool']['must'][] = ['match' => ['vin' => $id]];
+                $query['body']['query']['bool']['must'][] = ['match' => ['vin' => strtolower($id)]];
             }
 
             // Debug Log: Search Query

@@ -64,7 +64,7 @@ class StoreVehicleToElasticsearch implements ShouldQueue
             Log::info('Indexing Vehicle', ['vehicle_id' => $vehicle->id]);
 
             $vehicleData = $vehicle->toArray();
-
+            $vehicleData['vin'] = strtolower($vehicleData['vin']);
             // $bulkData[] = [
             //     'index' => [
             //         '_index' => 'vehicle_records',
