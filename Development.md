@@ -35,3 +35,6 @@ if (in_array($currentHour, range(0, 24, 2))) {
                 "DATE_FORMAT(DATE_ADD(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), INTERVAL 28 HOUR), '%Y-%m-%d %H:%i') <= ?",
                 [now()->format('Y-m-d H:i')]
             )
+
+zhwuf5zfxmla16208
+mvin388616ind
