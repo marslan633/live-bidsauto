@@ -661,7 +661,7 @@ class VehicleController extends Controller
             $index = 'vehicle_records';
             $dataSourceValue = $request->input('data_source') === 'active' ? 1 : 2;
             $client = app('ElasticsearchKvmFour');
-
+            $id = strtolower($id);
             // Debug Log: Check Index
 
             $must = [['term' => ['data_source' => $dataSourceValue]]];
@@ -682,7 +682,7 @@ class VehicleController extends Controller
             if ($request->has('type') && $request->type === 'lot_id') {
                 $query['body']['query']['bool']['must'][] = ['match' => ['lot_id' => $id]];
             } elseif ($request->type === 'vin') {
-                $query['body']['query']['bool']['must'][] = ['match' => ['vin' => strtolower($id)]];
+                $query['body']['query']['bool']['must'][] = ['match' => ['vin' => $id]];
             }
 
             // Debug Log: Search Query
