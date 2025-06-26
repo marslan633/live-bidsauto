@@ -84,19 +84,13 @@ class ExpireAndStatusSaleJob implements ShouldQueue
                 ];
                 if($saleAuctionRecord){
                     unset($saleData['created_at']);
-                    $updatedSaleData[] = [
-                        'id' => $saleAuctionRecord->id,
-                        'status_id' => 7,
-                        'data_source' => 2,
-                        'updated_at' => $now
-                    ];
+                    $updatedSaleData[] = array_merge(['id' => $saleAuctionRecord->id], $saleData);
                     Log::info('ExpireAndStatusSaleJob Sale Auctio History Record Updated', ['record' => json_encode(array_merge(['id' => $saleAuctionRecord->id], $saleData))]);
                 }else{
                     $newSaleData[] = $saleData;
                     Log::info('ExpireAndStatusSaleJob Sale Auctio History Record Created', ['record' => json_encode($saleData)]);
                 }
             }
-
             DB::table('vehicle_records')->upsert($updatedVehicleRecordsData,['id']);
             DB::table('sale_auction_histories')->upsert($updatedSaleData,['id']);
             DB::table('sale_auction_histories')->insert($newSaleData);
