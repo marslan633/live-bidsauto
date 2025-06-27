@@ -123,7 +123,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                         $record['id'] = $existingRecords[$record['lot_id']]; // Add ID for update
                         $record['processed_at'] = Carbon::now();
                         $record['updated_at'] = Carbon::now();
-                        // $record['data_source'] = 1;
+                        $record['data_source'] = 1;
                         $updatedRecords[] = $record;
                     } else {
                         // New record - insert
