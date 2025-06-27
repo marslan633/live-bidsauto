@@ -3,7 +3,7 @@
 use Illuminate\Console\Scheduling\Schedule;
 
 if (config('app.app_kvm_one') === true) {
-     app(Schedule::class)->command('process:api-data-with-elasticsearch')->dailyAt('22:44')->withoutOverlapping();
+     app(Schedule::class)->command('process:api-data-with-elasticsearch')->dailyAt('18:15')->withoutOverlapping();
         // app(Schedule::class)->command('process:api-data-with-elasticsearch')->cron('*/30 * * * *')->withoutOverlapping();
         app(Schedule::class)->command('process:cached-data-with-elasticsearch')->everyFiveMinutes()->withoutOverlapping();
         // app(Schedule::class)->command('process:archived-data-with-elasticsearch')->cron('52 * * * *')->withoutOverlapping();
