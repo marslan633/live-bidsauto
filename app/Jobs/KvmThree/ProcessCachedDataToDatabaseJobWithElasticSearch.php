@@ -175,14 +175,14 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                         if($checkRecordSaleDate == $currentSaleDate && $getVehicleRecord->data_source == 2){
                             Log::info('Condition 1', ['record' => json_encode($item)]);
 
-                            DB::table('vehicle_records')->where('id', $getVehicleRecord->id)->update($item);
+                            // DB::table('vehicle_records')->where('id', $getVehicleRecord->id)->update($item);
                         }elseif($checkRecordSaleDate != $currentSaleDate && $getVehicleRecord->status_id != 3 && $getVehicleRecord->data_source == 2){
                             Log::info('Condition 2', ['record' => json_encode($item)]);
-                            DB::table('vehicle_records')->where('id', $getVehicleRecord->id)->update($item);
+                            // DB::table('vehicle_records')->where('id', $getVehicleRecord->id)->update($item);
                         }elseif($checkRecordSaleDate != $currentSaleDate && $getVehicleRecord->status_id == 3){
-                            Log::info('Condition 3', ['record' => json_encode($item)]);
                             $item['data_source'] = 1;
-                            DB::table('vehicle_records')->where('id', $getVehicleRecord->id)->update($item);
+                            Log::info('Condition 3', ['record' => json_encode($item)]);
+                            // DB::table('vehicle_records')->where('id', $getVehicleRecord->id)->update($item);
                         }
 
 
@@ -208,13 +208,13 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                                 ];
                                 if($saleAuctionRecord){
                                     unset($saleData['created_at']);
-                                    DB::connection('mysql')
-                                        ->table('sale_auction_histories')
-                                        ->where('id', $saleAuctionRecord->id)
-                                        ->update($saleData);
+                                    // DB::connection('mysql')
+                                    //     ->table('sale_auction_histories')
+                                    //     ->where('id', $saleAuctionRecord->id)
+                                    //     ->update($saleData);
                                     Log::info('Sale Auctio History Record Updadted Active', ['record' => json_encode($saleAuctionRecord)]);
                                 }else{
-                                    DB::table('sale_auction_histories')->insert($saleData);
+                                    // DB::table('sale_auction_histories')->insert($saleData);
                                     Log::info('Sale Auctio History Record Created Active', ['record' => json_encode($saleData)]);
                                 }
                         }
