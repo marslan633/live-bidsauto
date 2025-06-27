@@ -20,6 +20,8 @@ class DeleteElasticsearchClassesKvmOne extends Command
             'vehicle_archived_api_data',
             'cron_run_histories',
             'error_logs',
+            'lots_archived_by_carstat',
+            'lots_by_carstat'
         ];
 
         foreach ($indices as $indexName) {
