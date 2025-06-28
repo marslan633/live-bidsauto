@@ -105,6 +105,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 return;
             }
 
+
             // Extract API IDs from batchData
             $lotIds = array_column($batchData, 'lot_id');
 
@@ -158,11 +159,9 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             // ✅ Bulk Update Existing Records
             if (!empty($updatedRecords)) {
                 foreach ($updatedRecords as $item) {
-                    Log::info('item', ['item' => json_encode($item)]);
-                    // Database Record
                     DB::table('vehicle_records')->where('id', $item['id'])->update($item);
-
                 }
+                // DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
             }
         } catch (\Throwable $e) {
             $clientkvmOne->index([
@@ -564,7 +563,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             'year' => $car['vehicle_record']['year'] ?? null,
             'year_id' => $year,
             'title' => $car['vehicle_record']['title'] ?? null,
-            'vin' => strtolower($car['vehicle_record']['vin']) ?? null,
+            'vin' => $car['vehicle_record']['vin'] ?? null,
             'cylinders' => $car['vehicle_record']['cylinders'] ?? null,
             // Lot Data Processing
             'salvage_id' => $car['vehicle_record']['salvage_id'] ?? null,
