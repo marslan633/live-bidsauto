@@ -99,144 +99,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
     public function insertBatch(array $batchData, $cacheKey)
     {
         Log::info('Starting Batch Insertion');
-        $clientkvmOne = app('ElasticsearchKvmOne');
-        try {
-            if (empty($batchData)) {
-                return;
-            }
 
-
-            // Extract API IDs from batchData
-            $lotIds = array_column($batchData, 'lot_id');
-
-            // Fetch existing records by API ID
-            $existingRecords = DB::table('vehicle_records')->whereIn('lot_id', $lotIds)->pluck('id', 'lot_id');
-
-            // Lists for new and updated records
-            $newRecords = [];
-            $updatedRecords = [];
-            $failedRecords = []; // ❌ Store records that failed
-
-            foreach ($batchData as $record) {
-                try {
-                    if (isset($existingRecords[$record['lot_id']])) {
-                        // Existing record - update full data
-                        $record['id'] = $existingRecords[$record['lot_id']]; // Add ID for update
-                        $record['processed_at'] = Carbon::now();
-                        $record['updated_at'] = Carbon::now();
-                        $record['data_source'] = 1;
-                        $updatedRecords[] = $record;
-                    } else {
-                        // New record - insert
-                        $record['is_new'] = true;
-                        $record['processed_at'] = Carbon::now();
-                        $record['created_at'] = Carbon::now();
-                        $record['updated_at'] = Carbon::now();
-                        $record['data_source'] = 1;
-                        $newRecords[] = $record;
-                    }
-                } catch (\Exception $e) {
-                    $failedRecords[] = $record;
-                    $clientkvmOne->index([
-                        'index' => 'error_logs',
-                        'body' => [
-                            'server_name' => 'KVM4.3',
-                            'error_type' => 'Internal Server Error',
-                            'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
-                            'error' => "Skipping record due to error: " . json_encode($e->getMessage()),
-                            'created_at' => now()->toIso8601String(),
-                            'updated_at' => now()->toIso8601String(),
-                        ],
-                    ]);
-                }
-            }
-
-            // ✅ Bulk Insert New Records
-            if (!empty($newRecords)) {
-                DB::table('vehicle_records')->insert($newRecords);
-            }
-
-            // ✅ Bulk Update Existing Records
-            if (!empty($updatedRecords)) {
-                foreach ($updatedRecords as $item) {
-                    DB::table('vehicle_records')->where('id', $item['id'])->update($item);
-                }
-                // DB::table('vehicle_records')->upsert($updatedRecords, ['id'], array_keys($updatedRecords[0]));
-            }
-        } catch (\Throwable $e) {
-            $clientkvmOne->index([
-                'index' => 'error_logs',
-                'body' => [
-                    'server_name' => 'KVM4.3',
-                    'error_type' => 'Internal Server Error',
-                    'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
-                    'error' => "Batch insert failed: " . json_encode($e->getMessage()),
-                    'created_at' => now()->toIso8601String(),
-                    'updated_at' => now()->toIso8601String(),
-                ],
-            ]);
-            return;
-        }
-
-        try {
-            $client = app('ElasticsearchKvmOne');
-
-            $response = $client->exists([
-                'index' => 'vehicle_process_cached_api_data',
-                'id' => $cacheKey,
-            ]);
-
-            if ($response) {
-                try {
-                    $client->update([
-                        'index' => 'vehicle_process_cached_api_data',
-                        'id' => $cacheKey,
-                        'body' => [
-                            'doc' => [
-                                'status' => 'completed'
-                            ]
-                        ]
-                    ]);
-                    Log::info("✅ Elasticsearch Processed document status updated for _id: $cacheKey");
-                } catch (\Throwable $e) {
-                    // $clientkvmOne->index([
-                    //     'index' => 'error_logs',
-                    //     'body' => [
-                    //         'server_name' => 'KVM4.3',
-                    //         'error_type' => 'Internal Server Error',
-                    //         'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
-                    //         'error' => "⚠️ Failed to update document: " . json_encode($e->getMessage()),
-                    //         'created_at' => now()->toIso8601String(),
-                    //         'updated_at' => now()->toIso8601String(),
-                    //     ],
-                    // ]);
-                }
-            } else {
-                $clientkvmOne->index([
-                    'index' => 'error_logs',
-                    'body' => [
-                        'server_name' => 'KVM4.3',
-                        'error_type' => 'General',
-                        'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
-                        'error' => "⚠️ Document not found for update with _id: $cacheKey",
-                        'created_at' => now()->toIso8601String(),
-                        'updated_at' => now()->toIso8601String(),
-                    ],
-                ]);
-            }
-        } catch (\Throwable $e) {
-            $clientkvmOne->index([
-                'index' => 'error_logs',
-                'body' => [
-                    'server_name' => 'KVM4.3',
-                    'error_type' => 'Internal Server Error',
-                    'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
-                    'error' => "❌ Elasticsearch exists check failed: " . json_encode($e->getMessage()),
-                    'created_at' => now()->toIso8601String(),
-                    'updated_at' => now()->toIso8601String(),
-                ],
-            ]);
-        }
     }
 
     public function prepareCarData(array $car)
@@ -563,7 +426,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             'year' => $car['vehicle_record']['year'] ?? null,
             'year_id' => $year,
             'title' => $car['vehicle_record']['title'] ?? null,
-            'vin' => $car['vehicle_record']['vin'] ?? null,
+            'vin' => strtolower($car['vehicle_record']['vin']) ?? null,
             'cylinders' => $car['vehicle_record']['cylinders'] ?? null,
             // Lot Data Processing
             'salvage_id' => $car['vehicle_record']['salvage_id'] ?? null,
