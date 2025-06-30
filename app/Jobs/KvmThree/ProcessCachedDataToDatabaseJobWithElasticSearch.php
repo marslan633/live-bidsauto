@@ -99,7 +99,10 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
     public function insertBatch(array $batchData, $cacheKey)
     {
         Log::info('Starting Batch Insertion');
-
+        $lotIds = array_column($batchData, 'lot_id');
+        $vins = array_column($batchData, 'vin');
+        Log::info('LOT IDS ', ['lotIds' => json_encode($lotIds)]);
+        Log::info('VIN IDS ', ['vins' => json_encode($vins)]);
     }
 
     public function prepareCarData(array $car)
