@@ -1051,7 +1051,7 @@ class VehicleController extends Controller
                 $must[] = ['terms' => ['domain_id' => $request->input('domain_id')]];
             }
 
-            if ($request->has('buy_now')) {
+            if ($request->has('buy_now') && $request->input('data_source') == 'active') {
                 $buyNow = $request->input('buy_now');
                 if ($buyNow === true || $buyNow === 'true') {
                     $must[] = ['term' => ['buy_now_id' => BuyNow::where('name', 'buyNowWithPrice')->value('id')]];
