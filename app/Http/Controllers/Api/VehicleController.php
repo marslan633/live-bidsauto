@@ -1023,14 +1023,19 @@ class VehicleController extends Controller
                     'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions'],
                     // 'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles'],
                     'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages'],
-                    'buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows'],
                 ];
+                if($request->input('data_source') == 'active'){
+                   $filters[] = ['buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows']];
+                }
             }else{
                 $filters = [
                     'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers'],
                     'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types'],
-                    'buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows'],
                 ];
+                if($request->input('data_source') == 'active'){
+                    $filters[] = ['buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows']];
+
+                 }
             }
 
             $searchAttribute = $request->input('search_attribute');
