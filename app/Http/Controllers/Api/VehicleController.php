@@ -1025,7 +1025,7 @@ class VehicleController extends Controller
                     'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages'],
                 ];
                 if($request->input('data_source') == 'active'){
-                   $filters[] = ['buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows']];
+                   $filters['buy_now'] = ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows'];
                 }
             }else{
                 $filters = [
@@ -1033,8 +1033,7 @@ class VehicleController extends Controller
                     'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types'],
                 ];
                 if($request->input('data_source') == 'active'){
-                    $filters[] = ['buy_now' => ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows']];
-
+                    $filters['buy_now'] = ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows'];
                  }
             }
 
