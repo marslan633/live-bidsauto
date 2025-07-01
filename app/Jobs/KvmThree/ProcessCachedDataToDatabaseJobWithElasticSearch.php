@@ -129,7 +129,6 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 return;
             }
 
-
             // Extract API IDs from batchData
             $lotIds = array_column($batchData, 'lot_id');
 

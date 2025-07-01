@@ -664,7 +664,9 @@ class VehicleController extends Controller
             $id = strtolower($id);
             // Debug Log: Check Index
 
-            $must = [['term' => ['data_source' => $dataSourceValue]]];
+            if(!$request->input('data_source') == 'all'){
+                $must = [['term' => ['data_source' => $dataSourceValue]]];
+            }
             // Base query for vehicle records
             $query = [
                 'index' => $index,
@@ -1421,7 +1423,6 @@ class VehicleController extends Controller
             // ")
             // ->where('data_source', 1)
             // ->first();
-
 
             $vehicleRecordArchiveds = VehicleRecord::where('data_source', 2)->count();
             $saleAuctionHistories = DB::table('sale_auction_histories')->count();
