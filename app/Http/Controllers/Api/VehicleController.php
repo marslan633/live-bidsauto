@@ -664,7 +664,7 @@ class VehicleController extends Controller
             $id = strtolower($id);
             // Debug Log: Check Index
             $must  = [];
-            if(!$request->input('data_source') == 'all'){
+            if($request->input('data_source') != 'all'){
                 $must = [['term' => ['data_source' => $dataSourceValue]]];
             }
             // Base query for vehicle records
