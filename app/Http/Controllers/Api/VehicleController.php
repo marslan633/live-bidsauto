@@ -663,7 +663,7 @@ class VehicleController extends Controller
             $client = app('ElasticsearchKvmFour');
             $id = strtolower($id);
             // Debug Log: Check Index
-
+            $must  = [];
             if(!$request->input('data_source') == 'all'){
                 $must = [['term' => ['data_source' => $dataSourceValue]]];
             }
