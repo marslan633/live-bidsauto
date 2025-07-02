@@ -174,8 +174,46 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
 
             // ✅ Bulk Insert New Records
             if (!empty($newRecords)) {
-                DB::table('vehicle_records')->insert($newRecords);
+                $referenceKeys = array_keys($newRecords[0]);
+                $normalizedRecords = [];
+                $unnormalizedRecords = [];
+
+                foreach ($newRecords as $index => $record) {
+                    $currentKeys = array_keys($record);
+
+                    if ($currentKeys !== $referenceKeys) {
+                        $unnormalizedRecords[] = [
+                            'index' => $index,
+                            'expected_keys' => $referenceKeys,
+                            'actual_keys' => $currentKeys,
+                            'lot_id' => $record['lot_id'] ?? 'N/A',
+                            'vin' => $record['vin'] ?? 'N/A',
+                        ];
+                        continue;
+                    }
+
+                    // Normalize only valid ones
+                    $normalized = [];
+                    foreach ($referenceKeys as $key) {
+                        $normalized[$key] = $record[$key] ?? null;
+                    }
+                    $normalizedRecords[] = $normalized;
+                }
+
+                // ✅ Log unnormalized records (to file or Elasticsearch)
+                if (!empty($unnormalizedRecords)) {
+
+                    // Optionally send to Elasticsearch
+                    foreach ($unnormalizedRecords as $log) {
+                        Log::info('Unnormalized Record', ['unnormaized' => json_encode($log)]);
+                    }
+                }
+
+                if (!empty($normalizedRecords)) {
+                    DB::table('vehicle_records')->insert($normalizedRecords);
+                }
             }
+
 
             // ✅ Bulk Update Existing Records
             if (!empty($updatedRecords)) {
@@ -645,7 +683,6 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             'image_id' => $imageId,
         ];
 
-        Log::info('Lot ID', ['lot_id' => $car['vehicle_record']['lot_id'] ?? null, 'vin' => $car['vehicle_record']['vin'] ?? null]);
 
         if (preg_match('/[A-Za-z]/', $car['vehicle_record']['lot_id'])) {
             // Skip this record if it contains any letters
