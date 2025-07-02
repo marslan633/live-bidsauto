@@ -86,7 +86,6 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             }
 
             if (count($batchData) > 0) {
-                Log::info('Batch Inserted');
                 $this->insertBatch($batchData, $this->cacheKey->_id);
                 $batchData = []; // Reset batch
             } else {
@@ -122,7 +121,6 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
      */
     public function insertBatch(array $batchData, $cacheKey)
     {
-        Log::info('Starting Batch Insertion');
         $clientkvmOne = app('ElasticsearchKvmOne');
         try {
             if (empty($batchData)) {
@@ -202,18 +200,15 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                             $dataOne = $item;
                             $dataOne['id'] = $getVehicleRecord->id;
                             $VehicleUpdateRecordOne[] = $dataOne;
-                            Log::info('Condition 1', ['record' => json_encode($dataOne)]);
                         }elseif($checkRecordSaleDate != $currentSaleDate && $getVehicleRecord->status_id != 3 && $getVehicleRecord->data_source == 2){
                             $dataTwo = $item;
                             $dataTwo['id'] = $getVehicleRecord->id;
                             $VehicleUpdateRecordOne[] = $dataTwo;
-                            Log::info('Condition 2', ['record' => json_encode($dataTwo)]);
                         }elseif($checkRecordSaleDate != $currentSaleDate && $getVehicleRecord->status_id == 3){
                             $dataThree = $item;
                             $dataThree['id'] = $getVehicleRecord->id;
                             $dataThree['data_source'] = 1;
                             $VehicleUpdateRecordOne[] = $dataThree;
-                            Log::info('Condition 3', ['record' => json_encode($dataThree)]);
                         }
 
 
@@ -242,10 +237,8 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                                     $updatedSaleData = $saleData;
                                     $updatedSaleData['id'] = $saleAuctionRecord->id;
                                     $updatedSaleRecords[] = $updatedSaleData;
-                                    Log::info('Sale Auctio History Record Updadted Active', ['record' => json_encode($saleAuctionRecord)]);
                                 }else{
                                     $newSaleRecords[] = $saleData;
-                                    Log::info('Sale Auctio History Record Created Active', ['record' => json_encode($saleData)]);
                                 }
                         }
 
@@ -292,7 +285,6 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                             ]
                         ]
                     ]);
-                    Log::info("✅ Elasticsearch Processed document status updated for _id: $cacheKey");
                 } catch (\Throwable $e) {
                     // $clientkvmOne->index([
                     //     'index' => 'error_logs',
@@ -654,7 +646,6 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
         ];
 
         Log::info('Lot ID', ['lot_id' => $car['vehicle_record']['lot_id'] ?? null, 'vin' => $car['vehicle_record']['vin'] ?? null]);
-        // Log::info('Returned Array Data', ['data' => json_encode($data)]);
 
         if (preg_match('/[A-Za-z]/', $car['vehicle_record']['lot_id'])) {
             // Skip this record if it contains any letters
