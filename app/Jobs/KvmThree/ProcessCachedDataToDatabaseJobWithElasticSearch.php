@@ -27,7 +27,6 @@ use App\Models\Transmission;
 use App\Models\VehicleModel;
 use App\Models\VehicleProcessCachedApiData;
 use App\Models\VehicleType;
-use App\Models\Year;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -125,7 +124,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
     {
         Log::info('Starting Batch Insertion');
         $clientkvmOne = app('ElasticsearchKvmOne');
-        // try {
+        try {
             if (empty($batchData)) {
                 return;
             }
@@ -177,9 +176,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
 
             // ✅ Bulk Insert New Records
             if (!empty($newRecords)) {
-                foreach($newRecords as $item){
-                    DB::table('vehicle_records')->insert($item);
-                }
+                DB::table('vehicle_records')->insert($newRecords);
             }
 
             // ✅ Bulk Update Existing Records
@@ -261,20 +258,20 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 DB::table('sale_auction_histories')->insert($newSaleRecords);
 
             }
-        // } catch (\Throwable $e) {
-        //     $clientkvmOne->index([
-        //         'index' => 'error_logs',
-        //         'body' => [
-        //             'server_name' => 'KVM4.3',
-        //             'error_type' => 'Internal Server Error',
-        //             'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
-        //             'error' => "Batch insert failed: " . json_encode($e->getMessage()),
-        //             'created_at' => now()->toIso8601String(),
-        //             'updated_at' => now()->toIso8601String(),
-        //         ],
-        //     ]);
-        //     return;
-        // }
+        } catch (\Throwable $e) {
+            $clientkvmOne->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.3',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+                    'error' => "Batch insert failed: " . json_encode($e->getMessage()),
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
+            return;
+        }
 
         try {
             $client = app('ElasticsearchKvmOne');
@@ -341,10 +338,8 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
     {
         // Log::info('Car Dara', ['CarData' => json_encode($car)]);
         $year = null;
-        if (!isset($car['year'])) {
-            $year = Year::firstOrCreate(
-                ['name' => $car['year']]
-            )->id;
+        if (isset($car['year'])) {
+            $year = DB::table('years')->insertGetId(['name' => $car['year']]);
         }
         // Log::info('Year', ['data' => $year]);
 
