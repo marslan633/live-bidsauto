@@ -25,8 +25,8 @@ use App\Models\Status;
 use App\Models\Title;
 use App\Models\Transmission;
 use App\Models\VehicleModel;
-use App\Models\VehicleProcessCachedApiData;
 use App\Models\VehicleType;
+use App\Models\Year;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -79,7 +79,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             $batchData = [];
             foreach ($data as $car) {
                 $preparedData = $this->prepareCarData((array) $car);
-
+                Log::info('Prepared Data', ['prepareedData' => json_encode($preparedData)]);
                 if ($preparedData) {
                     $batchData[] = $preparedData;
                 }
@@ -338,8 +338,10 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
     {
         // Log::info('Car Dara', ['CarData' => json_encode($car)]);
         $year = null;
-        if (!isset($car['year'])) {
-            $year = DB::table('years')->insertGetId(['name' => $car['year']]);
+        if (isset($car['year'])) {
+            $year = Year::firstOrCreate(
+                ['name' => $car['year']]
+            )->id;
         }
         // Log::info('Year', ['data' => $year]);
 
