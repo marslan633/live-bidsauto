@@ -25,6 +25,7 @@ use App\Models\Status;
 use App\Models\Title;
 use App\Models\Transmission;
 use App\Models\VehicleModel;
+use App\Models\VehicleProcessCachedApiData;
 use App\Models\VehicleType;
 use App\Models\Year;
 use Illuminate\Queue\SerializesModels;
@@ -79,12 +80,14 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             $batchData = [];
             foreach ($data as $car) {
                 $preparedData = $this->prepareCarData((array) $car);
+
                 if ($preparedData) {
                     $batchData[] = $preparedData;
                 }
             }
 
             if (count($batchData) > 0) {
+                Log::info('Batch Inserted');
                 $this->insertBatch($batchData, $this->cacheKey->_id);
                 $batchData = []; // Reset batch
             } else {
@@ -120,8 +123,9 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
      */
     public function insertBatch(array $batchData, $cacheKey)
     {
+        Log::info('Starting Batch Insertion');
         $clientkvmOne = app('ElasticsearchKvmOne');
-        try {
+        // try {
             if (empty($batchData)) {
                 return;
             }
@@ -173,46 +177,10 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
 
             // ✅ Bulk Insert New Records
             if (!empty($newRecords)) {
-                $referenceKeys = array_keys($newRecords[0]);
-                $normalizedRecords = [];
-                $unnormalizedRecords = [];
-
-                foreach ($newRecords as $index => $record) {
-                    $currentKeys = array_keys($record);
-
-                    if ($currentKeys !== $referenceKeys) {
-                        $unnormalizedRecords[] = [
-                            'index' => $index,
-                            'expected_keys' => $referenceKeys,
-                            'actual_keys' => $currentKeys,
-                            'lot_id' => $record['lot_id'] ?? 'N/A',
-                            'vin' => $record['vin'] ?? 'N/A',
-                        ];
-                        continue;
-                    }
-
-                    // Normalize only valid ones
-                    $normalized = [];
-                    foreach ($referenceKeys as $key) {
-                        $normalized[$key] = $record[$key] ?? null;
-                    }
-                    $normalizedRecords[] = $normalized;
-                }
-
-                // ✅ Log unnormalized records (to file or Elasticsearch)
-                if (!empty($unnormalizedRecords)) {
-
-                    // Optionally send to Elasticsearch
-                    foreach ($unnormalizedRecords as $log) {
-                        Log::info('Unnormalized Record', ['unnormaized' => json_encode($log)]);
-                    }
-                }
-
-                if (!empty($normalizedRecords)) {
-                    DB::table('vehicle_records')->insert($normalizedRecords);
+                foreach($newRecords as $item){
+                    DB::table('vehicle_records')->insert($item);
                 }
             }
-
 
             // ✅ Bulk Update Existing Records
             if (!empty($updatedRecords)) {
@@ -237,15 +205,18 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                             $dataOne = $item;
                             $dataOne['id'] = $getVehicleRecord->id;
                             $VehicleUpdateRecordOne[] = $dataOne;
+                            Log::info('Condition 1', ['record' => json_encode($dataOne)]);
                         }elseif($checkRecordSaleDate != $currentSaleDate && $getVehicleRecord->status_id != 3 && $getVehicleRecord->data_source == 2){
                             $dataTwo = $item;
                             $dataTwo['id'] = $getVehicleRecord->id;
                             $VehicleUpdateRecordOne[] = $dataTwo;
+                            Log::info('Condition 2', ['record' => json_encode($dataTwo)]);
                         }elseif($checkRecordSaleDate != $currentSaleDate && $getVehicleRecord->status_id == 3){
                             $dataThree = $item;
                             $dataThree['id'] = $getVehicleRecord->id;
                             $dataThree['data_source'] = 1;
                             $VehicleUpdateRecordOne[] = $dataThree;
+                            Log::info('Condition 3', ['record' => json_encode($dataThree)]);
                         }
 
 
@@ -274,8 +245,10 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                                     $updatedSaleData = $saleData;
                                     $updatedSaleData['id'] = $saleAuctionRecord->id;
                                     $updatedSaleRecords[] = $updatedSaleData;
+                                    Log::info('Sale Auctio History Record Updadted Active', ['record' => json_encode($saleAuctionRecord)]);
                                 }else{
                                     $newSaleRecords[] = $saleData;
+                                    Log::info('Sale Auctio History Record Created Active', ['record' => json_encode($saleData)]);
                                 }
                         }
 
@@ -288,20 +261,20 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 DB::table('sale_auction_histories')->insert($newSaleRecords);
 
             }
-        } catch (\Throwable $e) {
-            $clientkvmOne->index([
-                'index' => 'error_logs',
-                'body' => [
-                    'server_name' => 'KVM4.3',
-                    'error_type' => 'Internal Server Error',
-                    'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
-                    'error' => "Batch insert failed: " . json_encode($e->getMessage()),
-                    'created_at' => now()->toIso8601String(),
-                    'updated_at' => now()->toIso8601String(),
-                ],
-            ]);
-            return;
-        }
+        // } catch (\Throwable $e) {
+        //     $clientkvmOne->index([
+        //         'index' => 'error_logs',
+        //         'body' => [
+        //             'server_name' => 'KVM4.3',
+        //             'error_type' => 'Internal Server Error',
+        //             'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+        //             'error' => "Batch insert failed: " . json_encode($e->getMessage()),
+        //             'created_at' => now()->toIso8601String(),
+        //             'updated_at' => now()->toIso8601String(),
+        //         ],
+        //     ]);
+        //     return;
+        // }
 
         try {
             $client = app('ElasticsearchKvmOne');
@@ -322,6 +295,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                             ]
                         ]
                     ]);
+                    Log::info("✅ Elasticsearch Processed document status updated for _id: $cacheKey");
                 } catch (\Throwable $e) {
                     // $clientkvmOne->index([
                     //     'index' => 'error_logs',
@@ -367,7 +341,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
     {
         // Log::info('Car Dara', ['CarData' => json_encode($car)]);
         $year = null;
-        if (isset($car['year'])) {
+        if (!isset($car['year'])) {
             $year = Year::firstOrCreate(
                 ['name' => $car['year']]
             )->id;
@@ -682,6 +656,8 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             'image_id' => $imageId,
         ];
 
+        Log::info('Lot ID', ['lot_id' => $car['vehicle_record']['lot_id'] ?? null, 'vin' => $car['vehicle_record']['vin'] ?? null]);
+        // Log::info('Returned Array Data', ['data' => json_encode($data)]);
 
         if (preg_match('/[A-Za-z]/', $car['vehicle_record']['lot_id'])) {
             // Skip this record if it contains any letters
