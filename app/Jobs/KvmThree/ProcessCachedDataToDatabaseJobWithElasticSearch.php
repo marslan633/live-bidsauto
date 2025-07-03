@@ -187,7 +187,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                                 'server_name' => 'KVM4.3',
                                 'error_type' => 'Internal Server Error',
                                 'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
-                                'error' => "Batch insert failed: " . json_encode($e->getMessage()),
+                                'error' => "Nested Catch Error " . json_encode($e->getMessage()),
                                 'created_at' => now()->toIso8601String(),
                                 'updated_at' => now()->toIso8601String(),
                             ],
