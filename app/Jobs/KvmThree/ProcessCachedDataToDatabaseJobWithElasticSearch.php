@@ -275,7 +275,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 DB::table('sale_auction_histories')->insert($newSaleRecords);
 
             }
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $clientkvmOne->index([
                 'index' => 'error_logs',
                 'body' => [
