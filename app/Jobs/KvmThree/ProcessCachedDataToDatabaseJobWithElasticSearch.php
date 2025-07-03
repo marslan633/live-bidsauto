@@ -58,7 +58,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
     public function handle(): void
     {
         $clientkvmOne = app('ElasticsearchKvmOne');
-        try {
+        // try {
 
             $data = unCompressData($this->cacheKey->cache_value);
             if (!$data) {
@@ -102,19 +102,19 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 //     ],
                 // ]);
             }
-        } catch (\Exception $e) {
-            $clientkvmOne->index([
-                'index' => 'error_logs',
-                'body' => [
-                    'server_name' => 'KVM4.3',
-                    'error_type' => 'Internal Server Error',
-                    'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
-                    'error' => "Error processing key {$this->cacheKey->_id}: " . json_encode($e->getMessage()),
-                    'created_at' => now()->toIso8601String(),
-                    'updated_at' => now()->toIso8601String(),
-                ],
-            ]);
-        }
+        // } catch (\Exception $e) {
+        //     $clientkvmOne->index([
+        //         'index' => 'error_logs',
+        //         'body' => [
+        //             'server_name' => 'KVM4.3',
+        //             'error_type' => 'Internal Server Error',
+        //             'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+        //             'error' => "Error processing key {$this->cacheKey->_id}: " . json_encode($e->getMessage()),
+        //             'created_at' => now()->toIso8601String(),
+        //             'updated_at' => now()->toIso8601String(),
+        //         ],
+        //     ]);
+        // }
     }
 
     /**
