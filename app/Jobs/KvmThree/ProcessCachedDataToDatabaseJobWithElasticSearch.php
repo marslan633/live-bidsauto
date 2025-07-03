@@ -124,7 +124,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
     {
         Log::info('Starting Batch Insertion');
         $clientkvmOne = app('ElasticsearchKvmOne');
-        try {
+        // try {
             if (empty($batchData)) {
                 return;
             }
@@ -275,80 +275,80 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 DB::table('sale_auction_histories')->insert($newSaleRecords);
 
             }
-        } catch (\Exception $e) {
-            $clientkvmOne->index([
-                'index' => 'error_logs',
-                'body' => [
-                    'server_name' => 'KVM4.3',
-                    'error_type' => 'Internal Server Error',
-                    'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
-                    'error' => "Batch insert failed: " . json_encode($e->getMessage()),
-                    'created_at' => now()->toIso8601String(),
-                    'updated_at' => now()->toIso8601String(),
-                ],
-            ]);
-            return;
-        }
+        // } catch (\Exception $e) {
+        //     $clientkvmOne->index([
+        //         'index' => 'error_logs',
+        //         'body' => [
+        //             'server_name' => 'KVM4.3',
+        //             'error_type' => 'Internal Server Error',
+        //             'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+        //             'error' => "Batch insert failed: " . json_encode($e->getMessage()),
+        //             'created_at' => now()->toIso8601String(),
+        //             'updated_at' => now()->toIso8601String(),
+        //         ],
+        //     ]);
+        //     return;
+        // }
 
-        try {
-            $client = app('ElasticsearchKvmOne');
+        // try {
+        //     $client = app('ElasticsearchKvmOne');
 
-            $response = $client->exists([
-                'index' => 'vehicle_process_cached_api_data',
-                'id' => $cacheKey,
-            ]);
+        //     $response = $client->exists([
+        //         'index' => 'vehicle_process_cached_api_data',
+        //         'id' => $cacheKey,
+        //     ]);
 
-            if ($response) {
-                try {
-                    $client->update([
-                        'index' => 'vehicle_process_cached_api_data',
-                        'id' => $cacheKey,
-                        'body' => [
-                            'doc' => [
-                                'status' => 'completed'
-                            ]
-                        ]
-                    ]);
-                    Log::info("✅ Elasticsearch Processed document status updated for _id: $cacheKey");
-                } catch (\Throwable $e) {
-                    // $clientkvmOne->index([
-                    //     'index' => 'error_logs',
-                    //     'body' => [
-                    //         'server_name' => 'KVM4.3',
-                    //         'error_type' => 'Internal Server Error',
-                    //         'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
-                    //         'error' => "⚠️ Failed to update document: " . json_encode($e->getMessage()),
-                    //         'created_at' => now()->toIso8601String(),
-                    //         'updated_at' => now()->toIso8601String(),
-                    //     ],
-                    // ]);
-                }
-            } else {
-                $clientkvmOne->index([
-                    'index' => 'error_logs',
-                    'body' => [
-                        'server_name' => 'KVM4.3',
-                        'error_type' => 'General',
-                        'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
-                        'error' => "⚠️ Document not found for update with _id: $cacheKey",
-                        'created_at' => now()->toIso8601String(),
-                        'updated_at' => now()->toIso8601String(),
-                    ],
-                ]);
-            }
-        } catch (\Throwable $e) {
-            $clientkvmOne->index([
-                'index' => 'error_logs',
-                'body' => [
-                    'server_name' => 'KVM4.3',
-                    'error_type' => 'Internal Server Error',
-                    'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
-                    'error' => "❌ Elasticsearch exists check failed: " . json_encode($e->getMessage()),
-                    'created_at' => now()->toIso8601String(),
-                    'updated_at' => now()->toIso8601String(),
-                ],
-            ]);
-        }
+        //     if ($response) {
+        //         try {
+        //             $client->update([
+        //                 'index' => 'vehicle_process_cached_api_data',
+        //                 'id' => $cacheKey,
+        //                 'body' => [
+        //                     'doc' => [
+        //                         'status' => 'completed'
+        //                     ]
+        //                 ]
+        //             ]);
+        //             Log::info("✅ Elasticsearch Processed document status updated for _id: $cacheKey");
+        //         } catch (\Throwable $e) {
+        //             // $clientkvmOne->index([
+        //             //     'index' => 'error_logs',
+        //             //     'body' => [
+        //             //         'server_name' => 'KVM4.3',
+        //             //         'error_type' => 'Internal Server Error',
+        //             //         'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+        //             //         'error' => "⚠️ Failed to update document: " . json_encode($e->getMessage()),
+        //             //         'created_at' => now()->toIso8601String(),
+        //             //         'updated_at' => now()->toIso8601String(),
+        //             //     ],
+        //             // ]);
+        //         }
+        //     } else {
+        //         $clientkvmOne->index([
+        //             'index' => 'error_logs',
+        //             'body' => [
+        //                 'server_name' => 'KVM4.3',
+        //                 'error_type' => 'General',
+        //                 'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+        //                 'error' => "⚠️ Document not found for update with _id: $cacheKey",
+        //                 'created_at' => now()->toIso8601String(),
+        //                 'updated_at' => now()->toIso8601String(),
+        //             ],
+        //         ]);
+        //     }
+        // } catch (\Throwable $e) {
+        //     $clientkvmOne->index([
+        //         'index' => 'error_logs',
+        //         'body' => [
+        //             'server_name' => 'KVM4.3',
+        //             'error_type' => 'Internal Server Error',
+        //             'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+        //             'error' => "❌ Elasticsearch exists check failed: " . json_encode($e->getMessage()),
+        //             'created_at' => now()->toIso8601String(),
+        //             'updated_at' => now()->toIso8601String(),
+        //         ],
+        //     ]);
+        // }
     }
 
     public function prepareCarData(array $car)
