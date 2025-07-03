@@ -338,11 +338,11 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
         try{
             // Log::info('Car Dara', ['CarData' => json_encode($car)]);
         $year = null;
-        if (isset($car['year']) && isset($car['year']['name'])) {
-            $year = Year::firstOrCreate(
-                ['name' => $car['year']['name']]
-            )->id;
-        }
+        // if (isset($car['year']) && isset($car['year']['name'])) {
+        //     $year = Year::firstOrCreate(
+        //         ['name' => $car['year']['name']]
+        //     )->id;
+        // }
         // Log::info('Year', ['data' => $year]);
 
         $car['vehicle_record'] = (array) $car['vehicle_record'];
