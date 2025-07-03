@@ -176,22 +176,23 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
 
             // ✅ Bulk Insert New Records
             if (!empty($newRecords)) {
-                try{
-                    foreach($newRecords as $newRecord){
+                foreach($newRecords as $newRecord){
+                    try{
                         DB::table('vehicle_records')->insert($newRecord);
+                    } catch (\Throwable $e) {
+                        Log::info('Corrupted Record', ['record' => json_encode($newRecord)]);
+                        $clientkvmOne->index([
+                            'index' => 'error_logs',
+                            'body' => [
+                                'server_name' => 'KVM4.3',
+                                'error_type' => 'Internal Server Error',
+                                'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+                                'error' => "Batch insert failed: " . json_encode($e->getMessage()),
+                                'created_at' => now()->toIso8601String(),
+                                'updated_at' => now()->toIso8601String(),
+                            ],
+                        ]);
                     }
-                } catch (\Throwable $e) {
-                    $clientkvmOne->index([
-                        'index' => 'error_logs',
-                        'body' => [
-                            'server_name' => 'KVM4.3',
-                            'error_type' => 'Internal Server Error',
-                            'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
-                            'error' => "Batch insert failed: " . json_encode($e->getMessage()),
-                            'created_at' => now()->toIso8601String(),
-                            'updated_at' => now()->toIso8601String(),
-                        ],
-                    ]);
                 }
             }
 
