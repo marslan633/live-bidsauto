@@ -338,6 +338,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             // Log::info('Car Dara', ['CarData' => json_encode($car)]);
         $year = null;
         if (isset($car['year'])) {
+            Log::info('Year', ['year' => json_encode($car['year'])]);
             $year = DB::table('years')->insertGetId(['name' => $car['year']]);
         }
         // Log::info('Year', ['data' => $year]);
