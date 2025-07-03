@@ -27,6 +27,7 @@ use App\Models\Transmission;
 use App\Models\VehicleModel;
 use App\Models\VehicleProcessCachedApiData;
 use App\Models\VehicleType;
+use App\Models\Year;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -338,7 +339,9 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             // Log::info('Car Dara', ['CarData' => json_encode($car)]);
         $year = null;
         if (isset($car['year']) && isset($car['year']['name'])) {
-            $year = DB::table('years')->insertGetId(['name' => $car['year']['name']]);
+            $year = Year::firstOrCreate(
+                ['name' => $car['year']['name']]
+            )->id;
         }
         // Log::info('Year', ['data' => $year]);
 
