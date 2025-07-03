@@ -201,13 +201,11 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                         if($checkRecordSaleDate == $currentSaleDate && $getVehicleRecord->data_source == 2){
                             $dataOne = $item;
                             $dataOne['id'] = $getVehicleRecord->id;
-                            $dataTwo['data_source'] = 2;
                             $VehicleUpdateRecordOne[] = $dataOne;
                             Log::info('Condition 1', ['record' => json_encode($dataOne)]);
                         }elseif($checkRecordSaleDate != $currentSaleDate && $getVehicleRecord->status_id != 3 && $getVehicleRecord->data_source == 2){
                             $dataTwo = $item;
                             $dataTwo['id'] = $getVehicleRecord->id;
-                            $dataTwo['data_source'] = 2;
                             $VehicleUpdateRecordOne[] = $dataTwo;
                             Log::info('Condition 2', ['record' => json_encode($dataTwo)]);
                         }elseif($checkRecordSaleDate != $currentSaleDate && $getVehicleRecord->status_id == 3){
@@ -255,8 +253,22 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                     }
 
                 }
-                DB::table('vehicle_records')->upsert($VehicleUpdateRecordOne,['id']);
-                DB::table('sale_auction_histories')->upsert($updatedSaleRecords,['id']);
+
+                foreach ($VehicleUpdateRecordOne as $record) {
+                    if (isset($record['id']) && DB::table('vehicle_records')->where('id', $record['id'])->exists()) {
+                        $id = $record['id'];
+                        unset($record['id']);
+                        DB::table('vehicle_records')->where('id', $id)->update($record);
+                    }
+                }
+                foreach ($updatedSaleRecords as $record) {
+                    if (isset($record['id'])) {
+                        $id = $record['id'];
+                        unset($record['id']); // Don't update the primary key
+                        DB::table('sale_auction_histories')->where('id', $id)->update($record);
+                    }
+                }
+
                 DB::table('sale_auction_histories')->insert($newSaleRecords);
 
             }
