@@ -201,11 +201,13 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                         if($checkRecordSaleDate == $currentSaleDate && $getVehicleRecord->data_source == 2){
                             $dataOne = $item;
                             $dataOne['id'] = $getVehicleRecord->id;
+                            $dataTwo['data_source'] = 2;
                             $VehicleUpdateRecordOne[] = $dataOne;
                             Log::info('Condition 1', ['record' => json_encode($dataOne)]);
                         }elseif($checkRecordSaleDate != $currentSaleDate && $getVehicleRecord->status_id != 3 && $getVehicleRecord->data_source == 2){
                             $dataTwo = $item;
                             $dataTwo['id'] = $getVehicleRecord->id;
+                            $dataTwo['data_source'] = 2;
                             $VehicleUpdateRecordOne[] = $dataTwo;
                             Log::info('Condition 2', ['record' => json_encode($dataTwo)]);
                         }elseif($checkRecordSaleDate != $currentSaleDate && $getVehicleRecord->status_id == 3){
@@ -253,7 +255,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                     }
 
                 }
-                // DB::table('vehicle_records')->upsert($VehicleUpdateRecordOne,['id']);
+                DB::table('vehicle_records')->upsert($VehicleUpdateRecordOne,['id']);
                 DB::table('sale_auction_histories')->upsert($updatedSaleRecords,['id']);
                 DB::table('sale_auction_histories')->insert($newSaleRecords);
 
