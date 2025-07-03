@@ -78,7 +78,6 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             $batchData = [];
             foreach ($data as $car) {
                 $preparedData = $this->prepareCarData((array) $car);
-                Log::info('Prepare Data', ['prepareData' => json_encode($preparedData)]);
                 if ($preparedData) {
                     $batchData[] = $preparedData;
                 }
