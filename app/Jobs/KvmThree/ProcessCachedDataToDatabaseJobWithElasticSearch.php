@@ -334,7 +334,9 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
 
     public function prepareCarData(array $car)
     {
-        // Log::info('Car Dara', ['CarData' => json_encode($car)]);
+        $clientkvmOne = app('ElasticsearchKvmOne');
+        try{
+            // Log::info('Car Dara', ['CarData' => json_encode($car)]);
         $year = null;
         if (isset($car['year'])) {
             $year = DB::table('years')->insertGetId(['name' => $car['year']]);
@@ -657,5 +659,18 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             return null;
         }
         return $data;
+        }catch(\Exception $e){
+            $clientkvmOne->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.3',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+                    'error' => "Error processing key {$this->cacheKey->_id}: " . json_encode($e->getMessage()),
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
+        }
     }
 }
