@@ -49,7 +49,6 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
     {
         $this->queue = 'process_cached_data_to_database_job_with_elasticsearch';
         $this->cacheKey = $cacheKey;
-        Log::info('Log From Database Constructor');
     }
 
     /**
@@ -79,14 +78,13 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             $batchData = [];
             foreach ($data as $car) {
                 $preparedData = $this->prepareCarData((array) $car);
-
+                Log::info('Prepare Data', ['prepareData' => json_encode($preparedData)]);
                 if ($preparedData) {
                     $batchData[] = $preparedData;
                 }
             }
 
             if (count($batchData) > 0) {
-                Log::info('Batch Inserted');
                 $this->insertBatch($batchData, $this->cacheKey->_id);
                 $batchData = []; // Reset batch
             } else {
@@ -122,7 +120,6 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
      */
     public function insertBatch(array $batchData, $cacheKey)
     {
-        Log::info('Starting Batch Insertion');
         $clientkvmOne = app('ElasticsearchKvmOne');
         try {
             if (empty($batchData)) {
@@ -174,11 +171,6 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 }
             }
 
-            // ✅ Bulk Insert New Records
-            if (!empty($newRecords)) {
-                DB::table('vehicle_records')->insert($newRecords);
-            }
-
             // ✅ Bulk Update Existing Records
             if (!empty($updatedRecords)) {
                 $VehicleUpdateRecordOne = [];
@@ -202,18 +194,15 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                             $dataOne = $item;
                             $dataOne['id'] = $getVehicleRecord->id;
                             $VehicleUpdateRecordOne[] = $dataOne;
-                            Log::info('Condition 1', ['record' => json_encode($dataOne)]);
                         }elseif($checkRecordSaleDate != $currentSaleDate && $getVehicleRecord->status_id != 3 && $getVehicleRecord->data_source == 2){
                             $dataTwo = $item;
                             $dataTwo['id'] = $getVehicleRecord->id;
                             $VehicleUpdateRecordOne[] = $dataTwo;
-                            Log::info('Condition 2', ['record' => json_encode($dataTwo)]);
                         }elseif($checkRecordSaleDate != $currentSaleDate && $getVehicleRecord->status_id == 3){
                             $dataThree = $item;
                             $dataThree['id'] = $getVehicleRecord->id;
                             $dataThree['data_source'] = 1;
                             $VehicleUpdateRecordOne[] = $dataThree;
-                            Log::info('Condition 3', ['record' => json_encode($dataThree)]);
                         }
 
 
@@ -242,10 +231,8 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                                     $updatedSaleData = $saleData;
                                     $updatedSaleData['id'] = $saleAuctionRecord->id;
                                     $updatedSaleRecords[] = $updatedSaleData;
-                                    Log::info('Sale Auctio History Record Updadted Active', ['record' => json_encode($saleAuctionRecord)]);
                                 }else{
                                     $newSaleRecords[] = $saleData;
-                                    Log::info('Sale Auctio History Record Created Active', ['record' => json_encode($saleData)]);
                                 }
                         }
 
@@ -253,9 +240,21 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                     }
 
                 }
-                DB::table('vehicle_records')->upsert($VehicleUpdateRecordOne,['id']);
-                DB::table('sale_auction_histories')->upsert($updatedSaleRecords,['id']);
-                DB::table('sale_auction_histories')->insert($newSaleRecords);
+
+                 // ✅ Bulk Insert New Records
+                if (!empty($newRecords)) {
+                    DB::table('vehicle_records')->insert($newRecords);
+                }
+
+                if(!empty($VehicleUpdateRecordOne)){
+                    DB::table('vehicle_records')->upsert($VehicleUpdateRecordOne,['id']);
+                }
+                if(!empty($updatedSaleRecords)){
+                    DB::table('sale_auction_histories')->upsert($updatedSaleRecords,['id']);
+                }
+                if(!empty($newSaleRecords)){
+                    DB::table('sale_auction_histories')->insert($newSaleRecords);
+                }
 
             }
         } catch (\Throwable $e) {
@@ -292,7 +291,6 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                             ]
                         ]
                     ]);
-                    Log::info("✅ Elasticsearch Processed document status updated for _id: $cacheKey");
                 } catch (\Throwable $e) {
                     // $clientkvmOne->index([
                     //     'index' => 'error_logs',
