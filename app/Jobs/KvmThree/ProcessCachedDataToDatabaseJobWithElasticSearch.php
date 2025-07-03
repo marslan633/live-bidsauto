@@ -58,6 +58,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
     public function handle(): void
     {
         $clientkvmOne = app('ElasticsearchKvmOne');
+        try {
 
             $data = unCompressData($this->cacheKey->cache_value);
             if (!$data) {
@@ -88,8 +89,32 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 Log::info('Batch Inserted');
                 $this->insertBatch($batchData, $this->cacheKey->_id);
                 $batchData = []; // Reset batch
+            } else {
+                // $clientkvmOne->index([
+                //     'index' => 'error_logs',
+                //     'body' => [
+                //         'server_name' => 'KVM4.3',
+                //         'error_type' => 'General',
+                //         'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+                //         'error' => "Batch Condition Not Meet",
+                //         'created_at' => now()->toIso8601String(),
+                //         'updated_at' => now()->toIso8601String(),
+                //     ],
+                // ]);
             }
-
+        } catch (\Exception $e) {
+            $clientkvmOne->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.3',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+                    'error' => "Error processing key {$this->cacheKey->_id}: " . json_encode($e->getMessage()),
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
+        }
     }
 
     /**
@@ -99,6 +124,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
     {
         Log::info('Starting Batch Insertion');
         $clientkvmOne = app('ElasticsearchKvmOne');
+        try {
             if (empty($batchData)) {
                 return;
             }
@@ -150,24 +176,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
 
             // ✅ Bulk Insert New Records
             if (!empty($newRecords)) {
-                foreach($newRecords as $newRecord){
-                    try{
-                        DB::table('vehicle_records')->insert($newRecord);
-                    } catch (\Throwable $e) {
-                        Log::info('Corrupted Record', ['record' => json_encode($newRecord)]);
-                        $clientkvmOne->index([
-                            'index' => 'error_logs',
-                            'body' => [
-                                'server_name' => 'KVM4.3',
-                                'error_type' => 'Internal Server Error',
-                                'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
-                                'error' => "Nested Catch Error " . json_encode($e->getMessage()),
-                                'created_at' => now()->toIso8601String(),
-                                'updated_at' => now()->toIso8601String(),
-                            ],
-                        ]);
-                    }
-                }
+                DB::table('vehicle_records')->insert($newRecords);
             }
 
             // ✅ Bulk Update Existing Records
@@ -244,12 +253,85 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                     }
 
                 }
-                DB::table('vehicle_records')->upsert($VehicleUpdateRecordOne,['id']);
+                // DB::table('vehicle_records')->upsert($VehicleUpdateRecordOne,['id']);
                 DB::table('sale_auction_histories')->upsert($updatedSaleRecords,['id']);
                 DB::table('sale_auction_histories')->insert($newSaleRecords);
 
             }
+        } catch (\Throwable $e) {
+            $clientkvmOne->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.3',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+                    'error' => "Batch insert failed: " . json_encode($e->getMessage()),
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
+            return;
+        }
 
+        try {
+            $client = app('ElasticsearchKvmOne');
+
+            $response = $client->exists([
+                'index' => 'vehicle_process_cached_api_data',
+                'id' => $cacheKey,
+            ]);
+
+            if ($response) {
+                try {
+                    $client->update([
+                        'index' => 'vehicle_process_cached_api_data',
+                        'id' => $cacheKey,
+                        'body' => [
+                            'doc' => [
+                                'status' => 'completed'
+                            ]
+                        ]
+                    ]);
+                    Log::info("✅ Elasticsearch Processed document status updated for _id: $cacheKey");
+                } catch (\Throwable $e) {
+                    // $clientkvmOne->index([
+                    //     'index' => 'error_logs',
+                    //     'body' => [
+                    //         'server_name' => 'KVM4.3',
+                    //         'error_type' => 'Internal Server Error',
+                    //         'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+                    //         'error' => "⚠️ Failed to update document: " . json_encode($e->getMessage()),
+                    //         'created_at' => now()->toIso8601String(),
+                    //         'updated_at' => now()->toIso8601String(),
+                    //     ],
+                    // ]);
+                }
+            } else {
+                $clientkvmOne->index([
+                    'index' => 'error_logs',
+                    'body' => [
+                        'server_name' => 'KVM4.3',
+                        'error_type' => 'General',
+                        'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+                        'error' => "⚠️ Document not found for update with _id: $cacheKey",
+                        'created_at' => now()->toIso8601String(),
+                        'updated_at' => now()->toIso8601String(),
+                    ],
+                ]);
+            }
+        } catch (\Throwable $e) {
+            $clientkvmOne->index([
+                'index' => 'error_logs',
+                'body' => [
+                    'server_name' => 'KVM4.3',
+                    'error_type' => 'Internal Server Error',
+                    'command_name' => 'process_cached_data_to_database_job_with_elasticsearch',
+                    'error' => "❌ Elasticsearch exists check failed: " . json_encode($e->getMessage()),
+                    'created_at' => now()->toIso8601String(),
+                    'updated_at' => now()->toIso8601String(),
+                ],
+            ]);
+        }
     }
 
     public function prepareCarData(array $car)
