@@ -36,10 +36,10 @@ Route::get('removeStaleCacheKeys', [VehicleController::class, 'removeStaleCacheK
 Route::get('/records-by-interval', [VehicleController::class, 'getRecordsByInterval']);
 
 Route::get('/sale-date-check', function(){
-    $notSaleData = VehicleRecord::with('sellingBranch')->where('data_source', 1)->where('status_id')->whereRaw(
+    $notSaleData = VehicleRecord::with('sellingBranch')->where('data_source', 1)->where('status_id', 3)->whereRaw(
                 "DATE_FORMAT(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), '%Y-%m-%d %H:%i') > ?",
                 [now()->format('Y-m-d H:i')]
-            )->limit(5000)->get();
+            )->limit(10)->get();
     return ['notSaleData' => $notSaleData];
 });
 
