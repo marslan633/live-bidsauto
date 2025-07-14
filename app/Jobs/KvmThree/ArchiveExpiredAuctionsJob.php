@@ -58,6 +58,7 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
                     ])]);
                 }
 
+
                 DB::table('vehicle_records')->upsert($updatedVehicleRecordsData,['id']);
             } catch (\Exception $e) {
                 $client->index([
