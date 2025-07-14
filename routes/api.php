@@ -10,6 +10,7 @@ use App\Models\VehicleProcessCachedApiData;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use App\Console\Commands\ProcessCachedDataToDatabases;
+use App\Models\VehicleRecord;
 use Carbon\Carbon;
 
 Route::get('/user', function (Request $request) {
@@ -35,24 +36,11 @@ Route::get('removeStaleCacheKeys', [VehicleController::class, 'removeStaleCacheK
 Route::get('/records-by-interval', [VehicleController::class, 'getRecordsByInterval']);
 
 Route::get('/sale-date-check', function(){
-    $origonal = DB::table('vehicle_records')
-            ->whereRaw(
-                "DATE_FORMAT(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), '%Y-%m-%d %H:%i') <= ?",
-                [now()->format('Y-m-d H:i')]
-            )
-            ->orderBy('created_at')->limit(1)->get();
-    $extended = DB::table('vehicle_records')
-            ->whereRaw(
-                "DATE_FORMAT(DATE_ADD(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), INTERVAL 28 HOUR), '%Y-%m-%d %H:%i') <= ?",
-                [now()->addHours(28)->format('Y-m-d H:i')]
-            )
-            ->orderBy('created_at')->limit(1)->get();
-
-    $notSaleData = DB::table('vehicle_records')->where('data_source', 1)->where('status_id', '!=', 3)->whereRaw(
+    $notSaleData = VehicleRecord::with('sellingBranch')->where('data_source', 1)->where('status_id')->whereRaw(
                 "DATE_FORMAT(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), '%Y-%m-%d %H:%i') > ?",
                 [now()->format('Y-m-d H:i')]
             )->limit(5000)->get();
-    return ['origonal' => $origonal, 'extended' => $extended, 'notSaleData' => $notSaleData];
+    return ['notSaleData' => $notSaleData];
 });
 
 Route::get('get-read-redis-data', function(){
