@@ -35,7 +35,7 @@ class IndexVehicleRecords extends Command
                     'query' => [
                         'bool' => [
                             'must' => [
-                                ['term' => ['cron_name' => 'process_archived_vehicle_data']],
+                                ['term' => ['cron_name' => 'process_vehicles_to_elasticsearch']],
                                 ['term' => ['status' => 'success']]
                             ]
                         ]

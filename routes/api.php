@@ -47,7 +47,12 @@ Route::get('/sale-date-check', function(){
                 [now()->addHours(28)->format('Y-m-d H:i')]
             )
             ->orderBy('created_at')->limit(1)->get();
-    return ['origonal' => $origonal, 'extended' => $extended];
+
+    $notSaleData = DB::table('vehicle_records')->where('data_source', 1)->where('status_id', '!=', 3)->whereRaw(
+                "DATE_FORMAT(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), '%Y-%m-%d %H:%i') > ?",
+                [now()->format('Y-m-d H:i')]
+            )->limit(5000);
+    return ['origonal' => $origonal, 'extended' => $extended, 'notSaleData' => $notSaleData];
 });
 
 Route::get('get-read-redis-data', function(){

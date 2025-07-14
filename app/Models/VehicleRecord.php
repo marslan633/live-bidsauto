@@ -139,9 +139,10 @@ class VehicleRecord extends Model
         return $this->belongsTo(Location::class);
     }
 
+
     public function sellingBranch()
     {
-        return $this->belongsTo(SellingBranch::class);
+        return $this->belongsTo(SellingBranch::class, 'selling_branch', 'id');
     }
 
     // Accessor methods to decode the JSON strings for small, normal, and big
