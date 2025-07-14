@@ -51,7 +51,7 @@ Route::get('/sale-date-check', function(){
     $notSaleData = DB::table('vehicle_records')->where('data_source', 1)->where('status_id', '!=', 3)->whereRaw(
                 "DATE_FORMAT(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), '%Y-%m-%d %H:%i') > ?",
                 [now()->format('Y-m-d H:i')]
-            )->limit(5000);
+            )->limit(5000)->get();
     return ['origonal' => $origonal, 'extended' => $extended, 'notSaleData' => $notSaleData];
 });
 
