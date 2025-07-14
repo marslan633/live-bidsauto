@@ -23,8 +23,8 @@ if (config('app.app_kvm_three') === true) {
 }
 
 if (config('app.app_kvm_four') === true) {
-    // app(Schedule::class)->command('index:sale-auction-histories')->dailyAt('10:59')->withoutOverlapping();
-    // app(Schedule::class)->command('index:vehicle-records')->cron('*/11 * * * *')->withoutOverlapping();
-    // app(Schedule::class)->command('index:sale-auction-histories')->cron('*/20 * * * *')->withoutOverlapping();
-    // app(Schedule::class)->command('process:delete-expired-data')->everyFiveMinutes()->withoutOverlapping();
+   //  app(Schedule::class)->command('index:vehicle-records')->dailyAt('03:011')->withoutOverlapping();
+   app(Schedule::class)->command('index:vehicle-records')->cron('*/11 * * * *')->withoutOverlapping();
+   app(Schedule::class)->command('index:sale-auction-histories')->cron('*/20 * * * *')->withoutOverlapping();
+  // app(Schedule::class)->command('process:delete-expired-data')->everyFiveMinutes()->withoutOverlapping();
 }
