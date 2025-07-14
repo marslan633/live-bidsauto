@@ -43,30 +43,13 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
                 try {
                 $now = Carbon::now();
                 $saleDate = Carbon::parse($record['sale_date']);
-                if($saleDate < now() && $record['status_id'] == 3){
-                    $record['status_id'] = 7;
-                    $record['data_source'] = 2;
+                if($saleDate->gt($now) && $record['status_id'] == 3){
                     $updatedVehicleRecordsData[] = [
                         'id' => $record['id'],
-                        'status_id' => 7,
-                        'data_source' => 2,
+                        'data_source' => 1,
                         'updated_at' => $now
                     ];
-                    Log::info('Expired and Status Sale Record Updadted', ['record' => json_encode([
-                        'id' => $record['id'],
-                        'status_id' => 7,
-                        'data_source' => 2,
-                        'updated_at' => $now,
-                        'lot_id' => $record['lot_id'],
-                        'sale_date' => $record['sale_date']
-                    ])]);
-                }elseif($saleDate > now() && $record['status_id'] != 3){
-                    $updatedVehicleRecordsData[] = [
-                        'id' => $record['id'],
-                        'data_source' => 2,
-                        'updated_at' => $now
-                    ];
-                    Log::info('Active and Status Not Sale Record Updadted', ['record' => json_encode([
+                    Log::info('Active and Status Sale Record Updadted', ['record' => json_encode([
                         'id' => $record['id'],
                         'data_source' => 2,
                         'updated_at' => $now,
@@ -75,39 +58,7 @@ class ArchiveExpiredAuctionsJob implements ShouldQueue
                     ])]);
                 }
 
-                $record['updated_at'] = $now;
-
-
-                $saleAuctionRecord = DB::table('sale_auction_histories')
-                ->where([
-                    'vin' => $record['vin'],
-                    'lot_id' => $record['lot_id'],
-                    'sale_date' => $record['sale_date'],
-                ])->first();
-
-                $saleData = [
-                    'vin' => $record['vin'],
-                    'domain_id' => $record['domain_id'],
-                    'sale_date' => $record['sale_date'],
-                    'lot_id' => $record['lot_id'],
-                    'bid' => $record['bid'],
-                    'odometer_mi' => $record['odometer_mi'],
-                    'status_id' => $record['status_id'],
-                    'seller_id' => $record['seller_id'],
-                    'created_at' => $now,
-                    'updated_at' => $now
-                ];
-                if($saleAuctionRecord){
-                    unset($saleData['created_at']);
-                    $updatedSaleData[] = array_merge(['id' => $saleAuctionRecord->id], $saleData);
-                    Log::info('Sale Auctio History Record Updadted', ['record' => json_encode(array_merge(['id' => $saleAuctionRecord->id], $saleData))]);
-                }else{
-                    $newSaleData[] = $saleData;
-                    Log::info('Sale Auctio History Record Created', ['record' => json_encode($saleData)]);
-                }
-                // DB::table('sale_records')->upsert($updatedVehicleRecordsData,['id']);
-                // DB::table('sale_auction_histories')->upsert($updatedSaleData,['id']);
-                // DB::table('sale_auction_histories')->insert($newSaleData);
+                DB::table('vehicle_records')->upsert($updatedVehicleRecordsData,['id']);
             } catch (\Exception $e) {
                 $client->index([
                     'index' => 'error_logs',

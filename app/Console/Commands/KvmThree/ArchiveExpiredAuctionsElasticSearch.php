@@ -126,10 +126,8 @@ class ArchiveExpiredAuctionsElasticSearch extends Command
 
             $totalArchived = 0;
             $query = VehicleRecord::query();
-            $query->where('data_source', 1);
-            if (!$isFullFetch) {
-                $query->where('updated_at', '>=', $minutes);
-            }
+            $query->where('data_source', 2);
+
             $query->chunk(100, function ($expiredRecords) use (&$totalArchived) {
                    ArchiveExpiredAuctionsJob::dispatch($expiredRecords->toArray());
                 $totalArchived += count($expiredRecords);

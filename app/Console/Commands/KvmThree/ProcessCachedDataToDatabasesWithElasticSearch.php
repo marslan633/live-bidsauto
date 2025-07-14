@@ -39,7 +39,6 @@ class ProcessCachedDataToDatabasesWithElasticSearch extends Command
 
         $clientkvmOne = app('ElasticsearchKvmOne');
 
-
         try{
 
             $params = [

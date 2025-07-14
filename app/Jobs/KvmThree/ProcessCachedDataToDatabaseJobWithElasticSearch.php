@@ -190,25 +190,24 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                     $getVehicleRecord = DB::table('vehicle_records')->where('id', $item['id'])->first();
 
                     if(!is_null($getVehicleRecord)){
-                        $checkRecordSaleDate = Carbon::parse($getVehicleRecord->sale_date);
-                        $currentSaleDate = $item['sale_date'];
 
-
+                        $oldSaleDate = Carbon::parse($getVehicleRecord->sale_date);
+                        $currentSaleDate = Carbon::parse($item['sale_date']);
                         // Condition 1: Sale Date Matched AND data_source = 2 update the record | update or create auction history
                         // Condition 2: Sale Date Not Macthed And Status != 3 And data_source = 2 update or create auction history
                         // Condition 3: Sale Date Not Macthed And Status == 3(sale) Active and Update
 
-                        if($checkRecordSaleDate == $currentSaleDate && $getVehicleRecord->data_source == 2){
+                        if($oldSaleDate->eq($currentSaleDate) && $getVehicleRecord->data_source == 2){
                             $dataOne = $item;
                             $dataOne['id'] = $getVehicleRecord->id;
                             $VehicleUpdateRecordOne[] = $dataOne;
                             Log::info('Condition 1', ['record' => json_encode($dataOne)]);
-                        }elseif($checkRecordSaleDate != $currentSaleDate && $getVehicleRecord->status_id != 3 && $getVehicleRecord->data_source == 2){
+                        }elseif($oldSaleDate->lt($currentSaleDate) &&  $item['status_id'] != 3 && $getVehicleRecord->data_source == 2){
                             $dataTwo = $item;
                             $dataTwo['id'] = $getVehicleRecord->id;
                             $VehicleUpdateRecordOne[] = $dataTwo;
                             Log::info('Condition 2', ['record' => json_encode($dataTwo)]);
-                        }elseif($checkRecordSaleDate != $currentSaleDate && $getVehicleRecord->status_id == 3){
+                        }elseif($currentSaleDate->gt($oldSaleDate) && $item['status_id'] == 3){
                             $dataThree = $item;
                             $dataThree['id'] = $getVehicleRecord->id;
                             $dataThree['data_source'] = 1;
@@ -217,8 +216,8 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                         }
 
 
-                        if(($checkRecordSaleDate == $currentSaleDate && $getVehicleRecord->data_source == 2)
-                        || ($checkRecordSaleDate != $currentSaleDate && $getVehicleRecord->status_id != 3 && $getVehicleRecord->data_source == 2)){
+                        if(($oldSaleDate->eq($currentSaleDate) && $getVehicleRecord->data_source == 2)
+                        || ($oldSaleDate->lt($currentSaleDate) &&  $item['status_id'] != 3 && $getVehicleRecord->data_source == 2)){
                                 $saleAuctionRecord = DB::table('sale_auction_histories')
                                 ->where([
                                     'vin' => $item['vin'],
