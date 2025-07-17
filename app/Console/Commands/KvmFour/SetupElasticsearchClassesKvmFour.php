@@ -145,7 +145,8 @@ class SetupElasticsearchClassesKvmFour extends Command
                                 ],
                             ],
                         ],
-
+                        'tags' => ['type' => 'keyword'],
+                        'line' => ['type' => 'keyword'],
                     ],
                 ],
             ],
