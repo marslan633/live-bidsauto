@@ -77,6 +77,7 @@ class ExpireAndStatusSaleJob implements ShouldQueue
                     'lot_id' => $record['lot_id'],
                     'bid' => $record['bid'],
                     'odometer_mi' => $record['odometer_mi'],
+                    'final_bid_updated_at' => $record['bid_updated_at'] ? $record['bid_updated_at'] : $record['final_bid_updated_at'],
                     'status_id' => $record['status_id'],
                     'seller_id' => $record['seller_id'],
                     'created_at' => $now,

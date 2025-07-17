@@ -20,7 +20,7 @@ class VehicleRecord extends Model
         'final_bid', 'final_bid_updated_at', 'status_id', 'seller_id', 'seller_type_id',
         'title_id', 'detailed_title_id', 'damage_id', 'damage_main', 'damage_second', 'keys_available',
         'airbags', 'condition_id', 'grade_iaai', 'image_id', 'country_id', 'state_id',
-        'city_id', 'location_id', 'selling_branch', 'details', 'buy_now_id', 'processed_at', 'is_new', 'odometer_id',
+        'city_id', 'location_id', 'selling_branch', 'details', 'buy_now_id', 'processed_at', 'is_new', 'odometer_id', 'tags', 'line',
         'created_at','updated_at'
     ];
 

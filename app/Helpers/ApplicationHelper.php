@@ -458,6 +458,10 @@ function processLotData($lot)
     $lotConvertedData['airbags'] = $lot['airbags']['name'] ?? null;
     $lotConvertedData['grade_iaai'] = $lot['grade_iaai'] ?? null;
     $lotConvertedData['details'] = $lot['details'] ?? null;
+    $lotConvertedData['line'] = $lot['line'] ?? null;
+    $lotConvertedData['tags'] = !empty($lot['tags']) && is_array($lot['tags'])
+    ? implode(',', array_filter($lot['tags']))
+    : null;
 
 
     return $lotConvertedData;

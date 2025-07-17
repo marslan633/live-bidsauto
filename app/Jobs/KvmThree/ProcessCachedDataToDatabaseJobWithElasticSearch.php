@@ -197,33 +197,50 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                         // Condition 2: Sale Date Not Macthed And Status != 3 And data_source = 2 update or create auction history
                         // Condition 3: Sale Date Not Macthed And Status == 3(sale) Active and Update
 
-                        if($oldSaleDate->eq($currentSaleDate) && $getVehicleRecord->data_source == 2){
-                            $dataOne = $item;
-                            $dataOne['id'] = $getVehicleRecord->id;
-                            $VehicleUpdateRecordOne[] = $dataOne;
-                            Log::info('Condition 1', ['record' => json_encode($dataOne)]);
-                        }elseif($oldSaleDate->lt($currentSaleDate) &&  $item['status_id'] != 3 && $getVehicleRecord->data_source == 2){
-                            $dataTwo = $item;
-                            $dataTwo['id'] = $getVehicleRecord->id;
-                            $VehicleUpdateRecordOne[] = $dataTwo;
-                            Log::info('Condition 2', ['record' => json_encode($dataTwo)]);
-                        }elseif($currentSaleDate->gt($oldSaleDate) && $item['status_id'] == 3){
-                            $dataThree = $item;
-                            $dataThree['id'] = $getVehicleRecord->id;
-                            $dataThree['data_source'] = 1;
-                            $VehicleUpdateRecordOne[] = $dataThree;
-                            Log::info('Condition 3', ['record' => json_encode($dataThree)]);
+                        if ($getVehicleRecord->data_source == 2) {
+                            if ($oldSaleDate->eq($currentSaleDate)) {
+                                $dataOne = $item;
+                                $dataOne['id'] = $getVehicleRecord->id;
+                                $dataOne['status_id'] = $item['status_id'] == 3 ? 7 : $item['status_id'];
+                                $VehicleUpdateRecordOne[] = $dataOne;
+                                Log::info('Condition 1 Archived', ['record' => json_encode($dataOne)]);
+                            }
+                            elseif ($oldSaleDate->lt($currentSaleDate) && $item['status_id'] != 3 ) {
+                                $dataTwo = $item;
+                                $dataTwo['id'] = $getVehicleRecord->id;
+                                $VehicleUpdateRecordOne[] = $dataTwo;
+                                Log::info('Condition 2 Archived', ['record' => json_encode($dataTwo)]);
+                            }
+                            elseif ($currentSaleDate->gt($oldSaleDate) && $item['status_id'] == 3) {
+                                $dataThree = $item;
+                                $dataThree['id'] = $getVehicleRecord->id;
+                                $dataThree['data_source'] = 1;
+                                $VehicleUpdateRecordOne[] = $dataThree;
+                                Log::info('Condition 3 Archived to Active', ['record' => json_encode($dataThree)]);
+                            }
+                        }
+                        elseif ($getVehicleRecord->data_source == 1) {
+                            $dataFour = $item;
+                            $dataFour['id'] = $getVehicleRecord->id;
+                            $dataFour['data_source'] = 1;
+                            $VehicleUpdateRecordOne[] = $dataFour;
+                            Log::info('Condition 4 Active', ['record' => json_encode($dataFour)]);
                         }
 
 
-                        if(($oldSaleDate->eq($currentSaleDate) && $getVehicleRecord->data_source == 2)
-                        || ($oldSaleDate->lt($currentSaleDate) &&  $item['status_id'] != 3 && $getVehicleRecord->data_source == 2)){
-                                $saleAuctionRecord = DB::table('sale_auction_histories')
-                                ->where([
+                        if ($getVehicleRecord->data_source == 2) {
+                            $isSameSaleDate = $oldSaleDate->eq($currentSaleDate);
+                            $isNewerSaleDate = $oldSaleDate->lt($currentSaleDate);
+                            $isStatusNotThree = $item['status_id'] != 3;
+
+                            if ($isSameSaleDate || ($isNewerSaleDate && $isStatusNotThree)) {
+                                $saleAuctionRecord = DB::table('sale_auction_histories')->where([
                                     'vin' => $item['vin'],
                                     'lot_id' => $item['lot_id'],
                                     'sale_date' => $item['sale_date'],
                                 ])->first();
+
+                                $now = now();
                                 $saleData = [
                                     'vin' => strtolower($item['vin']),
                                     'domain_id' => $item['domain_id'],
@@ -233,21 +250,28 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                                     'odometer_mi' => $item['odometer_mi'],
                                     'status_id' => $item['status_id'],
                                     'seller_id' => $item['seller_id'],
-                                    'created_at' => now(),
-                                    'updated_at' => now()
+                                    'created_at' => $now,
+                                    'updated_at' => $now,
                                 ];
-                                if($saleAuctionRecord){
+
+                                if ($saleAuctionRecord) {
                                     unset($saleData['created_at']);
                                     $updatedSaleData = $saleData;
                                     $updatedSaleData['id'] = $saleAuctionRecord->id;
                                     $updatedSaleRecords[] = $updatedSaleData;
-                                    Log::info('Sale Auctio History Record Updadted Active', ['record' => json_encode($saleAuctionRecord)]);
-                                }else{
-                                    $newSaleRecords[] = $saleData;
-                                    Log::info('Sale Auctio History Record Created Active', ['record' => json_encode($saleData)]);
-                                }
-                        }
 
+                                    Log::info('Sale Auction History Record Updated (Active)', [
+                                        'record' => json_encode($saleAuctionRecord),
+                                    ]);
+                                } else {
+                                    $newSaleRecords[] = $saleData;
+
+                                    Log::info('Sale Auction History Record Created (Active)', [
+                                        'record' => json_encode($saleData),
+                                    ]);
+                                }
+                            }
+                        }
 
                     }
 
@@ -662,6 +686,8 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             'details' => $car['vehicle_record']['details'] ?? null,
             'location_id' => $location_id,
             'image_id' => $imageId,
+            'tags' => $car['vehicle_record']['tags'] ?? null,
+            'line' => $car['vehicle_record']['line'] ?? null,
         ];
 
         Log::info('Lot ID', ['lot_id' => $car['vehicle_record']['lot_id'] ?? null, 'vin' => $car['vehicle_record']['vin'] ?? null]);
