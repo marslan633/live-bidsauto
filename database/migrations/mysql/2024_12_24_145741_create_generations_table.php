@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -26,6 +27,14 @@ return new class extends Migration
             $table->foreign('manufacturer_id')->references('id')->on('manufacturers')->onDelete('cascade');
             $table->foreign('model_id')->references('id')->on('vehicle_models')->onDelete('cascade');
         });
+
+
+        DB::connection('mysql')->table('generations')->insertOrIgnore([
+            'generation_api_id' => 0,
+            'name' => 'unknown',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     /**

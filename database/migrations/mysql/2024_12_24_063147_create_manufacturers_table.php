@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -24,6 +25,13 @@ return new class extends Migration
             // Add the composite unique constraint
             $table->unique(['manufacturer_api_id', 'type'], 'manufacturer_type_unique');
         });
+
+        DB::connection('mysql')->table('manufacturers')->insertOrIgnore([
+            'manufacturer_api_id' => 0,
+            'name' => 'unknown',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     /**

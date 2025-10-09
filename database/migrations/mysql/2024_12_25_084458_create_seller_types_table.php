@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -17,6 +18,13 @@ return new class extends Migration
             $table->string('name')->nullable();
             $table->timestamps();
         });
+
+        DB::connection('mysql')->table('seller_types')->insertOrIgnore([
+            'seller_type_api_id' => 0,
+            'name' => 'unknown',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     /**

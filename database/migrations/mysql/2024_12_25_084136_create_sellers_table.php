@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -21,6 +22,14 @@ return new class extends Migration
             $table->boolean('is_credit_company')->nullable();
             $table->timestamps();
         });
+
+        
+        DB::connection('mysql')->table('sellers')->insertOrIgnore([
+            'seller_api_id' => 0,
+            'name' => 'unknown',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     /**
