@@ -338,6 +338,18 @@ function processLotData($lot)
             'name' => $unknownName
         ];
 
+    // Auction Type
+    $lotConvertedData['auction_type'] = !empty($lot['auction_type']) && !empty((array) $lot['auction_type'])
+    ?
+        [
+            'auction_type_api_id' => $lot['auction_type']['id'],
+            'name' => $lot['auction_type']['name']
+        ]
+    :
+        [
+            'auction_type_api_id' => $unknownApiId,
+            'name' => $unknownName
+        ];
 
 
     // Process Detailed Title
@@ -462,8 +474,8 @@ function processLotData($lot)
     $lotConvertedData['tags'] = !empty($lot['tags']) && is_array($lot['tags'])
     ? implode(',', array_filter($lot['tags']))
     : null;
-
-
+    $lotConveredData['is_timed_auction'] = $lot['is_timed_auction'];
+    $lotConveredData['seller_reserve'] = $lot['seller_reserve']['price'] ?? null;
     return $lotConvertedData;
 
 }

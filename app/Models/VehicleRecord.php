@@ -21,7 +21,7 @@ class VehicleRecord extends Model
         'title_id', 'detailed_title_id', 'damage_id', 'damage_main', 'damage_second', 'keys_available',
         'airbags', 'condition_id', 'grade_iaai', 'image_id', 'country_id', 'state_id',
         'city_id', 'location_id', 'selling_branch', 'details', 'buy_now_id', 'processed_at', 'is_new', 'odometer_id', 'tags', 'line',
-        'created_at','updated_at'
+        'created_at','updated_at', 'archived_at', 'is_timed_auction', 'seller_reserve', 'auction_type_id'
     ];
 
     public function manufacturer()
@@ -190,5 +190,10 @@ class VehicleRecord extends Model
     public function buyNowRelation()
     {
         return $this->belongsTo(BuyNow::class, 'buy_now_id');
+    }
+
+    public function auctionType()
+    {
+        return $this->belongsTo(AuctionType::class, 'auction_type_id');
     }
 }

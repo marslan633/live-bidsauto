@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class SaleAuctionHistory extends Model
 {
-    protected $fillable = ['vin', 'domain_id', 'sale_date', 'lot_id', 'bid', 'odometer_mi', 'status_id', 'seller_id'];
+    protected $fillable = ['vin', 'domain_id', 'sale_date', 'lot_id', 'bid', 'odometer_mi', 'status_id', 'seller_id', 'archived_at', 'coming_from'];
 
     // Relationship with Domain (Assuming a Domain model exists)
     public function domain()

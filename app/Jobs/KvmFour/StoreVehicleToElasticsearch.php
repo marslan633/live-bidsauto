@@ -57,6 +57,7 @@ class StoreVehicleToElasticsearch implements ShouldQueue
             'location',
             'sellingBranch',
             'buyNowRelation',
+            'auctionType'
         ]);
 
         foreach ($this->vehicles as $vehicle) {

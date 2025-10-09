@@ -203,12 +203,14 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                                 $dataOne['id'] = $getVehicleRecord->id;
                                 $dataOne['status_id'] = $item['status_id'] == 3 ? 7 : $item['status_id'];
                                 $VehicleUpdateRecordOne[] = $dataOne;
+                                $dataOne['coming_from'] = "oldSaleDate->eq(currentSaleDate)";
                                 Log::info('Condition 1 Archived', ['record' => json_encode($dataOne)]);
                             }
                             elseif ($oldSaleDate->lt($currentSaleDate) && $item['status_id'] != 3 ) {
                                 $dataTwo = $item;
                                 $dataTwo['id'] = $getVehicleRecord->id;
                                 $VehicleUpdateRecordOne[] = $dataTwo;
+                                $dataTwo['coming_from'] = "oldSaleDate->lt(currentSaleDate) && item['status_id'] != 3";
                                 Log::info('Condition 2 Archived', ['record' => json_encode($dataTwo)]);
                             }
                             elseif ($currentSaleDate->gt($oldSaleDate) && $item['status_id'] == 3) {
@@ -216,6 +218,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                                 $dataThree['id'] = $getVehicleRecord->id;
                                 $dataThree['data_source'] = 1;
                                 $VehicleUpdateRecordOne[] = $dataThree;
+                                $dataThree['coming_from'] = "currentSaleDate->gt(oldSaleDate) && item['status_id'] == 3";
                                 Log::info('Condition 3 Archived to Active', ['record' => json_encode($dataThree)]);
                             }
                         }
@@ -224,6 +227,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                             $dataFour['id'] = $getVehicleRecord->id;
                             $dataFour['data_source'] = 1;
                             $VehicleUpdateRecordOne[] = $dataFour;
+                            $dataFour['coming_from'] = "getVehicleRecord->data_source == 1";
                             Log::info('Condition 4 Active', ['record' => json_encode($dataFour)]);
                         }
 
@@ -785,6 +789,22 @@ if (empty($statusData)) {
     }
 }
 
+    // --- Auction Type Handling ---
+    $auctionTypeData = $car['vehicle_record']['auction_type'] ?? null;
+    if (empty($auctionTypeData)) {
+        $auction_type_id = null;
+    } else {
+        $auctiontypeApiId = $auctionTypeData['auction_type_api_id'] ?? 0;
+        if ($auctiontypeApiId == 0) {
+            $auction_type_id = AuctionType::where('auction_type_api_id', 0)->value('id');
+        } else {
+            $auction_type_id = AuctionType::firstOrCreate(
+                ['auction_type_api_id' => $auctiontypeApiId],
+                ['name' => $auctionTypeData['name'] ?? 'unknown']
+            )->id;
+        }
+    }
+
         // $title_id = !empty($car['vehicle_record']['title_title'])
         // ? Title::firstOrCreate(
         //     ['title_api_id' => $car['vehicle_record']['title_title']['title_api_id']],
@@ -950,6 +970,8 @@ if (empty($detailedTitleData)) {
             'image_id' => $imageId,
             'tags' => $car['vehicle_record']['tags'] ?? null,
             'line' => $car['vehicle_record']['line'] ?? null,
+            'is_timed_auction' => $car['vehicle_record']['is_timed_auction'] ?? null,
+            'seller_reserve' => $car['vehicle_record']['seller_reserve'] ?? null,
         ];
 
         Log::info('Lot ID', ['lot_id' => $car['vehicle_record']['lot_id'] ?? null, 'vin' => $car['vehicle_record']['vin'] ?? null]);

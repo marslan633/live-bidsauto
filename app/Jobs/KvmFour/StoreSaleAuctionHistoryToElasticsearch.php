@@ -42,6 +42,7 @@ class StoreSaleAuctionHistoryToElasticsearch implements ShouldQueue
             $historyData['sale_date'] = Carbon::parse($historyData['sale_date'])->toIso8601String();
             $historyData['created_at'] = Carbon::parse($historyData['created_at'])->format('Y-m-d H:i:s');
             $historyData['updated_at'] = Carbon::parse($historyData['updated_at'])->format('Y-m-d H:i:s');
+            $historyData['archived_at'] = Carbon::parse($historyData['archived_at'])->format('Y-m-d H:i:s');
 
             try {
                 // Upsert parameters
