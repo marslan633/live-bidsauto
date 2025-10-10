@@ -1152,6 +1152,35 @@ class VehicleController extends Controller
         }
     }
 
+    /**
+     * Get Currency Exchange Rate - Elastic Search.
+     */
+    public function getCurrency(Request $request)
+    {
+        try {
+            $client = app('ElasticsearchKvmFour');
+
+            $index = 'currency_exchanges';
+            $docId = 1;
+
+            // Fetch the document from Elasticsearch
+            $response = $client->get([
+                'index' => $index,
+                'id' => $docId,
+            ]);
+
+            if (!isset($response['_source'])) {
+                return sendResponse(false, 404, 'Currency exchange record not found.', null, 200);
+            }
+
+            return sendResponse(true, 200, 'Currency exchange record found.', $response['_source'], 200);
+
+        } catch (\Elastic\Elasticsearch\Exception\ClientResponseException $e) {
+            return sendResponse(false, 500, 'Error fetching from Elasticsearch:', $ex->getMessage(), 500);
+        } catch (\Exception $e) {
+            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 500);
+        }
+    }
 
     /**
      * Filter Attributes and Manage Counts API.

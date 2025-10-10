@@ -175,6 +175,18 @@ class SetupElasticsearchClassesKvmFour extends Command
                     ],
                 ],
             ],
+
+            'currency_exchanges' => [
+                'mappings' => [
+                    'properties' => [
+                        'base_code' => ['type' => 'keyword'],
+                        'last_update_at' => ['type' => 'keyword'],
+                        'bgn' => ['type' => 'float'],
+                        'eur' => ['type' => 'float'],
+                        'usd' => ['type' => 'float'],
+                    ],
+                ],
+            ],
         ];
 
         foreach ($indices as $indexName => $indexConfig) {

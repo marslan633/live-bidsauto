@@ -23,6 +23,7 @@ Route::prefix('vehicles')->group(function () {
 });
 
 Route::post('filter-attributes', [VehicleController::class, 'filterAttributes']);
+Route::get('currency-exchange', [VehicleController::class, 'getCurrency']);
 
 Route::post('vehicles-with-filter-attributes', [VehicleController::class, 'vehicleInformationsWithFilters']);
 Route::get('get-updated-records', [VehicleController::class, 'getUpdatedRecords']);
