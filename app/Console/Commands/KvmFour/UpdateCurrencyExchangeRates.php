@@ -36,7 +36,7 @@ class UpdateCurrencyExchangeRates extends Command
         $apis = [
             [
                 'name' => 'ExchangeRateHost',
-                'url' => 'https://api.exchangerate.host/live?access_key=581a8bdf54613786f9f0f5930fd09b66',
+                'url' => 'https://api.exchangerate.host/live?access_key='.env('EXCHANGE_RATE_ACCESS_KEY'),
                 'parse' => function ($data) {
                     if (!isset($data['success']) || !$data['success']) {
                         return null;
@@ -47,6 +47,7 @@ class UpdateCurrencyExchangeRates extends Command
                         'bgn' => $data['quotes']['USDBGN'] ?? null,
                         'eur' => $data['quotes']['USDEUR'] ?? null,
                         'usd' => 1.0,
+                        'source' => 'ExchangeRateHost',
                     ];
                 },
             ],
@@ -63,6 +64,7 @@ class UpdateCurrencyExchangeRates extends Command
                         'bgn' => $data['rates']['BGN'] ?? null,
                         'eur' => $data['rates']['EUR'] ?? null,
                         'usd' => 1.0,
+                        'source' => 'OpenERAPI',
                     ];
                 },
             ],

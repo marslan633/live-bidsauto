@@ -155,6 +155,11 @@ class VehicleRecordArchived extends Model
         return json_decode($value, true);
     }
 
+    public function getDownloadedAttribute($value)
+    {
+        return json_decode($value, true);
+    }
+
     // Override the toArray method to modify how the image attributes are returned
     public function toArray()
     {
@@ -167,7 +172,7 @@ class VehicleRecordArchived extends Model
                 'small' => $this->getSmallAttribute($this->image->small),
                 'normal' => $this->getNormalAttribute($this->image->normal),
                 'big' => $this->getBigAttribute($this->image->big),
-                'downloaded' => $this->image->downloaded,
+                'downloaded' => $this->getDownloadedAttribute($this->image->downloaded),
                 'exterior' => json_decode($this->image->exterior, true),
                 'interior' => json_decode($this->image->interior, true),
                 'video' => $this->image->video,

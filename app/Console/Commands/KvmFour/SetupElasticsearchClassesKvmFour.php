@@ -184,6 +184,7 @@ class SetupElasticsearchClassesKvmFour extends Command
                         'bgn' => ['type' => 'float'],
                         'eur' => ['type' => 'float'],
                         'usd' => ['type' => 'float'],
+                        'source' => ['type' => 'keyword'],
                     ],
                 ],
             ],
