@@ -916,7 +916,7 @@ if (empty($detailedTitleData)) {
 
         $data = [
             'manufacturer_id' => $manufacturer_id,
-            'vehicle_model_id' =>  $model_id,
+            'vehicle_model_id' =>  $vehicle_model_id,
             'generation_id' => $generation_id,
             'body_type_id' => $body_type_id,
             'color_id' => $color_id,
