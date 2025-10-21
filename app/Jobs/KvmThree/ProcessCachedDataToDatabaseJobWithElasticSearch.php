@@ -27,6 +27,7 @@ use App\Models\Transmission;
 use App\Models\VehicleModel;
 use App\Models\VehicleProcessCachedApiData;
 use App\Models\VehicleType;
+use App\Models\AuctionType;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -750,7 +751,7 @@ if (empty($sellerTypeData)) {
         //     ['name' => $car['vehicle_record']['condition']['name']]
         // )->id;
         // Log::info('Condition', ['data' => $condition_id]);
-        
+
 // --- Condition Handling ---
 $conditionData = $car['vehicle_record']['condition'] ?? null;
 if (empty($conditionData)) {
