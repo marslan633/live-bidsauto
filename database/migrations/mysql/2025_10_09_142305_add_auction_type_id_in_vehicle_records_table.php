@@ -12,7 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('vehicle_records', function (Blueprint $table) {
-            $table->foreign('auction_type_id')->references('id')->on('auction_types')->onDelete('set null');
+            // Add the column first if it doesn't exist
+            if (!Schema::hasColumn('vehicle_records', 'auction_type_id')) {
+                $table->unsignedBigInteger('auction_type_id')->nullable()->after('id');
+            }
+
+            // Then add the foreign key
+            $table->foreign('auction_type_id')
+                ->references('id')
+                ->on('auction_types')
+                ->onDelete('set null');
         });
     }
 
@@ -22,7 +31,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('vehicle_records', function (Blueprint $table) {
-            //
+            if (Schema::hasColumn('vehicle_records', 'auction_type_id')) {
+                $table->dropForeign(['auction_type_id']);
+                $table->dropColumn('auction_type_id');
+            }
         });
     }
 };
