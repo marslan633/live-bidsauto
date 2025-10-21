@@ -36,7 +36,7 @@ class UpdateCurrencyExchangeRates extends Command
         $apis = [
             [
                 'name' => 'ExchangeRateHost',
-                'url' => 'https://api.exchangerate.host/live?access_key='.env('EXCHANGE_RATE_ACCESS_KEY'),
+                'url' => 'https://api.exchangerate.host/live?access_key=' . config('app.exchange_rate_access_key'),
                 'parse' => function ($data) {
                     if (!isset($data['success']) || !$data['success']) {
                         return null;

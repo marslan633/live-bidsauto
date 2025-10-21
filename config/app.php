@@ -29,6 +29,7 @@ return [
     'per_page_archived_data' => env('PER_PAGE_ARCHIVED_DATA', 10),
     'cron_history_api_url' => env('CRON_HISTORY_API_URL'),
     'elastic_store_time' => env('ELASTIC_STORE_TIME', 30),
+    'exchange_rate_access_key' => env('EXCHANGE_RATE_ACCESS_KEY', ''),
 
     /*
     |--------------------------------------------------------------------------
