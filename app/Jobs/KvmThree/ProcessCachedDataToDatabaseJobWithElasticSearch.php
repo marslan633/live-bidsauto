@@ -874,17 +874,38 @@ if (empty($detailedTitleData)) {
         )->id;
         // Log::info('Country', ['data' => $country_id]);
 
-        $state_id = !empty($car['vehicle_record']['state'])
-        ? State::firstOrCreate(
-            ['state_api_id' => $car['vehicle_record']['state']['state_api_id']],
-            [
-                'country_id' => $country_id,
-                'code' => $car['vehicle_record']['state']['code'],
-                'name' => $car['vehicle_record']['state']['name']
-            ]
-        )->id
-        : null;
+        // $state_id = !empty($car['vehicle_record']['state'])
+        // ? State::firstOrCreate(
+        //     ['state_api_id' => $car['vehicle_record']['state']['state_api_id']],
+        //     [
+        //         'country_id' => $country_id,
+        //         'code' => $car['vehicle_record']['state']['code'],
+        //         'name' => $car['vehicle_record']['state']['name']
+        //     ]
+        // )->id
+        // : null;
         // Log::info('State', ['data' => $state_id]);
+
+        $stateData = $car['vehicle_record']['state'] ?? null;
+        if (empty($stateData)) {
+            $state_id = null;
+        } else {
+            $stateApiId = $stateData['state_api_id'] ?? 0;
+            if ($stateApiId == 0) {
+                // Use the existing 'unknown' or default state
+                $state_id = State::where('state_api_id', 0)->value('id');
+            } else {
+                $state_id = State::firstOrCreate(
+                    ['state_api_id' => $stateApiId],
+                    [
+                        'country_id' => $country_id,
+                        'code' => $stateData['code'] ?? 'unknown',
+                        'name' => $stateData['name'] ?? 'unknown'
+                    ]
+                )->id;
+            }
+        }
+
 
         $city_id = !empty($car['vehicle_record']['city'])
         ? City::firstOrCreate(
