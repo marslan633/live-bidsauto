@@ -502,7 +502,10 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
             } else {
                 $generation_id = Generation::firstOrCreate(
                     ['generation_api_id' => $generationApiId],
-                    ['name' => $generationData['name'] ?? 'unknown']
+                    [
+                     'name' => $generationData['name'] ?? 'unknown',
+                     'model_id' => $vehicle_model_id ?? 0, // ✅ required
+                    ]
                 )->id;
             }
         }
