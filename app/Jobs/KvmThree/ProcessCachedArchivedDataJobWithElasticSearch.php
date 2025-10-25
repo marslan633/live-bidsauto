@@ -186,7 +186,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                             $newSaleRecord['updated_at'] = now();
                             unset($newSaleRecord['id']); // ✅ Prevent duplicate primary key
                             $newSaleRecords[] = $newSaleRecord;
-                            $saleRecord['coming_from'] = 'new_archived_data';
+                            $newSaleRecord['coming_from'] = 'new_archived_data';
                         }
                     } elseif (!isset($existingSaleRecords[$record['lot_id']]) && isset($existingRecords[$record['lot_id']])) {
                         $newSaleRecord = $record;
@@ -199,7 +199,7 @@ class ProcessCachedArchivedDataJobWithElasticSearch implements ShouldQueue
                         $newSaleRecord['updated_at'] = now();
                         unset($newSaleRecord['id']); // ✅ Prevent duplicate primary key
                         $newSaleRecords[] = $newSaleRecord;
-                        $saleRecord['coming_from'] = 'new_sale_record_elseif_block';
+                        $newSaleRecord['coming_from'] = 'new_sale_record_elseif_block';
                     }
                 } catch (\Exception $e) {
                     $failedRecords[] = $record;

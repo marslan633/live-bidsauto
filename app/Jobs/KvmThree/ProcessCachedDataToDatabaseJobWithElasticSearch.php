@@ -250,6 +250,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                                     'vin' => strtolower($item['vin']),
                                     'domain_id' => $item['domain_id'],
                                     'sale_date' => $item['sale_date'],
+                                    'coming_from' => '$getVehicleRecord->data_source == 2 condition',
                                     'lot_id' => $item['lot_id'],
                                     'bid' => $item['bid'],
                                     'odometer_mi' => $item['odometer_mi'],
@@ -887,19 +888,20 @@ if (empty($detailedTitleData)) {
         // Log::info('State', ['data' => $state_id]);
 
         $stateData = $car['vehicle_record']['state'] ?? null;
+
         if (empty($stateData)) {
             $state_id = null;
         } else {
-            $stateApiId = $stateData['state_api_id'] ?? 0;
-            if ($stateApiId == 0) {
-                // Use the existing 'unknown' or default state
+            $stateCode = $stateData['code'] ?? null;
+
+            if (empty($stateCode)) {
                 $state_id = State::where('state_api_id', 0)->value('id');
             } else {
                 $state_id = State::firstOrCreate(
-                    ['state_api_id' => $stateApiId],
+                    ['code' => $stateCode],
                     [
+                        'state_api_id' => $stateData['state_api_id'] ?? 0,
                         'country_id' => $country_id,
-                        'code' => $stateData['code'] ?? 'unknown',
                         'name' => $stateData['name'] ?? 'unknown'
                     ]
                 )->id;
@@ -933,6 +935,21 @@ if (empty($detailedTitleData)) {
         )->id
         : null;
 
+        $odometerKm = $car['vehicle_record']['odometer_km'] ?? null;
+        if (!is_numeric($odometerKm) || $odometerKm < 0) {
+            $odometerKm = null;
+        } else {
+            $odometerKm = (int) round($odometerKm);
+        }
+
+
+        $odometerMi = $car['vehicle_record']['odometer_mi'] ?? null;
+        if (!is_numeric($odometerMi) || $odometerMi < 0) {
+            $odometerMi = null;
+        } else {
+            $odometerMi = (int) round($odometerMi);
+        }
+
         // Log::info('Location', ['data' => $location_id]);
 
         $data = [
@@ -958,8 +975,8 @@ if (empty($detailedTitleData)) {
             'domain_id' =>  $domain_id,
             'selling_branch' => $selling_branch_id,
             'external_id' => $car['vehicle_record']['external_id'] ?? null,
-            'odometer_km' => $car['vehicle_record']['odometer_km'] ?? null,
-            'odometer_mi' => $car['vehicle_record']['odometer_mi'] ?? null,
+            'odometer_km' => $odometerKm,
+            'odometer_mi' => $odometerMi,
             'odometer_status' => $car['vehicle_record']['odometer_status'] ?? null,
             'estimate_repair_price' => $car['vehicle_record']['estimate_repair_price'] ?? null,
             'pre_accident_price' => $car['vehicle_record']['pre_accident_price'] ?? null,
