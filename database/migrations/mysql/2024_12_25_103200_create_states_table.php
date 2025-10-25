@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('country_id')->constrained('countries')->cascadeOnDelete();
             $table->unsignedBigInteger('state_api_id')->nullable();
-            $table->string('code')->unique()->nullable();
+            $table->string('code')->nullable();
             $table->string('name')->nullable();
             $table->timestamps();
         });
