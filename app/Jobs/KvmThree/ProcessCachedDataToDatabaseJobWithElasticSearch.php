@@ -384,9 +384,11 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
         if (!isset($car['year'])) {
             $year = DB::table('years')->insertGetId(['name' => $car['year']]);
         }
+
         // Log::info('Year', ['data' => $year]);
 
-        // $car['vehicle_record'] = (array) $car['vehicle_record'];
+        $car['vehicle_record'] = (array) $car['vehicle_record'];
+
         // $model = VehicleModel::firstOrCreate(
         //     ['vehicle_model_api_id' => $car['model']['vehicle_model_api_id']],
         //     ['name' => $car['model']['name']]
@@ -394,21 +396,21 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
         // $model_id = $model->id;
         // Log::info('Model', ['data' => $model_id]);
 
-// --- Vehicle Model Handling ---
-$modelData = $car['vehicle_record']['vehicle_model'] ?? null;
-if (empty($modelData)) {
-    $vehicle_model_id = null;
-} else {
-    $modelApiId = $modelData['model_api_id'] ?? 0;
-    if ($modelApiId == 0) {
-        $vehicle_model_id = VehicleModel::where('model_api_id', 0)->value('id');
-    } else {
-        $vehicle_model_id = VehicleModel::firstOrCreate(
-            ['model_api_id' => $modelApiId],
-            ['name' => $modelData['name'] ?? 'unknown']
-        )->id;
-    }
-}
+        // --- Vehicle Model Handling ---
+        $modelData = $car['model'] ?? null;
+        if (empty($modelData)) {
+            $vehicle_model_id = null;
+        } else {
+            $modelApiId = $modelData['model_api_id'] ?? 0;
+            if ($modelApiId == 0) {
+                $vehicle_model_id = VehicleModel::where('model_api_id', 0)->value('id');
+            } else {
+                $vehicle_model_id = VehicleModel::firstOrCreate(
+                    ['model_api_id' => $modelApiId],
+                    ['name' => $modelData['name'] ?? 'unknown']
+                )->id;
+            }
+        }
 
         $imageRecord = $car['vehicle_record']['imageRecord'] ?? [];
 
@@ -462,21 +464,21 @@ if (empty($modelData)) {
         // $manufacturer_id = $manufacturer->id;
         // Log::info('Manufacturer', ['data' => $manufacturer_id]);
 
-// --- Manufacturer Handling (with unknown support) ---
-$manufacturerData = $car['vehicle_record']['manufacturer'] ?? null;
-if (empty($manufacturerData)) {
-    $manufacturer_id = null;
-} else {
-    $manufacturerApiId = $manufacturerData['manufacturer_api_id'] ?? 0;
-    if ($manufacturerApiId == 0) {
-        $manufacturer_id = Manufacturer::where('manufacturer_api_id', 0)->value('id');
-    } else {
-        $manufacturer_id = Manufacturer::firstOrCreate(
-            ['manufacturer_api_id' => $manufacturerApiId],
-            ['name' => $manufacturerData['name'] ?? 'unknown']
-        )->id;
-    }
-}
+        // --- Manufacturer Handling (with unknown support) ---
+        $manufacturerData = $car['manufacturer'] ?? null;
+        if (empty($manufacturerData)) {
+            $manufacturer_id = null;
+        } else {
+            $manufacturerApiId = $manufacturerData['manufacturer_api_id'] ?? 0;
+            if ($manufacturerApiId == 0) {
+                $manufacturer_id = Manufacturer::where('manufacturer_api_id', 0)->value('id');
+            } else {
+                $manufacturer_id = Manufacturer::firstOrCreate(
+                    ['manufacturer_api_id' => $manufacturerApiId],
+                    ['name' => $manufacturerData['name'] ?? 'unknown']
+                )->id;
+            }
+        }
 
         // $generation = Generation::firstOrCreate(
         //     ['generation_api_id' => $car['generation']['generation_api_id']],
@@ -489,21 +491,21 @@ if (empty($manufacturerData)) {
 
         // Log::info('Generation', ['data' => $generation_id]);
 
-// --- Generation Handling ---
-$generationData = $car['vehicle_record']['generation'] ?? null;
-if (empty($generationData)) {
-    $generation_id = null;
-} else {
-    $generationApiId = $generationData['generation_api_id'] ?? 0;
-    if ($generationApiId == 0) {
-        $generation_id = Generation::where('generation_api_id', 0)->value('id');
-    } else {
-        $generation_id = Generation::firstOrCreate(
-            ['generation_api_id' => $generationApiId],
-            ['name' => $generationData['name'] ?? 'unknown']
-        )->id;
-    }
-}
+        // --- Generation Handling ---
+        $generationData = $car['generation'] ?? null;
+        if (empty($generationData)) {
+            $generation_id = null;
+        } else {
+            $generationApiId = $generationData['generation_api_id'] ?? 0;
+            if ($generationApiId == 0) {
+                $generation_id = Generation::where('generation_api_id', 0)->value('id');
+            } else {
+                $generation_id = Generation::firstOrCreate(
+                    ['generation_api_id' => $generationApiId],
+                    ['name' => $generationData['name'] ?? 'unknown']
+                )->id;
+            }
+        }
 
         // $bodyType = BodyType::firstOrCreate(
         //     ['body_type_api_id' => $car['body_type']['body_type_api_id']],
@@ -513,21 +515,21 @@ if (empty($generationData)) {
 
         // Log::info('Body Type', ['data' => $body_type_id]);
 
-// --- Body Type Handling ---
-$bodyTypeData = $car['vehicle_record']['body_type'] ?? null;
-if (empty($bodyTypeData)) {
-    $body_type_id = null;
-} else {
-    $bodyTypeApiId = $bodyTypeData['body_type_api_id'] ?? 0;
-    if ($bodyTypeApiId == 0) {
-        $body_type_id = BodyType::where('body_type_api_id', 0)->value('id');
-    } else {
-        $body_type_id = BodyType::firstOrCreate(
-            ['body_type_api_id' => $bodyTypeApiId],
-            ['name' => $bodyTypeData['name'] ?? 'unknown']
-        )->id;
-    }
-}
+        // --- Body Type Handling ---
+        $bodyTypeData = $car['body_type'] ?? null;
+        if (empty($bodyTypeData)) {
+            $body_type_id = null;
+        } else {
+            $bodyTypeApiId = $bodyTypeData['body_type_api_id'] ?? 0;
+            if ($bodyTypeApiId == 0) {
+                $body_type_id = BodyType::where('body_type_api_id', 0)->value('id');
+            } else {
+                $body_type_id = BodyType::firstOrCreate(
+                    ['body_type_api_id' => $bodyTypeApiId],
+                    ['name' => $bodyTypeData['name'] ?? 'unknown']
+                )->id;
+            }
+        }
 
         // $color = Color::firstOrCreate(
         //     ['color_api_id' => $car['color']['color_api_id']],
@@ -538,21 +540,21 @@ if (empty($bodyTypeData)) {
         // Log::info('Color', ['data' => $color_id]);
 
 
-// --- Color Handling ---
-$colorData = $car['vehicle_record']['color'] ?? null;
-if (empty($colorData)) {
-    $color_id = null;
-} else {
-    $colorApiId = $colorData['color_api_id'] ?? 0;
-    if ($colorApiId == 0) {
-        $color_id = Color::where('color_api_id', 0)->value('id');
-    } else {
-        $color_id = Color::firstOrCreate(
-            ['color_api_id' => $colorApiId],
-            ['name' => $colorData['name'] ?? 'unknown']
-        )->id;
-    }
-}
+        // --- Color Handling ---
+        $colorData = $car['color'] ?? null;
+        if (empty($colorData)) {
+            $color_id = null;
+        } else {
+            $colorApiId = $colorData['color_api_id'] ?? 0;
+            if ($colorApiId == 0) {
+                $color_id = Color::where('color_api_id', 0)->value('id');
+            } else {
+                $color_id = Color::firstOrCreate(
+                    ['color_api_id' => $colorApiId],
+                    ['name' => $colorData['name'] ?? 'unknown']
+                )->id;
+            }
+        }
         // $engine = Engine::firstOrCreate(
         //     ['engine_api_id' => $car['engine']['engine_api_id']],
         //     ['name' => $car['engine']['name']]
@@ -561,21 +563,21 @@ if (empty($colorData)) {
         // $engine_id = $engine->id;
         // Log::info('Engine', ['data' => $engine_id]);
 
-// --- Engine Handling ---
-$engineData = $car['vehicle_record']['engine'] ?? null;
-if (empty($engineData)) {
-    $engine_id = null;
-} else {
-    $engineApiId = $engineData['engine_api_id'] ?? 0;
-    if ($engineApiId == 0) {
-        $engine_id = Engine::where('engine_api_id', 0)->value('id');
-    } else {
-        $engine_id = Engine::firstOrCreate(
-            ['engine_api_id' => $engineApiId],
-            ['name' => $engineData['name'] ?? 'unknown']
-        )->id;
-    }
-}
+        // --- Engine Handling ---
+        $engineData = $car['engine'] ?? null;
+        if (empty($engineData)) {
+            $engine_id = null;
+        } else {
+            $engineApiId = $engineData['engine_api_id'] ?? 0;
+            if ($engineApiId == 0) {
+                $engine_id = Engine::where('engine_api_id', 0)->value('id');
+            } else {
+                $engine_id = Engine::firstOrCreate(
+                    ['engine_api_id' => $engineApiId],
+                    ['name' => $engineData['name'] ?? 'unknown']
+                )->id;
+            }
+        }
 
         // $transmission = Transmission::firstOrCreate(
         //     ['transmission_api_id' => $car['transmission']['transmission_api_id']],
@@ -585,21 +587,21 @@ if (empty($engineData)) {
         // Log::info('Transmission', ['data' => $transmission_id]);
 
 
-// --- Transmission Handling ---
-$transmissionData = $car['vehicle_record']['transmission'] ?? null;
-if (empty($transmissionData)) {
-    $transmission_id = null;
-} else {
-    $transmissionApiId = $transmissionData['transmission_api_id'] ?? 0;
-    if ($transmissionApiId == 0) {
-        $transmission_id = Transmission::where('transmission_api_id', 0)->value('id');
-    } else {
-        $transmission_id = Transmission::firstOrCreate(
-            ['transmission_api_id' => $transmissionApiId],
-            ['name' => $transmissionData['name'] ?? 'unknown']
-        )->id;
-    }
-}
+        // --- Transmission Handling ---
+        $transmissionData = $car['transmission'] ?? null;
+        if (empty($transmissionData)) {
+            $transmission_id = null;
+        } else {
+            $transmissionApiId = $transmissionData['transmission_api_id'] ?? 0;
+            if ($transmissionApiId == 0) {
+                $transmission_id = Transmission::where('transmission_api_id', 0)->value('id');
+            } else {
+                $transmission_id = Transmission::firstOrCreate(
+                    ['transmission_api_id' => $transmissionApiId],
+                    ['name' => $transmissionData['name'] ?? 'unknown']
+                )->id;
+            }
+        }
 
 
         // $driveWheel = DriveWheel::firstOrCreate(
@@ -609,21 +611,21 @@ if (empty($transmissionData)) {
         // $drive_wheel_id = $driveWheel->id;
         // Log::info('Driver Wheel', ['data' => $drive_wheel_id]);
 
-// --- Drive Wheel Handling ---
-$driveWheelData = $car['vehicle_record']['drive_wheel'] ?? null;
-if (empty($driveWheelData)) {
-    $drive_wheel_id = null;
-} else {
-    $driveWheelApiId = $driveWheelData['drive_wheel_api_id'] ?? 0;
-    if ($driveWheelApiId == 0) {
-        $drive_wheel_id = DriveWheel::where('drive_wheel_api_id', 0)->value('id');
-    } else {
-        $drive_wheel_id = DriveWheel::firstOrCreate(
-            ['drive_wheel_api_id' => $driveWheelApiId],
-            ['name' => $driveWheelData['name'] ?? 'unknown']
-        )->id;
-    }
-}
+        // --- Drive Wheel Handling ---
+        $driveWheelData = $car['drive_wheel'] ?? null;
+        if (empty($driveWheelData)) {
+            $drive_wheel_id = null;
+        } else {
+            $driveWheelApiId = $driveWheelData['drive_wheel_api_id'] ?? 0;
+            if ($driveWheelApiId == 0) {
+                $drive_wheel_id = DriveWheel::where('drive_wheel_api_id', 0)->value('id');
+            } else {
+                $drive_wheel_id = DriveWheel::firstOrCreate(
+                    ['drive_wheel_api_id' => $driveWheelApiId],
+                    ['name' => $driveWheelData['name'] ?? 'unknown']
+                )->id;
+            }
+        }
 
         // $vehicleType = VehicleType::firstOrCreate(
         //     ['vehicle_type_api_id' => $car['vehicle_type']['vehicle_type_api_id']],
@@ -633,21 +635,21 @@ if (empty($driveWheelData)) {
         // Log::info('Vehicle Type', ['data' => $vehicle_type_id]);
 
 
-// --- Vehicle Type Handling ---
-$vehicleTypeData = $car['vehicle_record']['vehicle_type'] ?? null;
-if (empty($vehicleTypeData)) {
-    $vehicle_type_id = null;
-} else {
-    $vehicleTypeApiId = $vehicleTypeData['vehicle_type_api_id'] ?? 0;
-    if ($vehicleTypeApiId == 0) {
-        $vehicle_type_id = VehicleType::where('vehicle_type_api_id', 0)->value('id');
-    } else {
-        $vehicle_type_id = VehicleType::firstOrCreate(
-            ['vehicle_type_api_id' => $vehicleTypeApiId],
-            ['name' => $vehicleTypeData['name'] ?? 'unknown']
-        )->id;
-    }
-}
+        // --- Vehicle Type Handling ---
+        $vehicleTypeData = $car['vehicle_type'] ?? null;
+        if (empty($vehicleTypeData)) {
+            $vehicle_type_id = null;
+        } else {
+            $vehicleTypeApiId = $vehicleTypeData['vehicle_type_api_id'] ?? 0;
+            if ($vehicleTypeApiId == 0) {
+                $vehicle_type_id = VehicleType::where('vehicle_type_api_id', 0)->value('id');
+            } else {
+                $vehicle_type_id = VehicleType::firstOrCreate(
+                    ['vehicle_type_api_id' => $vehicleTypeApiId],
+                    ['name' => $vehicleTypeData['name'] ?? 'unknown']
+                )->id;
+            }
+        }
 
         // $fuel = Fuel::firstOrCreate(
         //     ['fuel_api_id' => $car['fuel']['fuel_api_id']],
@@ -657,21 +659,21 @@ if (empty($vehicleTypeData)) {
         // Log::info('Fuel', ['data' => $fuel_id]);
 
 
-// --- Fuel Handling ---
-$fuelData = $car['vehicle_record']['fuel'] ?? null;
-if (empty($fuelData)) {
-    $fuel_id = null;
-} else {
-    $fuelApiId = $fuelData['fuel_api_id'] ?? 0;
-    if ($fuelApiId == 0) {
-        $fuel_id = Fuel::where('fuel_api_id', 0)->value('id');
-    } else {
-        $fuel_id = Fuel::firstOrCreate(
-            ['fuel_api_id' => $fuelApiId],
-            ['name' => $fuelData['name'] ?? 'unknown']
-        )->id;
-    }
-}
+        // --- Fuel Handling ---
+        $fuelData = $car['fuel'] ?? null;
+        if (empty($fuelData)) {
+            $fuel_id = null;
+        } else {
+            $fuelApiId = $fuelData['fuel_api_id'] ?? 0;
+            if ($fuelApiId == 0) {
+                $fuel_id = Fuel::where('fuel_api_id', 0)->value('id');
+            } else {
+                $fuel_id = Fuel::firstOrCreate(
+                    ['fuel_api_id' => $fuelApiId],
+                    ['name' => $fuelData['name'] ?? 'unknown']
+                )->id;
+            }
+        }
 
         $domain_id = null;
         if (isset($car['vehicle_record']['domain'])) {
@@ -708,21 +710,21 @@ if (empty($fuelData)) {
         // )->id;
         // Log::info('Seller', ['data' => $seller_id]);
 
-// --- Seller Handling ---
-$sellerData = $car['vehicle_record']['seller'] ?? null;
-if (empty($sellerData)) {
-    $seller_id = null;
-} else {
-    $sellerApiId = $sellerData['seller_api_id'] ?? 0;
-    if ($sellerApiId == 0) {
-        $seller_id = Seller::where('seller_api_id', 0)->value('id');
-    } else {
-        $seller_id = Seller::firstOrCreate(
-            ['seller_api_id' => $sellerApiId],
-            ['name' => $sellerData['name'] ?? 'unknown']
-        )->id;
-    }
-}
+        // --- Seller Handling ---
+        $sellerData = $car['vehicle_record']['seller'] ?? null;
+        if (empty($sellerData)) {
+            $seller_id = null;
+        } else {
+            $sellerApiId = $sellerData['seller_api_id'] ?? 0;
+            if ($sellerApiId == 0) {
+                $seller_id = Seller::where('seller_api_id', 0)->value('id');
+            } else {
+                $seller_id = Seller::firstOrCreate(
+                    ['seller_api_id' => $sellerApiId],
+                    ['name' => $sellerData['name'] ?? 'unknown']
+                )->id;
+            }
+        }
 
         // $seller_type_id = SellerType::firstOrCreate(
         //     ['seller_type_api_id' => $car['vehicle_record']['seller_type']['seller_type_api_id']],
@@ -731,21 +733,21 @@ if (empty($sellerData)) {
         // Log::info('Seller Type', ['data' => $seller_type_id]);
 
 
-// --- Seller Type Handling ---
-$sellerTypeData = $car['vehicle_record']['seller_type'] ?? null;
-if (empty($sellerTypeData)) {
-    $seller_type_id = null;
-} else {
-    $sellerTypeApiId = $sellerTypeData['seller_type_api_id'] ?? 0;
-    if ($sellerTypeApiId == 0) {
-        $seller_type_id = SellerType::where('seller_type_api_id', 0)->value('id');
-    } else {
-        $seller_type_id = SellerType::firstOrCreate(
-            ['seller_type_api_id' => $sellerTypeApiId],
-            ['name' => $sellerTypeData['name'] ?? 'unknown']
-        )->id;
-    }
-}
+        // --- Seller Type Handling ---
+        $sellerTypeData = $car['vehicle_record']['seller_type'] ?? null;
+        if (empty($sellerTypeData)) {
+            $seller_type_id = null;
+        } else {
+            $sellerTypeApiId = $sellerTypeData['seller_type_api_id'] ?? 0;
+            if ($sellerTypeApiId == 0) {
+                $seller_type_id = SellerType::where('seller_type_api_id', 0)->value('id');
+            } else {
+                $seller_type_id = SellerType::firstOrCreate(
+                    ['seller_type_api_id' => $sellerTypeApiId],
+                    ['name' => $sellerTypeData['name'] ?? 'unknown']
+                )->id;
+            }
+        }
 
         // $condition_id = Condition::firstOrCreate(
         //     ['condition_api_id' => $car['vehicle_record']['condition']['condition_api_id']],
@@ -753,21 +755,21 @@ if (empty($sellerTypeData)) {
         // )->id;
         // Log::info('Condition', ['data' => $condition_id]);
 
-// --- Condition Handling ---
-$conditionData = $car['vehicle_record']['condition'] ?? null;
-if (empty($conditionData)) {
-    $condition_id = null;
-} else {
-    $conditionApiId = $conditionData['condition_api_id'] ?? 100;
-    if ($conditionApiId == 100) {
-        $condition_id = Condition::where('condition_api_id', 100)->value('id');
-    } else {
-        $condition_id = Condition::firstOrCreate(
-            ['condition_api_id' => $conditionApiId],
-            ['name' => $conditionData['name'] ?? 'unknown']
-        )->id;
-    }
-}
+        // --- Condition Handling ---
+        $conditionData = $car['vehicle_record']['condition'] ?? null;
+        if (empty($conditionData)) {
+            $condition_id = null;
+        } else {
+            $conditionApiId = $conditionData['condition_api_id'] ?? 100;
+            if ($conditionApiId == 100) {
+                $condition_id = Condition::where('condition_api_id', 100)->value('id');
+            } else {
+                $condition_id = Condition::firstOrCreate(
+                    ['condition_api_id' => $conditionApiId],
+                    ['name' => $conditionData['name'] ?? 'unknown']
+                )->id;
+            }
+        }
 
         // $status_id = Status::firstOrCreate(
         //     ['status_api_id' => $car['vehicle_record']['status']['status_api_id']],
@@ -775,37 +777,37 @@ if (empty($conditionData)) {
         // )->id;
         // Log::info('Status', ['data' => $status_id]);
 
-// --- Status Handling ---
-$statusData = $car['vehicle_record']['status'] ?? null;
-if (empty($statusData)) {
-    $status_id = null;
-} else {
-    $statusApiId = $statusData['status_api_id'] ?? 0;
-    if ($statusApiId == 0) {
-        $status_id = Status::where('status_api_id', 0)->value('id');
-    } else {
-        $status_id = Status::firstOrCreate(
-            ['status_api_id' => $statusApiId],
-            ['name' => $statusData['name'] ?? 'unknown']
-        )->id;
-    }
-}
-
-    // --- Auction Type Handling ---
-    $auctionTypeData = $car['vehicle_record']['auction_type'] ?? null;
-    if (empty($auctionTypeData)) {
-        $auction_type_id = null;
-    } else {
-        $auctiontypeApiId = $auctionTypeData['auction_type_api_id'] ?? 0;
-        if ($auctiontypeApiId == 0) {
-            $auction_type_id = AuctionType::where('auction_type_api_id', 0)->value('id');
+        // --- Status Handling ---
+        $statusData = $car['vehicle_record']['status'] ?? null;
+        if (empty($statusData)) {
+            $status_id = null;
         } else {
-            $auction_type_id = AuctionType::firstOrCreate(
-                ['auction_type_api_id' => $auctiontypeApiId],
-                ['name' => $auctionTypeData['name'] ?? 'unknown']
-            )->id;
+            $statusApiId = $statusData['status_api_id'] ?? 0;
+            if ($statusApiId == 0) {
+                $status_id = Status::where('status_api_id', 0)->value('id');
+            } else {
+                $status_id = Status::firstOrCreate(
+                    ['status_api_id' => $statusApiId],
+                    ['name' => $statusData['name'] ?? 'unknown']
+                )->id;
+            }
         }
-    }
+
+        // --- Auction Type Handling ---
+        $auctionTypeData = $car['vehicle_record']['auction_type'] ?? null;
+        if (empty($auctionTypeData)) {
+            $auction_type_id = null;
+        } else {
+            $auctiontypeApiId = $auctionTypeData['auction_type_api_id'] ?? 0;
+            if ($auctiontypeApiId == 0) {
+                $auction_type_id = AuctionType::where('auction_type_api_id', 0)->value('id');
+            } else {
+                $auction_type_id = AuctionType::firstOrCreate(
+                    ['auction_type_api_id' => $auctiontypeApiId],
+                    ['name' => $auctionTypeData['name'] ?? 'unknown']
+                )->id;
+            }
+        }
 
         // $title_id = !empty($car['vehicle_record']['title_title'])
         // ? Title::firstOrCreate(
@@ -815,21 +817,21 @@ if (empty($statusData)) {
         // : null;
         // Log::info('Title', ['data' => $title_id]);
 
-// --- Title Handling ---
-$titleData = $car['vehicle_record']['title_title'] ?? null;
-if (empty($titleData)) {
-    $title_id = null;
-} else {
-    $titleApiId = $titleData['title_api_id'] ?? 0;
-    if ($titleApiId == 0) {
-        $title_id = Title::where('title_api_id', 0)->value('id');
-    } else {
-        $title_id = Title::firstOrCreate(
-            ['title_api_id' => $titleApiId],
-            ['name' => $titleData['name'] ?? 'unknown']
-        )->id;
-    }
-}
+        // --- Title Handling ---
+        $titleData = $car['vehicle_record']['title_title'] ?? null;
+        if (empty($titleData)) {
+            $title_id = null;
+        } else {
+            $titleApiId = $titleData['title_api_id'] ?? 0;
+            if ($titleApiId == 0) {
+                $title_id = Title::where('title_api_id', 0)->value('id');
+            } else {
+                $title_id = Title::firstOrCreate(
+                    ['title_api_id' => $titleApiId],
+                    ['name' => $titleData['name'] ?? 'unknown']
+                )->id;
+            }
+        }
 
         // $detailed_title_id = DetailedTitle::firstOrCreate(
         //     ['detailed_title_api_id' => $car['vehicle_record']['detailed_title']['detailed_title_api_id']],
@@ -837,21 +839,21 @@ if (empty($titleData)) {
         // )->id;
         // Log::info('Detailed Title', ['data' => $detailed_title_id]);
 
-// --- Detailed Title Handling ---
-$detailedTitleData = $car['vehicle_record']['detailed_title'] ?? null;
-if (empty($detailedTitleData)) {
-    $detailed_title_id = null;
-} else {
-    $detailedTitleApiId = $detailedTitleData['detailed_title_api_id'] ?? 0;
-    if ($detailedTitleApiId == 0) {
-        $detailed_title_id = DetailedTitle::where('detailed_title_api_id', 0)->value('id');
-    } else {
-        $detailed_title_id = DetailedTitle::firstOrCreate(
-            ['detailed_title_api_id' => $detailedTitleApiId],
-            ['name' => $detailedTitleData['name'] ?? 'unknown']
-        )->id;
-    }
-}
+        // --- Detailed Title Handling ---
+        $detailedTitleData = $car['vehicle_record']['detailed_title'] ?? null;
+        if (empty($detailedTitleData)) {
+            $detailed_title_id = null;
+        } else {
+            $detailedTitleApiId = $detailedTitleData['detailed_title_api_id'] ?? 0;
+            if ($detailedTitleApiId == 0) {
+                $detailed_title_id = DetailedTitle::where('detailed_title_api_id', 0)->value('id');
+            } else {
+                $detailed_title_id = DetailedTitle::firstOrCreate(
+                    ['detailed_title_api_id' => $detailedTitleApiId],
+                    ['name' => $detailedTitleData['name'] ?? 'unknown']
+                )->id;
+            }
+        }
 
         $damage_id = !empty($car['vehicle_record']['damageMain'])
         ? Damage::firstOrCreate(
