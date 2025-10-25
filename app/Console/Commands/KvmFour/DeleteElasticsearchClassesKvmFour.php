@@ -16,7 +16,8 @@ class DeleteElasticsearchClassesKvmFour extends Command
 
         $indices = [
             'vehicle_records',
-            'sale_auction_histories'
+            'sale_auction_histories',
+            'currency_exchanges'
         ];
 
         foreach ($indices as $indexName) {
