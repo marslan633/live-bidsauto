@@ -401,12 +401,12 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
         if (empty($modelData)) {
             $vehicle_model_id = null;
         } else {
-            $modelApiId = $modelData['model_api_id'] ?? 0;
+            $modelApiId = $modelData['vehicle_model_api_id'] ?? 0;
             if ($modelApiId == 0) {
-                $vehicle_model_id = VehicleModel::where('model_api_id', 0)->value('id');
+                $vehicle_model_id = VehicleModel::where('vehicle_model_api_id', 0)->value('id');
             } else {
                 $vehicle_model_id = VehicleModel::firstOrCreate(
-                    ['model_api_id' => $modelApiId],
+                    ['vehicle_model_api_id' => $modelApiId],
                     ['name' => $modelData['name'] ?? 'unknown']
                 )->id;
             }
@@ -894,15 +894,14 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
         if (empty($stateData)) {
             $state_id = null;
         } else {
-            $stateCode = $stateData['code'] ?? null;
+            $stateApiId = $stateData['state_api_id'] ?? null;
 
-            if (empty($stateCode)) {
+            if (empty($stateApiId)) {
                 $state_id = State::where('state_api_id', 0)->value('id');
             } else {
                 $state_id = State::firstOrCreate(
-                    ['code' => $stateCode],
+                    ['state_api_id' => $stateApiId],
                     [
-                        'state_api_id' => $stateData['state_api_id'] ?? 0,
                         'country_id' => $country_id,
                         'name' => $stateData['name'] ?? 'unknown'
                     ]
