@@ -5,7 +5,7 @@ namespace App\Console\Commands\KvmFour;
 use Illuminate\Console\Command;
 use App\Models\CurrencyExchange;
 use Illuminate\Support\Facades\Http;
-
+use Carbon\Carbon;
 class UpdateCurrencyExchangeRates extends Command
 {
     /**
@@ -43,7 +43,7 @@ class UpdateCurrencyExchangeRates extends Command
                     }
                     return [
                         'base_code' => $data['source'] ?? 'USD',
-                        'last_update_at' => $data['timestamp'] ?? null,
+                        'last_update_at' => now(),
                         'bgn' => $data['quotes']['USDBGN'] ?? null,
                         'eur' => $data['quotes']['USDEUR'] ?? null,
                         'usd' => 1.0,
@@ -60,7 +60,7 @@ class UpdateCurrencyExchangeRates extends Command
                     }
                     return [
                         'base_code' => $data['base_code'] ?? 'USD',
-                        'last_update_at' => $data['time_last_update_utc'] ?? null,
+                        'last_update_at' => now(),
                         'bgn' => $data['rates']['BGN'] ?? null,
                         'eur' => $data['rates']['EUR'] ?? null,
                         'usd' => 1.0,
