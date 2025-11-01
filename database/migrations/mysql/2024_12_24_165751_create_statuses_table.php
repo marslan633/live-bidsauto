@@ -10,24 +10,22 @@ return new class extends Migration
     public function up(): void
     {
         Schema::connection('mysql')->create('statuses', function (Blueprint $table) {
-            $table->unsignedBigInteger('id')->primary(); // no auto-increment
+            $table->id(); // AUTO_INCREMENT starts from 1
             $table->unsignedBigInteger('status_api_id')->unique();
             $table->string('name')->nullable();
             $table->timestamps();
         });
 
-        // Insert the 'unknown' row with 0,0
-        DB::connection('mysql')->table('statuses')->insert([
+        // Manually insert the "unknown" row with ID 0
+        DB::statement('SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO"'); // allow manual 0 insert
+        DB::table('statuses')->insertOrIgnore([
             'id' => 0,
             'status_api_id' => 0,
             'name' => 'unknown',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-
-        // Now convert id into auto_increment starting from 1
-        DB::statement('ALTER TABLE statuses MODIFY id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT;');
-        DB::statement('ALTER TABLE statuses AUTO_INCREMENT = 1;');
+        DB::statement('SET SQL_MODE=""'); // restore SQL mode
     }
 
     public function down(): void
