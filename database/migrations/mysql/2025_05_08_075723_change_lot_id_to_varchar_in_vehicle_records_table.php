@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('vehicle_records', function (Blueprint $table) {
-            $table->string('lot_id', 255)->change();
+            $table->string('lot_id', 255)->nullable()->change();
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('vehicle_records', function (Blueprint $table) {
-            $table->unsignedBigInteger('lot_id')->change();
+            $table->unsignedBigInteger('lot_id')->nullable()->change();
         });
     }
 };
