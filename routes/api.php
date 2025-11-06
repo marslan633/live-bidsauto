@@ -126,3 +126,5 @@ Route::get('/get-vehicles-for-database', [VehicleController::class, 'getVechicle
 Route::get('/get-archived-vehicles-for-database', [VehicleController::class, 'getArchivedVechiclesForDatabase']);
 Route::post('/delete-my-vehicle/{id}', [VehicleController::class, 'deleteMyVehicle']);
 Route::post('/delete-my-archive-vehicle/{id}', [VehicleController::class, 'deleteMyArchiveVehicle']);
+
+Route::get('/my-test', [VehicleController::class, 'mytest']);

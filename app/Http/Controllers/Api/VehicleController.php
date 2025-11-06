@@ -1722,4 +1722,85 @@ class VehicleController extends Controller
 
         return [];
     }
+
+    public function myTest()
+    {
+        $totalArchived = 0;
+
+        $query = VehicleRecord::query();
+        $query->where('data_source', 1)
+            ->where('status_id', '!=', 3)
+            ->whereRaw(
+                "DATE_FORMAT(STR_TO_DATE(sale_date, '%Y-%m-%dT%H:%i:%s.%fZ'), '%Y-%m-%d %H:%i') > ?",
+                [now()->format('Y-m-d H:i')]
+            )
+            ->limit(5);
+
+        $this->processInChunks($query, 1, $totalArchived);
+
+        return response()->json(['total' => $totalArchived]);
+    }
+
+    private function processInChunks($query, int $chunkSize, &$totalArchived)
+    {
+        $updatedVehicleRecordsData = [];
+        $updatedSaleData = [];
+        $newSaleData = [];
+        $query->chunk($chunkSize, function ($expiredRecords) use (&$totalArchived) {
+            foreach ($expiredRecords as $record) {
+                $record = $record->toArray();
+                $newRecord = (array) $record;
+
+                $now = Carbon::now();
+                    $updatedVehicleRecordsData[] = [
+                        'id' => $record['id'],
+                        'data_source' => 2,
+                        'updated_at' => $now
+                    ];
+
+                    $record['updated_at'] = $now;
+                  
+                $saleAuctionRecord = DB::table('sale_auction_histories')
+                ->where([
+                    'vin' => $record['vin'],
+                    'lot_id' => $record['lot_id'],
+                    'sale_date' => $record['sale_date'],
+                ])->first();
+            
+
+                $saleData = [
+                    'vin' => strtolower($record['vin']),
+                    'domain_id' => $record['domain_id'],
+                    'sale_date' => $record['sale_date'],
+                    'coming_from' => 'active_and_status_not_sale_job',
+                    'lot_id' => $record['lot_id'],
+                    'bid' => $record['bid'],
+                    'odometer_mi' => $record['odometer_mi'],
+                    'final_bid_updated_at' => $record['final_bid_updated_at'],
+                    'status_id' => $record['status_id'],
+                    'seller_id' => $record['seller_id'],
+                    'created_at' => $now,
+                    'updated_at' => $now
+                ];
+
+                if($saleAuctionRecord){
+                  
+                    unset($saleData['created_at']);
+                    $updatedSaleData[] = array_merge(['id' => $saleAuctionRecord->id], $saleData);
+                    Log::info('ActiveAndStatusNotSaleJob Sale Auctio History Record Updated', ['record' => json_encode(array_merge(['id' => $saleAuctionRecord->id], $saleData))]);
+                }else{
+                    
+                    $newSaleData[] = $saleData;
+                    Log::info('ActiveAndStatusNotSaleJob Sale Auctio History Record Created', ['record' => json_encode($saleData)]);
+                }
+                
+            }
+            // dd($updatedVehicleRecordsData);
+    
+            DB::table('vehicle_records')->upsert($updatedVehicleRecordsData,['id']);
+
+            dd("working");
+            $totalArchived += count($expiredRecords);
+        });
+    }    
 }
