@@ -254,7 +254,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                                     'lot_id' => $item['lot_id'],
                                     'bid' => $item['bid'],
                                     'odometer_mi' => $item['odometer_mi'],
-                                    'status_id' => $item['status_id'],
+                                    'status_id' => $item['status_id'] == 3 ? 7 : $item['status_id'],
                                     'seller_id' => $item['seller_id'],
                                     'created_at' => $now,
                                     'updated_at' => $now,
