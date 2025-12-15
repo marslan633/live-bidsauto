@@ -16,6 +16,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/scout": "^10.14",
         "laravel/tinker": "^2.9",
+        "league/flysystem-aws-s3-v3": "3.0",
         "mongodb/laravel-mongodb": "^5.2",
         "nesbot/carbon": "^2.73"
     },

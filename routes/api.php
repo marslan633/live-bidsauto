@@ -128,3 +128,4 @@ Route::post('/delete-my-vehicle/{id}', [VehicleController::class, 'deleteMyVehic
 Route::post('/delete-my-archive-vehicle/{id}', [VehicleController::class, 'deleteMyArchiveVehicle']);
 
 Route::get('/my-test', [VehicleController::class, 'mytest']);
+Route::post('/cloudflare-upload', [VehicleController::class, 'uploadCloudflare']);

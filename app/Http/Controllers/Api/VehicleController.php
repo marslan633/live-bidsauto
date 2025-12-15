@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 class VehicleController extends Controller
 {
@@ -1803,4 +1804,47 @@ class VehicleController extends Controller
             $totalArchived += count($expiredRecords);
         });
     }    
+    // public function uploadCloudflare(Request $request)
+    // {
+    //     try {
+    //         if ($request->hasFile('file')) {
+    //             $file = $request->file('file');
+    //             $filePath = 'uploads/' . uniqid() . '_' . $file->getClientOriginalName();
+
+    //             // Store the file in Cloudflare R2
+    //             Storage::disk('cloudflare')->put($filePath, file_get_contents($file));
+
+    //             $fileUrl = Storage::disk('cloudflare')->url($filePath);
+
+    //             return sendResponse(true, 200, 'File uploaded successfully!', ['file_url' => $fileUrl], 200);
+    //         } else {
+    //             return sendResponse(false, 400, 'No file provided in the request.', null, 200);
+    //         }
+    //     } catch (\Exception $ex) {
+    //         return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+    //     }
+    // }
+    public function uploadCloudflare(Request $request)
+    {
+        try {
+            if ($request->hasFile('file')) {
+                $file = $request->file('file');
+                $filePath = 'uploads/' . uniqid() . '_' . $file->getClientOriginalName();
+
+                // Upload file to Cloudflare R2
+                Storage::disk('cloudflare')->put($filePath, file_get_contents($file));
+
+                // ✅ Manually build public URL
+                $publicUrl = rtrim(env('CLOUDFLARE_PUBLIC_URL', 'https://pub-46b29f5ed27a48febc5b2d60f58cc801.r2.dev'), '/') . '/' . $filePath;
+
+                return sendResponse(true, 200, 'File uploaded successfully!', [
+                    'file_url' => $publicUrl
+                ], 200);
+            } else {
+                return sendResponse(false, 400, 'No file provided in the request.', null, 200);
+            }
+        } catch (\Exception $ex) {
+            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 200);
+        }
+    }
 }
