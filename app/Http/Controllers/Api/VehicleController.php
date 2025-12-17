@@ -13,6 +13,7 @@ use App\Models\Status;
 use App\Models\VehicleArchivedApiData;
 use App\Models\VehicleProcessCachedApiData;
 use App\Models\VehicleRecord;
+use App\Models\VehicleType;
 use App\Models\VehicleRecordArchived;
 use App\Models\Year;
 use Carbon\Carbon;
@@ -444,6 +445,49 @@ class VehicleController extends Controller
                 'sale_date' => $saleDateOrder === 'farthest' ? 'desc' : 'asc'
             ];
 
+            /* HOME PAGE LOGIC (ONLY WHEN FLAG IS PRESENT) */
+            if ($request->boolean('is_homepage') && $request->has('vehicle_types')) {
+            
+                $sections = [];
+
+                foreach ((array) $request->input('vehicle_types') as $vehicleTypeId) {
+
+                    $vehicleTypeMap = VehicleType::whereIn(
+                        'id',
+                        (array) $request->input('vehicle_types')
+                    )->pluck('name', 'id')->toArray();
+                        
+                    $homeMust = $must;
+                    $homeMust[] = [
+                        'term' => ['vehicle_type_id' => (int) $vehicleTypeId]
+                    ];
+
+                    $homeParams = [
+                        'index' => $index,
+                        'body' => [
+                            'from' => 0,
+                            'size' => $size,
+                            'query' => ['bool' => ['must' => $homeMust]],
+                            'sort' => $sort
+                        ]
+                    ];
+
+                    $homeResults = $client->search($homeParams);
+
+                    $sections[] = [
+                        'vehicle_type_id' => (int) $vehicleTypeId,
+                        'vehicle_type_name' => $vehicleTypeMap[$vehicleTypeId] ?? 'Unknown',
+                        'count' => $homeResults['hits']['total']['value'] ?? 0,
+                        'data' => collect($homeResults['hits']['hits'])
+                            ->map(fn($hit) => $hit['_source'])
+                            ->values()
+                    ];
+                }
+
+                return sendResponse(true, 200, 'Home Page Vehicles Loaded', [
+                    'sections' => $sections
+                ], 200);
+            }
 
             // Final ES Query
             $params = [
