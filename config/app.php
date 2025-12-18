@@ -31,6 +31,10 @@ return [
     'elastic_store_time' => env('ELASTIC_STORE_TIME', 30),
     'exchange_rate_access_key' => env('EXCHANGE_RATE_ACCESS_KEY', ''),
 
+    'allowed_api_origins' => array_filter(
+        explode(',', env('ALLOWED_API_ORIGINS', ''))
+    ),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

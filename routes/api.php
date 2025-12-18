@@ -16,10 +16,20 @@ use Carbon\Carbon;
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
-
+// Route::middleware([ 'verify.access.key', 'verify.origin', 'throttle:api'])->group(function () {
 Route::prefix('vehicles')->group(function () {
     Route::post('/', [VehicleController::class, 'vehicleInformations']);
     Route::get('/{id}', [VehicleController::class, 'searchVehicle']);
+});
+// });
+
+
+//testing duplicate route group
+Route::middleware([ 'verify.access.key', 'verify.origin', 'throttle:api'])->group(function () { 
+    Route::prefix('vehicles-copy')->group(function () {
+        Route::post('/', [VehicleController::class, 'vehicleInformations']);
+        Route::get('/{id}', [VehicleController::class, 'searchVehicle']);
+    });
 });
 
 Route::post('filter-attributes', [VehicleController::class, 'filterAttributes']);
