@@ -188,6 +188,18 @@ class SetupElasticsearchClassesKvmFour extends Command
                     ],
                 ],
             ],
+            'landing_page_rules' => [
+                'mappings' => [
+                    'properties' => [
+                        'section_key' => ['type' => 'keyword'],
+                        'section_title' => ['type' => 'text'],
+                        'request_body' => ['type' => 'object', 'dynamic' => true,],
+                        'limit' => ['type' => 'integer'],
+                        'is_active' => ['type' => 'boolean'],
+                    ],
+                ],
+            ],
+
         ];
 
         foreach ($indices as $indexName => $indexConfig) {

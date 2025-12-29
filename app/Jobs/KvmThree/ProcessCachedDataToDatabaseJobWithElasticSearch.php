@@ -396,21 +396,7 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
         // $model_id = $model->id;
         // Log::info('Model', ['data' => $model_id]);
 
-        // --- Vehicle Model Handling ---
-        $modelData = $car['model'] ?? null;
-        if (empty($modelData)) {
-            $vehicle_model_id = null;
-        } else {
-            $modelApiId = $modelData['vehicle_model_api_id'] ?? 0;
-            if ($modelApiId == 0) {
-                $vehicle_model_id = VehicleModel::where('vehicle_model_api_id', 0)->value('id');
-            } else {
-                $vehicle_model_id = VehicleModel::firstOrCreate(
-                    ['vehicle_model_api_id' => $modelApiId],
-                    ['name' => $modelData['name'] ?? 'unknown']
-                )->id;
-            }
-        }
+        
 
         $imageRecord = $car['vehicle_record']['imageRecord'] ?? [];
 
@@ -476,6 +462,25 @@ class ProcessCachedDataToDatabaseJobWithElasticSearch implements ShouldQueue
                 $manufacturer_id = Manufacturer::firstOrCreate(
                     ['manufacturer_api_id' => $manufacturerApiId],
                     ['name' => $manufacturerData['name'] ?? 'unknown']
+                )->id;
+            }
+        }
+
+        // --- Vehicle Model Handling ---
+        $modelData = $car['model'] ?? null;
+        if (empty($modelData)) {
+            $vehicle_model_id = null;
+        } else {
+            $modelApiId = $modelData['vehicle_model_api_id'] ?? 0;
+            if ($modelApiId == 0) {
+                $vehicle_model_id = VehicleModel::where('vehicle_model_api_id', 0)->value('id');
+            } else {
+                $vehicle_model_id = VehicleModel::firstOrCreate(
+                    ['vehicle_model_api_id' => $modelApiId],
+                    [
+                        'name' => $modelData['name'] ?? 'unknown',
+                        'manufacturer_id' => $manufacturer_id ?? 0
+                    ]
                 )->id;
             }
         }

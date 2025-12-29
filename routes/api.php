@@ -3,7 +3,6 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Api\VehicleController;
-use App\Http\Controllers\Api\LandingPageRuleController;
 use App\Http\Controllers\CronRunHistoryController;
 use App\Models\CacheKey;
 use App\Models\RemoteCacheKey;
@@ -24,12 +23,6 @@ Route::prefix('vehicles')->group(function () {
     Route::post('/homepage', [VehicleController::class, 'homepageVehicles']);
 });
 // });
-
-Route::prefix('landing-page-rules')->group(function () {
-    Route::get('/', [LandingPageRuleController::class, 'index']);
-    Route::get('{id}', [LandingPageRuleController::class, 'show']);
-    Route::put('{id}', [LandingPageRuleController::class, 'update']);
-});
 
 
 //testing duplicate route group

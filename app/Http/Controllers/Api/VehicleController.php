@@ -15,7 +15,7 @@ use App\Models\VehicleProcessCachedApiData;
 use App\Models\VehicleRecord;
 use App\Models\VehicleType;
 use App\Models\VehicleRecordArchived;
-use App\Models\{Year,LandingPageRule};
+use App\Models\{Year, LandingPageRule};
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -522,28 +522,52 @@ class VehicleController extends Controller
     {
         try {
             $client = app('ElasticsearchKvmFour');
-            $index  = 'vehicle_records';
 
-            $rules = LandingPageRule::where('is_active', 1)
-                ->orderBy('id')
-                ->get();
+            $rulesIndex = 'landing_page_rules';
+            $vehicleIndex = 'vehicle_records';
 
+            // -------------------------------------------------
+            // Fetch active landing page rules from Elasticsearch
+            // -------------------------------------------------
+            $elasticRules = $client->search([
+                'index' => $rulesIndex,
+                'body'  => [
+                    'query' => [
+                        'term' => ['is_active' => true]
+                    ],
+                    'size' => 1000 // adjust if you have more rules
+                ]
+            ]);
+
+            
+
+            $rules = collect($elasticRules['hits']['hits'])->map(fn ($hit) => [
+                'id'            => $hit['_id'],
+                'section_key'   => $hit['_source']['section_key'],
+                'section_title' => $hit['_source']['section_title'],
+                'request_body'  => $hit['_source']['request_body'], // should be JSON/object
+                'limit'         => $hit['_source']['limit'] ?? 8,
+            ]);
+            
             $sections = [];
 
             foreach ($rules as $rule) {
+                $body = $rule['request_body'];
+                $ruleLimit = $rule['limit'];
 
-                $body = $rule->request_body;
-                
+                // -------------------------------------------------
+                // DATA SOURCE FILTER
+                // -------------------------------------------------
                 $dataSourceValue = ($body['data_source'] ?? 'active') === 'active' ? 1 : 2;
 
                 $must = [
                     ['exists' => ['field' => 'sale_date']],
-                    ['term' => ['data_source' => $dataSourceValue]],
+                    ['term'   => ['data_source' => $dataSourceValue]],
                 ];
 
-                /* -------------------------------------------------
-                 | DOMAIN
-                 |-------------------------------------------------*/
+                // -------------------------------------------------
+                // DOMAIN FILTER
+                // -------------------------------------------------
                 if (!empty($body['domain_id'])) {
                     $must[] = [
                         'terms' => [
@@ -552,9 +576,9 @@ class VehicleController extends Controller
                     ];
                 }
 
-                /* -------------------------------------------------
-                 | BUY NOW FILTER
-                 |-------------------------------------------------*/
+                // -------------------------------------------------
+                // BUY NOW FILTER
+                // -------------------------------------------------
                 if (array_key_exists('buy_now', $body)) {
                     if ($body['buy_now']) {
                         $buyNowId = BuyNow::where('name', 'buyNowWithPrice')->value('id');
@@ -569,9 +593,9 @@ class VehicleController extends Controller
                     }
                 }
 
-                /* -------------------------------------------------
-                 | YEAR RANGE
-                 |-------------------------------------------------*/
+                // -------------------------------------------------
+                // YEAR RANGE FILTER
+                // -------------------------------------------------
                 if (!empty($body['year_from']) && !empty($body['year_to'])) {
                     $must[] = [
                         'range' => [
@@ -583,6 +607,9 @@ class VehicleController extends Controller
                     ];
                 }
 
+                // -------------------------------------------------
+                // OTHER FILTERS
+                // -------------------------------------------------
                 $filters = [
                     'manufacturers' => 'manufacturer_id',
                     'vehicle_models' => 'vehicle_model_id',
@@ -605,9 +632,9 @@ class VehicleController extends Controller
                     }
                 }
 
-                /* -------------------------------------------------
-                 | SORTING (SAME AS BEFORE)
-                 |-------------------------------------------------*/
+                // -------------------------------------------------
+                // SORTING
+                // -------------------------------------------------
                 $sort = [];
 
                 if (!empty($body['buy_now_sort'])) {
@@ -641,11 +668,14 @@ class VehicleController extends Controller
 
                 $sort[] = ['sale_date' => 'asc'];
 
+                // -------------------------------------------------
+                // SEARCH VEHICLES
+                // -------------------------------------------------
                 $params = [
-                    'index' => $index,
-                    'body' => [
+                    'index' => $vehicleIndex,
+                    'body'  => [
                         'from' => 0,
-                        'size' => $rule->limit ?? 8,
+                        'size' => $ruleLimit,
                         'query' => [
                             'bool' => [
                                 'must' => $must
@@ -659,10 +689,10 @@ class VehicleController extends Controller
                 $results = $client->search($params);
 
                 $sections[] = [
-                    'section_key'   => $rule->section_key,
-                    'section_title'=> $rule->section_title,
-                    'count'        => $results['hits']['total']['value'] ?? 0,
-                    'data'         => collect($results['hits']['hits'])
+                    'section_key'   => $rule['section_key'],
+                    'section_title' => $rule['section_title'],
+                    'count'         => $results['hits']['total']['value'] ?? 0,
+                    'data'          => collect($results['hits']['hits'])
                                         ->map(fn ($hit) => $hit['_source'])
                                         ->values()
                 ];

@@ -143,6 +143,19 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
+        'landing' => [
+            'driver' => 'mysql',
+            'host' => env('DB_LANDING_HOST', '127.0.0.1'),
+            'port' => env('DB_LANDING_PORT', '3306'),
+            'database' => env('DB_LANDING_DATABASE', 'forge'),
+            'username' => env('DB_LANDING_USERNAME', 'forge'),
+            'password' => env('DB_LANDING_PASSWORD', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+            'engine' => null,
+        ],
     ],
 
     /*
