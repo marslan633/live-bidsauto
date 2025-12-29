@@ -15,7 +15,7 @@ use App\Models\VehicleProcessCachedApiData;
 use App\Models\VehicleRecord;
 use App\Models\VehicleType;
 use App\Models\VehicleRecordArchived;
-use App\Models\Year;
+use App\Models\{Year,LandingPageRule};
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -513,6 +513,165 @@ class VehicleController extends Controller
                 'count' => $count,
                 'data' => $vehicles
             ], 200);
+        } catch (\Exception $ex) {
+            return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 500);
+        }
+    }
+
+    public function homepageVehicles(Request $request)
+    {
+        try {
+            $client = app('ElasticsearchKvmFour');
+            $index  = 'vehicle_records';
+
+            $rules = LandingPageRule::where('is_active', 1)
+                ->orderBy('id')
+                ->get();
+
+            $sections = [];
+
+            foreach ($rules as $rule) {
+
+                $body = $rule->request_body;
+                
+                $dataSourceValue = ($body['data_source'] ?? 'active') === 'active' ? 1 : 2;
+
+                $must = [
+                    ['exists' => ['field' => 'sale_date']],
+                    ['term' => ['data_source' => $dataSourceValue]],
+                ];
+
+                /* -------------------------------------------------
+                 | DOMAIN
+                 |-------------------------------------------------*/
+                if (!empty($body['domain_id'])) {
+                    $must[] = [
+                        'terms' => [
+                            'domain_id' => array_map('intval', $body['domain_id'])
+                        ]
+                    ];
+                }
+
+                /* -------------------------------------------------
+                 | BUY NOW FILTER
+                 |-------------------------------------------------*/
+                if (array_key_exists('buy_now', $body)) {
+                    if ($body['buy_now']) {
+                        $buyNowId = BuyNow::where('name', 'buyNowWithPrice')->value('id');
+                        $must[] = ['term' => ['buy_now_id' => (int) $buyNowId]];
+                    } else {
+                        $buyNowIds = BuyNow::whereIn(
+                            'name',
+                            ['buyNowWithoutPrice', 'buyNowWithPrice']
+                        )->pluck('id')->map(fn ($i) => (int) $i)->toArray();
+
+                        $must[] = ['terms' => ['buy_now_id' => $buyNowIds]];
+                    }
+                }
+
+                /* -------------------------------------------------
+                 | YEAR RANGE
+                 |-------------------------------------------------*/
+                if (!empty($body['year_from']) && !empty($body['year_to'])) {
+                    $must[] = [
+                        'range' => [
+                            'year' => [
+                                'gte' => (int) $body['year_from'],
+                                'lte' => (int) $body['year_to'],
+                            ]
+                        ]
+                    ];
+                }
+
+                $filters = [
+                    'manufacturers' => 'manufacturer_id',
+                    'vehicle_models' => 'vehicle_model_id',
+                    'vehicle_types' => 'vehicle_type_id',
+                    'conditions' => 'condition_id',
+                    'fuels' => 'fuel_id',
+                    'seller_types' => 'seller_type_id',
+                    'drive_wheels' => 'drive_wheel_id',
+                    'transmissions' => 'transmission_id',
+                    'damages' => 'damage_id',
+                ];
+
+                foreach ($filters as $key => $column) {
+                    if (!empty($body[$key]) && is_array($body[$key])) {
+                        $must[] = [
+                            'terms' => [
+                                $column => array_map('intval', $body[$key])
+                            ]
+                        ];
+                    }
+                }
+
+                /* -------------------------------------------------
+                 | SORTING (SAME AS BEFORE)
+                 |-------------------------------------------------*/
+                $sort = [];
+
+                if (!empty($body['buy_now_sort'])) {
+                    $sort[] = [
+                        '_script' => [
+                            'type' => 'number',
+                            'script' => [
+                                'source' =>
+                                    "doc['buy_now'].size()!=0 && doc['buy_now'].value > 0 ? 1 : 0",
+                                'lang' => 'painless'
+                            ],
+                            'order' => 'desc'
+                        ]
+                    ];
+                }
+
+                $currentDateMillis = Carbon::now()->startOfDay()->timestamp * 1000;
+
+                $sort[] = [
+                    '_script' => [
+                        'type' => 'number',
+                        'script' => [
+                            'source' =>
+                                "doc['sale_date'].value.toInstant().toEpochMilli() >= params.date ? 1 : 0",
+                            'params' => ['date' => $currentDateMillis],
+                            'lang' => 'painless',
+                        ],
+                        'order' => 'desc'
+                    ]
+                ];
+
+                $sort[] = ['sale_date' => 'asc'];
+
+                $params = [
+                    'index' => $index,
+                    'body' => [
+                        'from' => 0,
+                        'size' => $rule->limit ?? 8,
+                        'query' => [
+                            'bool' => [
+                                'must' => $must
+                            ]
+                        ],
+                        'sort' => $sort,
+                        'track_total_hits' => true
+                    ]
+                ];
+
+                $results = $client->search($params);
+
+                $sections[] = [
+                    'section_key'   => $rule->section_key,
+                    'section_title'=> $rule->section_title,
+                    'count'        => $results['hits']['total']['value'] ?? 0,
+                    'data'         => collect($results['hits']['hits'])
+                                        ->map(fn ($hit) => $hit['_source'])
+                                        ->values()
+                ];
+            }
+
+            return sendResponse(true, 200, 'Homepage Vehicles Loaded', [
+                'sections' => $sections
+            ], 200);
+
         } catch (\Exception $ex) {
             return sendResponse(false, 500, 'Internal Server Error', $ex->getMessage(), 500);
         }
