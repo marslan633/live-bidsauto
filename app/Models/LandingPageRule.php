@@ -19,6 +19,5 @@ class LandingPageRule extends Model
 
     protected $casts = [
         'request_body' => 'array',
-        'is_active'    => 'boolean',
     ];
 }
