@@ -24,9 +24,14 @@ return new class extends Migration
             $table->unsignedBigInteger('seller_id')->nullable();
             $table->timestamps();
 
+            // Foreign keys
             $table->foreign('domain_id')->references('id')->on('domains')->onDelete('set null');
             $table->foreign('status_id')->references('id')->on('statuses')->onDelete('set null');
             $table->foreign('seller_id')->references('id')->on('sellers')->onDelete('set null');
+
+            // Indexes
+            $table->index(['vin', 'lot_id', 'sale_date'], 'idx_vin_lot_sale');
+            $table->index('lot_id', 'idx_lot_id');
         });
     }
 
