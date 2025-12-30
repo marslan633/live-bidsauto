@@ -12,8 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('vehicle_records', function (Blueprint $table) {
-            $table->index('sale_date');
-            $table->index('year');
+            // Explicitly name indexes so dropIndex can use the same names
+            $table->index('sale_date', 'sale_date');
+            $table->index('year', 'year');
+            $table->index('vin', 'vin');
+            $table->index('lot_id', 'lot_id');
         });
     }
 
@@ -23,8 +26,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('vehicle_records', function (Blueprint $table) {
+            // Use the same names as above
             $table->dropIndex('sale_date');
             $table->dropIndex('year');
+            $table->dropIndex('vin');
+            $table->dropIndex('lot_id');
         });
     }
 };
