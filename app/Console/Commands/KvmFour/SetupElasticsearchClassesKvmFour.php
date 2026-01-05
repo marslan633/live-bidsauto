@@ -200,6 +200,23 @@ class SetupElasticsearchClassesKvmFour extends Command
                 ],
             ],
 
+            'landing_page_manufacturers' => [
+                'mappings' => [
+                    'properties' => [
+                        'manufacturer_api_id' => ['type' => 'integer'],
+                        'name' => ['type' => 'keyword'],
+                    ],
+                ],
+            ],
+            'landing_page_vehicle_models' => [
+                'mappings' => [
+                    'properties' => [
+                        'vehicle_model_api_id' => ['type' => 'integer'],
+                        'name' => ['type' => 'keyword'],
+                        'manufacturer_id' => ['type' => 'integer'],
+                    ],
+                ],
+            ],
         ];
 
         foreach ($indices as $indexName => $indexConfig) {

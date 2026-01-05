@@ -81,26 +81,17 @@ class IndexLandingPageRules extends Command
                     'is_active'     => (bool) $rule->is_active,
                 ];
 
-                $exists = $clientKvmFour->exists([
+                $clientKvmFour->index([
                     'index' => 'landing_page_rules',
                     'id'    => $docId,
-                ])->asBool();
-
-                if ($exists) {
-                    $clientKvmFour->update([
-                        'index' => 'landing_page_rules',
-                        'id'    => $docId,
-                        'body'  => [
-                            'doc' => $body,
-                        ],
-                    ]);
-                } else {
-                    $clientKvmFour->index([
-                        'index' => 'landing_page_rules',
-                        'id'    => $docId,
-                        'body'  => $body,
-                    ]);
-                }
+                    'body'  => [
+                        'section_key'   => $rule->section_key,
+                        'section_title' => $rule->section_title,
+                        'request_body'  => $rule->request_body, // DB is source of truth
+                        'limit'         => $rule->limit,
+                        'is_active'     => (bool) $rule->is_active,
+                    ],
+                ]);
 
                 $this->info("Indexed rule: {$rule->section_key}");
             }
