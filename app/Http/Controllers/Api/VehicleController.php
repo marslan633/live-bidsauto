@@ -1245,30 +1245,48 @@ class VehicleController extends Controller
 
             $dataSourceValue = $request->input('data_source') === 'active' ? 1 : 2;
 
-            if($request->has('manufacturers')){
+            if ($request->boolean('is_home')) {
                 $filters = [
-                    'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers'],
-                    'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models'],
-                    'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types'],
-                    'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions'],
-                    'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels'],
-                    'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types'],
-                    'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels'],
-                    'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions'],
-                    // 'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles'],
-                    'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages'],
+                    'manufacturers' => [
+                        'column'   => 'manufacturer_id',
+                        'relation' => 'manufacturer',
+                        'table'    => 'manufacturers',
+                    ],
+                    'vehicle_models' => [
+                        'column'   => 'vehicle_model_id',
+                        'relation' => 'vehicleModel',
+                        'table'    => 'vehicle_models',
+                    ],
                 ];
-                if($request->input('data_source') == 'active'){
-                   $filters['buy_now'] = ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows'];
-                }
-            }else{
-                $filters = [
-                    'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers'],
-                    'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types'],
-                ];
-                if($request->input('data_source') == 'active'){
+
+            }
+            else {
+
+                if($request->has('manufacturers')){
+                    $filters = [
+                        'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers'],
+                        'vehicle_models' => ['column' => 'vehicle_model_id', 'relation' => 'vehicleModel', 'table' => 'vehicle_models'],
+                        'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types'],
+                        'conditions' => ['column' => 'condition_id', 'relation' => 'condition', 'table' => 'conditions'],
+                        'fuels' => ['column' => 'fuel_id', 'relation' => 'fuel', 'table' => 'fuels'],
+                        'seller_types' => ['column' => 'seller_type_id', 'relation' => 'sellerType', 'table' => 'seller_types'],
+                        'drive_wheels' => ['column' => 'drive_wheel_id', 'relation' => 'driveWheel', 'table' => 'drive_wheels'],
+                        'transmissions' => ['column' => 'transmission_id', 'relation' => 'transmission', 'table' => 'transmissions'],
+                        // 'detailed_titles' => ['column' => 'detailed_title_id', 'relation' => 'detailedTitle', 'table' => 'detailed_titles'],
+                        'damages' => ['column' => 'damage_id', 'relation' => 'damageMain', 'table' => 'damages'],
+                    ];
+                    if($request->input('data_source') == 'active'){
                     $filters['buy_now'] = ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows'];
-                 }
+                    }
+                }else{
+                    $filters = [
+                        'manufacturers' => ['column' => 'manufacturer_id', 'relation' => 'manufacturer', 'table' => 'manufacturers'],
+                        'vehicle_types' => ['column' => 'vehicle_type_id', 'relation' => 'vehicleType', 'table' => 'vehicle_types'],
+                    ];
+                    if($request->input('data_source') == 'active'){
+                        $filters['buy_now'] = ['column' => 'buy_now_id', 'relation' => 'buyNowRelation', 'table' => 'buy_nows'];
+                    }
+                }
             }
 
             $searchAttribute = $request->input('search_attribute');
