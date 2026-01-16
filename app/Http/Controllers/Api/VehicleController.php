@@ -563,6 +563,13 @@ class VehicleController extends Controller
                 $must = [
                     ['exists' => ['field' => 'sale_date']],
                     ['term'   => ['data_source' => $dataSourceValue]],
+                    [
+                        'range' => [
+                            'sale_date' => [
+                                'gt' => Carbon::now()->toIso8601String()
+                            ]
+                        ]
+                    ]
                 ];
 
                 // -------------------------------------------------
